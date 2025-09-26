@@ -1,0 +1,659 @@
+CellProfiler Pipeline: http://www.cellprofiler.org
+Version:3
+DateRevision:20160302210837
+GitHash:1b13225
+ModuleCount:32
+HasImagePlaneDetails:False
+
+Images:[module_num:1|svn_version:\'Unknown\'|variable_revision_number:2|show_window:False|notes:\x5B\'To begin creating your project, use the Images module to compile a list of files and/or folders that you want to analyze. You can also specify a set of rules to include only the desired files in your selected folders.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    :
+    Filter images?:Images only
+    Select the rule criteria:and (extension does isimage) (directory doesnot containregexp "\x5B\\\\\\\\\\\\\\\\/\x5D\\\\\\\\.")
+
+Metadata:[module_num:2|svn_version:\'Unknown\'|variable_revision_number:4|show_window:False|notes:\x5B\'The Metadata module optionally allows you to extract information describing your images (i.e, metadata) which will be stored along with your measurements. This information can be contained in the file name and/or location, or in an external file.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Extract metadata?:Yes
+    Metadata data type:Text
+    Metadata types:{}
+    Extraction method count:3
+    Metadata extraction method:Extract from file/folder names
+    Metadata source:File name
+    Regular expression:^(?P<setname>\x5B^\\\\.\x5D+)\\\\s(?P<imnum>\\\\d+)_c(?P<ChannelNumber>\x5B0-9\x5D{1})
+    Regular expression:(?P<Date>\x5B0-9\x5D{4}_\x5B0-9\x5D{2}_\x5B0-9\x5D{2})$
+    Extract metadata from:All images
+    Select the filtering criteria:and (file does contain "")
+    Metadata file location:
+    Match file and image metadata:\x5B\x5D
+    Use case insensitive matching?:No
+    Metadata extraction method:Extract from file/folder names
+    Metadata source:Folder name
+    Regular expression:^(?P<Plate>.*)_(?P<Well>\x5BA-P\x5D\x5B0-9\x5D{2})_s(?P<Site>\x5B0-9\x5D)_w(?P<ChannelNumber>\x5B0-9\x5D)
+    Regular expression:(?P<foldername>\x5B^\\\\\\\\/\x5D+)\\\\sMito_Morphology$
+    Extract metadata from:All images
+    Select the filtering criteria:and (file does contain "")
+    Metadata file location:
+    Match file and image metadata:\x5B\x5D
+    Use case insensitive matching?:No
+    Metadata extraction method:Extract from file/folder names
+    Metadata source:File name
+    Regular expression:^(?P<wafflename>waffle)(?P<wafflenum>\\\\d+)
+    Regular expression:(?P<Date>\x5B0-9\x5D{4}_\x5B0-9\x5D{2}_\x5B0-9\x5D{2})$
+    Extract metadata from:All images
+    Select the filtering criteria:and (file does contain "")
+    Metadata file location:
+    Match file and image metadata:\x5B\x5D
+    Use case insensitive matching?:No
+
+NamesAndTypes:[module_num:3|svn_version:\'Unknown\'|variable_revision_number:6|show_window:False|notes:\x5B\'The NamesAndTypes module allows you to assign a meaningful name to each image by which other modules will refer to it.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Assign a name to:Images matching rules
+    Select the image type:Grayscale image
+    Name to assign these images:DNA
+    Match metadata:\x5B{u\'dapi\'\x3A u\'foldername\', u\'mito\'\x3A u\'foldername\', u\'waffleimage\'\x3A None, u\'actin\'\x3A u\'foldername\'}, {u\'dapi\'\x3A u\'setname\', u\'mito\'\x3A u\'setname\', u\'waffleimage\'\x3A None, u\'actin\'\x3A u\'setname\'}, {u\'dapi\'\x3A u\'imnum\', u\'mito\'\x3A u\'imnum\', u\'waffleimage\'\x3A None, u\'actin\'\x3A u\'imnum\'}\x5D
+    Image set matching method:Metadata
+    Set intensity range from:Image metadata
+    Assignments count:4
+    Single images count:0
+    Maximum intensity:255.0
+    Select the rule criteria:and (metadata does ChannelNumber "1")
+    Name to assign these images:dapi
+    Name to assign these objects:Cell
+    Select the image type:Grayscale image
+    Set intensity range from:Image metadata
+    Retain outlines of loaded objects?:No
+    Name the outline image:LoadedOutlines
+    Maximum intensity:255.0
+    Select the rule criteria:and (metadata does ChannelNumber "2")
+    Name to assign these images:actin
+    Name to assign these objects:Cell
+    Select the image type:Grayscale image
+    Set intensity range from:Image metadata
+    Retain outlines of loaded objects?:No
+    Name the outline image:LoadedOutlines
+    Maximum intensity:255.0
+    Select the rule criteria:and (metadata does ChannelNumber "3")
+    Name to assign these images:mito
+    Name to assign these objects:Cell
+    Select the image type:Grayscale image
+    Set intensity range from:Image metadata
+    Retain outlines of loaded objects?:No
+    Name the outline image:LoadedOutlines
+    Maximum intensity:255.0
+    Select the rule criteria:and (metadata does wafflenum "2")
+    Name to assign these images:waffleimage
+    Name to assign these objects:Nucleus
+    Select the image type:Grayscale image
+    Set intensity range from:Image metadata
+    Retain outlines of loaded objects?:No
+    Name the outline image:LoadedOutlines
+    Maximum intensity:255.0
+
+Groups:[module_num:4|svn_version:\'Unknown\'|variable_revision_number:2|show_window:False|notes:\x5B\'The Groups module optionally allows you to split your list of images into image subsets (groups) which will be processed independently of each other. Examples of groupings include screening batches, microtiter plates, time-lapse movies, etc.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Do you want to group your images?:Yes
+    grouping metadata count:1
+    Metadata category:setname
+
+Morph:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:4|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:mito
+    Name the output image:mito_morph
+    Select the operation to perform:close
+    Number of times to repeat operation:Once
+    Repetition number:2
+    Diameter:10
+    Structuring element:Disk
+    X offset:1.0
+    Y offset:1.0
+    Angle:0.0
+    Width:3.0
+    Height:3.0
+    Custom:5,5,1111111111111111111111111
+    Rescale values from 0 to 1?:Yes
+
+Smooth:[module_num:6|svn_version:\'Unknown\'|variable_revision_number:2|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:mito_morph
+    Name the output image:mito_smooth
+    Select smoothing method:Gaussian Filter
+    Calculate artifact diameter automatically?:No
+    Typical artifact diameter:20
+    Edge intensity difference:0.1
+    Clip intensities to 0 and 1?:Yes
+
+IdentifyPrimaryObjects:[module_num:7|svn_version:\'Unknown\'|variable_revision_number:10|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:dapi
+    Name the primary objects to be identified:Nuclei
+    Typical diameter of objects, in pixel units (Min,Max):70,130
+    Discard objects outside the diameter range?:Yes
+    Try to merge too small objects with nearby larger objects?:No
+    Discard objects touching the border of the image?:No
+    Method to distinguish clumped objects:Intensity
+    Method to draw dividing lines between clumped objects:Intensity
+    Size of smoothing filter:90
+    Suppress local maxima that are closer than this minimum allowed distance:7.0
+    Speed up by using lower-resolution image to find local maxima?:Yes
+    Name the outline image:NucleiOutlines
+    Fill holes in identified objects?:After both thresholding and declumping
+    Automatically calculate size of smoothing filter for declumping?:Yes
+    Automatically calculate minimum allowed distance between local maxima?:Yes
+    Retain outlines of the identified objects?:Yes
+    Automatically calculate the threshold using the Otsu method?:Yes
+    Enter Laplacian of Gaussian threshold:0.5
+    Automatically calculate the size of objects for the Laplacian of Gaussian filter?:Yes
+    Enter LoG filter diameter:5.0
+    Handling of objects if excessive number of objects identified:Continue
+    Maximum number of objects:500
+    Threshold setting version:2
+    Threshold strategy:Global
+    Thresholding method:Otsu
+    Select the smoothing method for thresholding:Automatic
+    Threshold smoothing scale:1.0
+    Threshold correction factor:1.0
+    Lower and upper bounds on threshold:0.0,1.0
+    Approximate fraction of image covered by objects?:0.01
+    Manual threshold:0.0
+    Select the measurement to threshold with:None
+    Select binary image:None
+    Masking objects:None
+    Two-class or three-class thresholding?:Two classes
+    Minimize the weighted variance or the entropy?:Weighted variance
+    Assign pixels in the middle intensity class to the foreground or the background?:Foreground
+    Method to calculate adaptive window size:Image size
+    Size of adaptive window:10
+    Use default parameters?:Default
+    Lower outlier fraction:0.05
+    Upper outlier fraction:0.05
+    Averaging method:Mean
+    Variance method:Standard deviation
+    # of deviations:2.0
+
+IdentifySecondaryObjects:[module_num:8|svn_version:\'Unknown\'|variable_revision_number:9|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input objects:Nuclei
+    Name the objects to be identified:Cells0
+    Select the method to identify the secondary objects:Watershed - Image
+    Select the input image:mito_smooth
+    Number of pixels by which to expand the primary objects:150
+    Regularization factor:0.05
+    Name the outline image:SecondaryOutlines
+    Retain outlines of the identified secondary objects?:No
+    Discard secondary objects touching the border of the image?:No
+    Discard the associated primary objects?:No
+    Name the new primary objects:FilteredNuclei
+    Retain outlines of the new primary objects?:No
+    Name the new primary object outlines:FilteredNucleiOutlines
+    Fill holes in identified objects?:Yes
+    Threshold setting version:2
+    Threshold strategy:Global
+    Thresholding method:Otsu
+    Select the smoothing method for thresholding:No smoothing
+    Threshold smoothing scale:1.0
+    Threshold correction factor:1.0
+    Lower and upper bounds on threshold:0.0,1.0
+    Approximate fraction of image covered by objects?:0.01
+    Manual threshold:0.0
+    Select the measurement to threshold with:None
+    Select binary image:None
+    Masking objects:None
+    Two-class or three-class thresholding?:Two classes
+    Minimize the weighted variance or the entropy?:Weighted variance
+    Assign pixels in the middle intensity class to the foreground or the background?:Foreground
+    Method to calculate adaptive window size:Image size
+    Size of adaptive window:10
+    Use default parameters?:Default
+    Lower outlier fraction:0.05
+    Upper outlier fraction:0.05
+    Averaging method:Mean
+    Variance method:Standard deviation
+    # of deviations:2.0
+
+IdentifySecondaryObjects:[module_num:9|svn_version:\'Unknown\'|variable_revision_number:9|show_window:False|notes:\x5B\'The combination of secondary objects is to accomplish the following\x3A First the distribution of the mitochondria is used to define cell boundaries. Second, the actin network is explored to capture cell regions that do not have mitochondria.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input objects:Cells0
+    Name the objects to be identified:Cells
+    Select the method to identify the secondary objects:Distance - B
+    Select the input image:actin
+    Number of pixels by which to expand the primary objects:200
+    Regularization factor:0.05
+    Name the outline image:CellsOutlines
+    Retain outlines of the identified secondary objects?:Yes
+    Discard secondary objects touching the border of the image?:No
+    Discard the associated primary objects?:No
+    Name the new primary objects:FilteredNuclei
+    Retain outlines of the new primary objects?:No
+    Name the new primary object outlines:FilteredNucleiOutlines
+    Fill holes in identified objects?:Yes
+    Threshold setting version:2
+    Threshold strategy:Automatic
+    Thresholding method:Otsu
+    Select the smoothing method for thresholding:No smoothing
+    Threshold smoothing scale:1.0
+    Threshold correction factor:1.0
+    Lower and upper bounds on threshold:0.0,1.0
+    Approximate fraction of image covered by objects?:0.01
+    Manual threshold:0.0
+    Select the measurement to threshold with:None
+    Select binary image:None
+    Masking objects:None
+    Two-class or three-class thresholding?:Two classes
+    Minimize the weighted variance or the entropy?:Weighted variance
+    Assign pixels in the middle intensity class to the foreground or the background?:Foreground
+    Method to calculate adaptive window size:Image size
+    Size of adaptive window:10
+    Use default parameters?:Default
+    Lower outlier fraction:0.05
+    Upper outlier fraction:0.05
+    Averaging method:Mean
+    Variance method:Standard deviation
+    # of deviations:2.0
+
+IdentifyTertiaryObjects:[module_num:10|svn_version:\'Unknown\'|variable_revision_number:2|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the larger identified objects:Cells
+    Select the smaller identified objects:Nuclei
+    Name the tertiary objects to be identified:Cytoplasm
+    Name the outline image:CytoplasmOutlines
+    Retain outlines of the tertiary objects?:Yes
+    Shrink smaller object prior to subtraction?:Yes
+
+EnhanceOrSuppressFeatures:[module_num:11|svn_version:\'Unknown\'|variable_revision_number:5|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:mito
+    Name the output image:mito_tubeness
+    Select the operation:Enhance
+    Feature size:10
+    Feature type:Neurites
+    Range of hole sizes:1,10
+    Smoothing scale:1
+    Shear angle:0.0
+    Decay:0.95
+    Enhancement method:Tubeness
+    Speed and accuracy:Fast / hexagonal
+
+ApplyThreshold:[module_num:12|svn_version:\'Unknown\'|variable_revision_number:7|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:mito_tubeness
+    Name the output image:mito_bw
+    Select the output image type:Binary (black and white)
+    Set pixels below or above the threshold to zero?:Below threshold
+    Subtract the threshold value from the remaining pixel intensities?:No
+    Number of pixels by which to expand the thresholding around those excluded bright pixels:0.0
+    Threshold setting version:2
+    Threshold strategy:Automatic
+    Thresholding method:Otsu
+    Select the smoothing method for thresholding:No smoothing
+    Threshold smoothing scale:1.0
+    Threshold correction factor:1.0
+    Lower and upper bounds on threshold:0.0,1.0
+    Approximate fraction of image covered by objects?:0.01
+    Manual threshold:0.0
+    Select the measurement to threshold with:None
+    Select binary image:None
+    Masking objects:None
+    Two-class or three-class thresholding?:Two classes
+    Minimize the weighted variance or the entropy?:Weighted variance
+    Assign pixels in the middle intensity class to the foreground or the background?:Foreground
+    Method to calculate adaptive window size:Image size
+    Size of adaptive window:10
+    Use default parameters?:Default
+    Lower outlier fraction:0.05
+    Upper outlier fraction:0.05
+    Averaging method:Mean
+    Variance method:Standard deviation
+    # of deviations:2.0
+
+Morph:[module_num:13|svn_version:\'Unknown\'|variable_revision_number:4|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:mito_bw
+    Name the output image:mito_skel
+    Select the operation to perform:skel
+    Number of times to repeat operation:Forever
+    Repetition number:2
+    Diameter:3.0
+    Structuring element:Disk
+    X offset:1.0
+    Y offset:1.0
+    Angle:0.0
+    Width:3.0
+    Height:3.0
+    Custom:5,5,1111111111111111111111111
+    Rescale values from 0 to 1?:Yes
+
+ImageMath:[module_num:14|svn_version:\'Unknown\'|variable_revision_number:4|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Operation:Multiply
+    Raise the power of the result by:1.0
+    Multiply the result by:1.0
+    Add to result:0.0
+    Set values less than 0 equal to 0?:Yes
+    Set values greater than 1 equal to 1?:Yes
+    Ignore the image masks?:No
+    Name the output image:mito_grid
+    Image or measurement?:Image
+    Select the first image:mito_bw
+    Multiply the first image by:1.0
+    Measurement:
+    Image or measurement?:Image
+    Select the second image:waffleimage
+    Multiply the second image by:0.5
+    Measurement:
+
+IdentifyPrimaryObjects:[module_num:15|svn_version:\'Unknown\'|variable_revision_number:10|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:mito_grid
+    Name the primary objects to be identified:mito
+    Typical diameter of objects, in pixel units (Min,Max):1,20
+    Discard objects outside the diameter range?:No
+    Try to merge too small objects with nearby larger objects?:No
+    Discard objects touching the border of the image?:No
+    Method to distinguish clumped objects:None
+    Method to draw dividing lines between clumped objects:Intensity
+    Size of smoothing filter:10
+    Suppress local maxima that are closer than this minimum allowed distance:7.0
+    Speed up by using lower-resolution image to find local maxima?:Yes
+    Name the outline image:MitochondriaOutlines
+    Fill holes in identified objects?:Never
+    Automatically calculate size of smoothing filter for declumping?:Yes
+    Automatically calculate minimum allowed distance between local maxima?:Yes
+    Retain outlines of the identified objects?:Yes
+    Automatically calculate the threshold using the Otsu method?:Yes
+    Enter Laplacian of Gaussian threshold:0.5
+    Automatically calculate the size of objects for the Laplacian of Gaussian filter?:Yes
+    Enter LoG filter diameter:5.0
+    Handling of objects if excessive number of objects identified:Continue
+    Maximum number of objects:500
+    Threshold setting version:2
+    Threshold strategy:Manual
+    Thresholding method:Otsu
+    Select the smoothing method for thresholding:Automatic
+    Threshold smoothing scale:1.0
+    Threshold correction factor:1.0
+    Lower and upper bounds on threshold:0.0,1.0
+    Approximate fraction of image covered by objects?:0.01
+    Manual threshold:0.5
+    Select the measurement to threshold with:None
+    Select binary image:None
+    Masking objects:None
+    Two-class or three-class thresholding?:Two classes
+    Minimize the weighted variance or the entropy?:Weighted variance
+    Assign pixels in the middle intensity class to the foreground or the background?:Foreground
+    Method to calculate adaptive window size:Image size
+    Size of adaptive window:10
+    Use default parameters?:Default
+    Lower outlier fraction:0.05
+    Upper outlier fraction:0.05
+    Averaging method:Mean
+    Variance method:Standard deviation
+    # of deviations:2.0
+
+MeasureNeurons:[module_num:16|svn_version:\'Unknown\'|variable_revision_number:3|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the seed objects:Nuclei
+    Select the skeletonized image:mito_skel
+    Retain the branchpoint image?:Yes
+    Name the branchpoint image:BranchpointImage
+    Fill small holes?:Yes
+    Maximum hole size:10
+    Export the neuron graph relationships?:No
+    Intensity image:None
+    File output directory:Default Output Folder\x7C
+    Vertex file name:vertices.csv
+    Edge file name:edges.csv
+
+MeasureObjectRadialDistribution:[module_num:17|svn_version:\'Unknown\'|variable_revision_number:4|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Hidden:1
+    Hidden:1
+    Hidden:2
+    Hidden:1
+    Select an image to measure:mito_tubeness
+    Select objects to measure:Cells
+    Object to use as center?:Centers of other objects
+    Select objects to use as centers:Nuclei
+    Scale the bins?:Yes
+    Number of bins:16
+    Maximum radius:100
+    Scale the bins?:No
+    Number of bins:20
+    Maximum radius:200
+    Image:None
+    Objects to display:Do not use
+    Number of bins:16
+    Measurement:Fraction at Distance
+    Color map:Default
+    Save display as image?:Yes
+    Output image name:mito_radial_heatmap
+
+SaveImages:[module_num:18|svn_version:\'Unknown\'|variable_revision_number:11|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the type of image to save:Image
+    Select the image to save:mito_radial_heatmap
+    Select the objects to save:None
+    Select the module display window to save:None
+    Select method for constructing file names:Single name
+    Select image name for file prefix:None
+    Enter single file name:mito_radial_heatmap_\\\\g<imnum>
+    Number of digits:4
+    Append a suffix to the image file name?:No
+    Text to append to the image name:
+    Saved file format:png
+    Output file location:Default Output Folder sub-folder\x7Cheatmap
+    Image bit depth:8-bit integer
+    Overwrite existing files without warning?:Yes
+    When to save:Every cycle
+    Rescale the images? :No
+    Save as grayscale or color image?:Grayscale
+    Select colormap:gray
+    Record the file and path information to the saved image?:Yes
+    Create subfolders in the output folder?:No
+    Base image folder:Elsewhere...\x7C
+    Saved movie format:avi
+
+MeasureObjectSizeShape:[module_num:19|svn_version:\'Unknown\'|variable_revision_number:1|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select objects to measure:Cells
+    Select objects to measure:Cytoplasm
+    Select objects to measure:Nuclei
+    Select objects to measure:mito
+    Calculate the Zernike features?:No
+
+MeasureObjectIntensity:[module_num:20|svn_version:\'Unknown\'|variable_revision_number:3|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Hidden:3
+    Select an image to measure:actin
+    Select an image to measure:dapi
+    Select an image to measure:mito
+    Select objects to measure:Cells
+    Select objects to measure:Cytoplasm
+    Select objects to measure:Nuclei
+    Select objects to measure:mito
+
+MeasureTexture:[module_num:21|svn_version:\'Unknown\'|variable_revision_number:4|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Hidden:1
+    Hidden:2
+    Hidden:1
+    Select an image to measure:actin
+    Select objects to measure:Cells
+    Select objects to measure:Nuclei
+    Texture scale to measure:8
+    Angles to measure:Horizontal,Vertical,Diagonal,Anti-diagonal
+    Measure Gabor features?:No
+    Number of angles to compute for Gabor:4
+    Measure images or objects?:Objects
+
+RelateObjects:[module_num:22|svn_version:\'Unknown\'|variable_revision_number:2|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input child objects:mito
+    Select the input parent objects:Cells
+    Calculate child-parent distances?:Centroid
+    Calculate per-parent means for all child measurements?:Yes
+    Calculate distances to other parents?:No
+    Parent name:None
+
+OverlayOutlines:[module_num:23|svn_version:\'Unknown\'|variable_revision_number:3|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Display outlines on a blank image?:No
+    Select image on which to display outlines:dapi
+    Name the output image:NucleiOverlay
+    Outline display mode:Color
+    Select method to determine brightness of outlines:Max of image
+    Width of outlines:1
+    Select outlines to display:None
+    Select outline color:Red
+    Load outlines from an image or objects?:Objects
+    Select objects to display:Nuclei
+
+DisplayDataOnImage:[module_num:24|svn_version:\'Unknown\'|variable_revision_number:6|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Display object or image measurements?:Object
+    Select the input objects:Nuclei
+    Measurement to display:Number_Object_Number
+    Select the image on which to display the measurements:NucleiOverlay
+    Text color:yellow
+    Name the output image that has the measurements displayed:CountNuclei
+    Font size (points):12
+    Number of decimals:0
+    Image elements to save:Image
+    Annotation offset (in pixels):0
+    Display mode:Text
+    Color map:Default
+    Display background image?:Yes
+    Color map scale:Use this image\'s measurement range
+    Color map range:0.0,1.0
+
+OverlayOutlines:[module_num:25|svn_version:\'Unknown\'|variable_revision_number:3|show_window:False|notes:\x5B\'To demonstrate the mitochondria segmentation\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Display outlines on a blank image?:No
+    Select image on which to display outlines:mito
+    Name the output image:MitoOverlay
+    Outline display mode:Color
+    Select method to determine brightness of outlines:Max of image
+    Width of outlines:1
+    Select outlines to display:None
+    Select outline color:Red
+    Load outlines from an image or objects?:Objects
+    Select objects to display:mito
+
+OverlayOutlines:[module_num:26|svn_version:\'Unknown\'|variable_revision_number:3|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Display outlines on a blank image?:No
+    Select image on which to display outlines:mito
+    Name the output image:Mito2Overlay
+    Outline display mode:Color
+    Select method to determine brightness of outlines:Max of image
+    Width of outlines:2
+    Select outlines to display:None
+    Select outline color:Red
+    Load outlines from an image or objects?:Objects
+    Select objects to display:mito
+    Select outlines to display:None
+    Select outline color:cyan
+    Load outlines from an image or objects?:Objects
+    Select objects to display:Nuclei
+    Select outlines to display:None
+    Select outline color:yellow
+    Load outlines from an image or objects?:Objects
+    Select objects to display:Cells
+
+OverlayOutlines:[module_num:27|svn_version:\'Unknown\'|variable_revision_number:3|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Display outlines on a blank image?:No
+    Select image on which to display outlines:actin
+    Name the output image:CellsOverlay
+    Outline display mode:Color
+    Select method to determine brightness of outlines:Max of image
+    Width of outlines:1
+    Select outlines to display:None
+    Select outline color:Red
+    Load outlines from an image or objects?:Objects
+    Select objects to display:Cells
+
+DisplayDataOnImage:[module_num:28|svn_version:\'Unknown\'|variable_revision_number:6|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Display object or image measurements?:Object
+    Select the input objects:Cells
+    Measurement to display:Number_Object_Number
+    Select the image on which to display the measurements:CellsOverlay
+    Text color:#F7FF21
+    Name the output image that has the measurements displayed:CountCells
+    Font size (points):12
+    Number of decimals:0
+    Image elements to save:Image
+    Annotation offset (in pixels):0
+    Display mode:Text
+    Color map:Default
+    Display background image?:Yes
+    Color map scale:Use this image\'s measurement range
+    Color map range:0.0,1.0
+
+SaveImages:[module_num:29|svn_version:\'Unknown\'|variable_revision_number:11|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:True]
+    Select the type of image to save:Image
+    Select the image to save:CountNuclei
+    Select the objects to save:None
+    Select the module display window to save:None
+    Select method for constructing file names:From image filename
+    Select image name for file prefix:actin
+    Enter single file name:OrigBlue
+    Number of digits:4
+    Append a suffix to the image file name?:Yes
+    Text to append to the image name:_CountNuclei_\\\\g<imnum>
+    Saved file format:png
+    Output file location:Default Output Folder sub-folder\x7Cimages
+    Image bit depth:8-bit integer
+    Overwrite existing files without warning?:Yes
+    When to save:Every cycle
+    Rescale the images? :No
+    Save as grayscale or color image?:Grayscale
+    Select colormap:Spectral
+    Record the file and path information to the saved image?:Yes
+    Create subfolders in the output folder?:No
+    Base image folder:Elsewhere...\x7C
+    Saved movie format:avi
+
+SaveImages:[module_num:30|svn_version:\'Unknown\'|variable_revision_number:11|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the type of image to save:Image
+    Select the image to save:MitoOverlay
+    Select the objects to save:None
+    Select the module display window to save:None
+    Select method for constructing file names:From image filename
+    Select image name for file prefix:dapi
+    Enter single file name:OrigBlue
+    Number of digits:4
+    Append a suffix to the image file name?:Yes
+    Text to append to the image name:_MitoOverlay_\\\\g<imnum>
+    Saved file format:png
+    Output file location:Default Output Folder sub-folder\x7Cimages
+    Image bit depth:8-bit integer
+    Overwrite existing files without warning?:Yes
+    When to save:Every cycle
+    Rescale the images? :No
+    Save as grayscale or color image?:Grayscale
+    Select colormap:Spectral
+    Record the file and path information to the saved image?:Yes
+    Create subfolders in the output folder?:No
+    Base image folder:Elsewhere...\x7C
+    Saved movie format:avi
+
+SaveImages:[module_num:31|svn_version:\'Unknown\'|variable_revision_number:11|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the type of image to save:Image
+    Select the image to save:Mito2Overlay
+    Select the objects to save:None
+    Select the module display window to save:None
+    Select method for constructing file names:From image filename
+    Select image name for file prefix:actin
+    Enter single file name:OrigBlue
+    Number of digits:4
+    Append a suffix to the image file name?:Yes
+    Text to append to the image name:_Mito2Overaly_\\\\g<imnum>
+    Saved file format:png
+    Output file location:Default Output Folder sub-folder\x7Cimages
+    Image bit depth:8-bit integer
+    Overwrite existing files without warning?:Yes
+    When to save:Every cycle
+    Rescale the images? :No
+    Save as grayscale or color image?:Grayscale
+    Select colormap:Spectral
+    Record the file and path information to the saved image?:Yes
+    Create subfolders in the output folder?:No
+    Base image folder:Elsewhere...\x7C
+    Saved movie format:avi
+
+SaveImages:[module_num:32|svn_version:\'Unknown\'|variable_revision_number:11|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the type of image to save:Image
+    Select the image to save:CountCells
+    Select the objects to save:None
+    Select the module display window to save:None
+    Select method for constructing file names:From image filename
+    Select image name for file prefix:mito
+    Enter single file name:OrigBlue
+    Number of digits:4
+    Append a suffix to the image file name?:Yes
+    Text to append to the image name:_CountCells_\\\\g<imnum>
+    Saved file format:png
+    Output file location:Default Output Folder sub-folder\x7Cimages
+    Image bit depth:8-bit integer
+    Overwrite existing files without warning?:Yes
+    When to save:Every cycle
+    Rescale the images? :No
+    Save as grayscale or color image?:Grayscale
+    Select colormap:gray
+    Record the file and path information to the saved image?:Yes
+    Create subfolders in the output folder?:No
+    Base image folder:Elsewhere...\x7C
+    Saved movie format:avi
