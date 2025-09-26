@@ -1,0 +1,665 @@
+CellProfiler Pipeline: http://www.cellprofiler.org
+Version:3
+DateRevision:300
+GitHash:
+ModuleCount:40
+HasImagePlaneDetails:False
+
+Images:[module_num:1|svn_version:\'Unknown\'|variable_revision_number:2|show_window:True|notes:\x5B\'To begin creating your project, use the Images module to compile a list of files and/or folders that you want to analyze. You can also specify a set of rules to include only the desired files in your selected folders.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    :
+    Filter images?:Images only
+    Select the rule criteria:and (extension does isimage) (directory doesnot containregexp "\x5B\\\\\\\\\\\\\\\\/\x5D\\\\\\\\.")
+
+Metadata:[module_num:2|svn_version:\'Unknown\'|variable_revision_number:5|show_window:True|notes:\x5B\'The Metadata module optionally allows you to extract information describing your images (i.e, metadata) which will be stored along with your measurements. This information can be contained in the file name and/or location, or in an external file.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Extract metadata?:Yes
+    Metadata data type:Text
+    Metadata types:{}
+    Extraction method count:3
+    Metadata extraction method:Extract from file/folder names
+    Metadata source:File name
+    Regular expression to extract from file name:^(?P<setname>\x5B^\\\\.\x5D+)\\\\s(?P<imnum>\\\\d+)_c(?P<ChannelNumber>\x5B0-9\x5D{1})
+    Regular expression to extract from folder name:(?P<Date>\x5B0-9\x5D{4}_\x5B0-9\x5D{2}_\x5B0-9\x5D{2})$
+    Extract metadata from:All images
+    Select the filtering criteria:and (file does contain "")
+    Metadata file location:Elsewhere...\x7C
+    Match file and image metadata:\x5B\x5D
+    Use case insensitive matching?:No
+    Metadata file name:
+    Metadata extraction method:Extract from file/folder names
+    Metadata source:Folder name
+    Regular expression to extract from file name:^(?P<Plate>.*)_(?P<Well>\x5BA-P\x5D\x5B0-9\x5D{2})_s(?P<Site>\x5B0-9\x5D)_w(?P<ChannelNumber>\x5B0-9\x5D)
+    Regular expression to extract from folder name:(?P<foldername>\x5B^\\\\\\\\/\x5D+)$
+    Extract metadata from:All images
+    Select the filtering criteria:and (file does contain "")
+    Metadata file location:Elsewhere...\x7C
+    Match file and image metadata:\x5B\x5D
+    Use case insensitive matching?:No
+    Metadata file name:
+    Metadata extraction method:Extract from file/folder names
+    Metadata source:File name
+    Regular expression to extract from file name:^(?P<wafflename>waffle)(?P<wafflenum>\\\\d+)
+    Regular expression to extract from folder name:(?P<Date>\x5B0-9\x5D{4}_\x5B0-9\x5D{2}_\x5B0-9\x5D{2})$
+    Extract metadata from:All images
+    Select the filtering criteria:and (file does contain "")
+    Metadata file location:Elsewhere...\x7C
+    Match file and image metadata:\x5B\x5D
+    Use case insensitive matching?:No
+    Metadata file name:
+
+NamesAndTypes:[module_num:3|svn_version:\'Unknown\'|variable_revision_number:8|show_window:True|notes:\x5B\'The NamesAndTypes module allows you to assign a meaningful name to each image by which other modules will refer to it.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Assign a name to:Images matching rules
+    Select the image type:Grayscale image
+    Name to assign these images:DNA
+    Match metadata:\x5B{u\'dapi\'\x3A u\'foldername\', u\'mito\'\x3A u\'foldername\', u\'waffleimage\'\x3A None, u\'actin\'\x3A u\'foldername\'}, {u\'dapi\'\x3A u\'setname\', u\'mito\'\x3A u\'setname\', u\'waffleimage\'\x3A None, u\'actin\'\x3A u\'setname\'}, {u\'dapi\'\x3A u\'imnum\', u\'mito\'\x3A u\'imnum\', u\'waffleimage\'\x3A None, u\'actin\'\x3A u\'imnum\'}\x5D
+    Image set matching method:Metadata
+    Set intensity range from:Image metadata
+    Assignments count:4
+    Single images count:0
+    Maximum intensity:255.0
+    Process as 3D?:No
+    Relative pixel spacing in X:1.0
+    Relative pixel spacing in Y:1.0
+    Relative pixel spacing in Z:1.0
+    Select the rule criteria:and (metadata does ChannelNumber "1")
+    Name to assign these images:dapi
+    Name to assign these objects:Cell
+    Select the image type:Grayscale image
+    Set intensity range from:Image metadata
+    Maximum intensity:255.0
+    Select the rule criteria:and (metadata does ChannelNumber "2")
+    Name to assign these images:actin
+    Name to assign these objects:Cell
+    Select the image type:Grayscale image
+    Set intensity range from:Image metadata
+    Maximum intensity:255.0
+    Select the rule criteria:and (metadata does ChannelNumber "3")
+    Name to assign these images:mito
+    Name to assign these objects:Cell
+    Select the image type:Grayscale image
+    Set intensity range from:Image metadata
+    Maximum intensity:255.0
+    Select the rule criteria:and (metadata does wafflenum "2")
+    Name to assign these images:waffleimage
+    Name to assign these objects:Nucleus
+    Select the image type:Grayscale image
+    Set intensity range from:Image metadata
+    Maximum intensity:255.0
+
+Groups:[module_num:4|svn_version:\'Unknown\'|variable_revision_number:2|show_window:True|notes:\x5B\'The Groups module optionally allows you to split your list of images into image subsets (groups) which will be processed independently of each other. Examples of groupings include screening batches, microtiter plates, time-lapse movies, etc.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Do you want to group your images?:Yes
+    grouping metadata count:1
+    Metadata category:foldername
+
+Resize:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:4|show_window:True|notes:\x5B\'The nuclei in these images are large enough, covering an area with a large number of pixels, that the segmentation methods used with CellProfiler have a tendency to oversegment. This is especially true due to the heterogeneity of the nuclear stain. Downsampling the image reduces the number of pixels and simultaneously has a smoothing effect on the nuclei.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:dapi
+    Name the output image:dapi_resized
+    Resizing method:Resize by a fraction or multiple of the original size
+    Resizing factor:0.25
+    Width of the final image:100
+    Height of the final image:100
+    Interpolation method:Nearest Neighbor
+    Method to specify the dimensions:Manual
+    Select the image with the desired dimensions:None
+    Additional image count:0
+
+Closing:[module_num:6|svn_version:\'Unknown\'|variable_revision_number:1|show_window:True|notes:\x5B\'The downsampled nuclei still retain enough heterogeneity that an additional smoothing step is required for clean segmentation. Closing is chosen, because it will "amplify" the bright spots within a nucleus and use these intensities to replace the more dim parts of the nucleus.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:dapi_resized
+    Name the output image:dapi_resized_morph
+    Structuring element:disk,5
+
+IdentifyPrimaryObjects:[module_num:7|svn_version:\'Unknown\'|variable_revision_number:13|show_window:True|notes:\x5B\'The nuclei are identified using a watershed approach. \'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:dapi_resized_morph
+    Name the primary objects to be identified:Nuclei_resized
+    Typical diameter of objects, in pixel units (Min,Max):10,80
+    Discard objects outside the diameter range?:Yes
+    Discard objects touching the border of the image?:No
+    Method to distinguish clumped objects:Shape
+    Method to draw dividing lines between clumped objects:Intensity
+    Size of smoothing filter:90
+    Suppress local maxima that are closer than this minimum allowed distance:7.0
+    Speed up by using lower-resolution image to find local maxima?:Yes
+    Fill holes in identified objects?:After both thresholding and declumping
+    Automatically calculate size of smoothing filter for declumping?:No
+    Automatically calculate minimum allowed distance between local maxima?:Yes
+    Handling of objects if excessive number of objects identified:Continue
+    Maximum number of objects:500
+    Use advanced settings?:Yes
+    Threshold setting version:9
+    Threshold strategy:Global
+    Thresholding method:Otsu
+    Threshold smoothing scale:1.3488
+    Threshold correction factor:1.0
+    Lower and upper bounds on threshold:0.0,1.0
+    Manual threshold:0.0
+    Select the measurement to threshold with:None
+    Two-class or three-class thresholding?:Three classes
+    Assign pixels in the middle intensity class to the foreground or the background?:Foreground
+    Size of adaptive window:10
+    Lower outlier fraction:0.05
+    Upper outlier fraction:0.05
+    Averaging method:Mean
+    Variance method:Standard deviation
+    # of deviations:2
+    Thresholding method:Otsu
+
+ResizeObjects:[module_num:8|svn_version:\'Unknown\'|variable_revision_number:1|show_window:True|notes:\x5B\'To make measurements and define cell boundaries, the nuclei will be used as seeds for further segmentation. The original image size will be used for the measurements and secondary objects, so the nuclei found in the resized image will be resized again to their original proportions.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input object:Nuclei_resized
+    Name the output object:Nuclei
+    Method:Factor
+    Factor:4
+    Width:100
+    Height:100
+
+ExpandOrShrinkObjects:[module_num:9|svn_version:\'Unknown\'|variable_revision_number:2|show_window:True|notes:\x5B\'The segmented nuclei do not always overlap with the mitochondria, so the borders of the nuclei are expanded a small measure to increase the likelihood these two regions will overlap. We want the nuclei to overlap with the mitochondria, because the mitochondria gives the best sense of the shape of the cell.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input objects:Nuclei
+    Name the output objects:Nuclei_expand
+    Select the operation:Expand objects by a specified number of pixels
+    Number of pixels by which to expand or shrink:10
+    Fill holes in objects so that all objects shrink to a single point?:No
+
+Closing:[module_num:10|svn_version:\'Unknown\'|variable_revision_number:1|show_window:True|notes:\x5B\'The mitochondria give a good sense of the cell boundaries and have give a higher confidence in the cell shape compared to the actin. However, the mitochondria are punctate, so a closing operation is used to smooth the mitochondria for use in segmentation.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:mito
+    Name the output image:mito_morph
+    Structuring element:disk,10
+
+Smooth:[module_num:11|svn_version:\'Unknown\'|variable_revision_number:2|show_window:True|notes:\x5B\'The closed mito image is not smooth enough for segmentation, so additional smoothing is added. Guassian filtering is done after closing to smooth the "rough edges" created by the closing operation that can lead to artificial boundaries in secondary segmentation.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:mito_morph
+    Name the output image:mito_smooth
+    Select smoothing method:Gaussian Filter
+    Calculate artifact diameter automatically?:No
+    Typical artifact diameter:20
+    Edge intensity difference:0.1
+    Clip intensities to 0 and 1?:Yes
+
+IdentifySecondaryObjects:[module_num:12|svn_version:\'Unknown\'|variable_revision_number:10|show_window:True|notes:\x5B\'The actin channel defines the outer boundary of cells clearly, but the boudaries between cells can be difficult to discern. Therefore, using the mitochondria channel to extend the segmentation past the nucleus is performed first. The mitochondria do not often reach the cell boundaries shown by actin, so this step is an intermediate step in the segmentation \'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input objects:Nuclei_expand
+    Name the objects to be identified:Cells_mito
+    Select the method to identify the secondary objects:Watershed - Image
+    Select the input image:mito_smooth
+    Number of pixels by which to expand the primary objects:150
+    Regularization factor:0.05
+    Discard secondary objects touching the border of the image?:No
+    Discard the associated primary objects?:No
+    Name the new primary objects:FilteredNuclei
+    Fill holes in identified objects?:Yes
+    Threshold setting version:9
+    Threshold strategy:Global
+    Thresholding method:Otsu
+    Threshold smoothing scale:0
+    Threshold correction factor:1.0
+    Lower and upper bounds on threshold:0.0,1.0
+    Manual threshold:0.0
+    Select the measurement to threshold with:None
+    Two-class or three-class thresholding?:Two classes
+    Assign pixels in the middle intensity class to the foreground or the background?:Foreground
+    Size of adaptive window:10
+    Lower outlier fraction:0.05
+    Upper outlier fraction:0.05
+    Averaging method:Mean
+    Variance method:Standard deviation
+    # of deviations:2
+    Thresholding method:Otsu
+
+IdentifySecondaryObjects:[module_num:13|svn_version:\'Unknown\'|variable_revision_number:10|show_window:True|notes:\x5B\'The combination of secondary objects is to accomplish the following\x3A First the distribution of the mitochondria is used to define cell boundaries. Second, the actin network is explored to capture cell regions that do not have mitochondria.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input objects:Cells_mito
+    Name the objects to be identified:Cells
+    Select the method to identify the secondary objects:Distance - B
+    Select the input image:actin
+    Number of pixels by which to expand the primary objects:250
+    Regularization factor:0.05
+    Discard secondary objects touching the border of the image?:No
+    Discard the associated primary objects?:No
+    Name the new primary objects:FilteredNuclei
+    Fill holes in identified objects?:Yes
+    Threshold setting version:9
+    Threshold strategy:Global
+    Thresholding method:Minimum cross entropy
+    Threshold smoothing scale:1.3488
+    Threshold correction factor:1
+    Lower and upper bounds on threshold:0.0, 1.0
+    Manual threshold:0.0
+    Select the measurement to threshold with:None
+    Two-class or three-class thresholding?:Two classes
+    Assign pixels in the middle intensity class to the foreground or the background?:Foreground
+    Size of adaptive window:10
+    Lower outlier fraction:0.05
+    Upper outlier fraction:0.05
+    Averaging method:Mean
+    Variance method:Standard deviation
+    # of deviations:2
+    Thresholding method:Otsu
+
+IdentifySecondaryObjects:[module_num:14|svn_version:\'Unknown\'|variable_revision_number:10|show_window:True|notes:\x5B\'To hedge against the accurate segmentation of the cell boundary, a radius around the nuclei will be measured for mitochondia distribution. The first 100 pixels around the nucleus are chosen, because a majority of the mitochondria appears to reside within this radius. The "round cells" will add an extra measurement that can be used to evaluate and complement the segmentation based on the actin channel.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input objects:Nuclei
+    Name the objects to be identified:Cells_Round
+    Select the method to identify the secondary objects:Distance - N
+    Select the input image:actin
+    Number of pixels by which to expand the primary objects:100
+    Regularization factor:0.05
+    Discard secondary objects touching the border of the image?:No
+    Discard the associated primary objects?:No
+    Name the new primary objects:FilteredNuclei
+    Fill holes in identified objects?:Yes
+    Threshold setting version:9
+    Threshold strategy:Global
+    Thresholding method:Minimum cross entropy
+    Threshold smoothing scale:1.3488
+    Threshold correction factor:1
+    Lower and upper bounds on threshold:(0.0, 1.0)
+    Manual threshold:0.0
+    Select the measurement to threshold with:None
+    Two-class or three-class thresholding?:Two classes
+    Assign pixels in the middle intensity class to the foreground or the background?:Foreground
+    Size of adaptive window:10
+    Lower outlier fraction:0.05
+    Upper outlier fraction:0.05
+    Averaging method:Mean
+    Variance method:Standard deviation
+    # of deviations:2
+    Thresholding method:Otsu
+
+IdentifyTertiaryObjects:[module_num:15|svn_version:\'Unknown\'|variable_revision_number:3|show_window:True|notes:\x5B\'The cytoplasm is the region past the nuclei and within the cell boundaries.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the larger identified objects:Cells
+    Select the smaller identified objects:Nuclei
+    Name the tertiary objects to be identified:Cytoplasm
+    Shrink smaller object prior to subtraction?:Yes
+
+IdentifyTertiaryObjects:[module_num:16|svn_version:\'Unknown\'|variable_revision_number:3|show_window:True|notes:\x5B\'The cytoplasm-round applies to the expanded nuclei instead of the actin defined cell boundary.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the larger identified objects:Cells_Round
+    Select the smaller identified objects:Nuclei
+    Name the tertiary objects to be identified:CytoplasmRound
+    Shrink smaller object prior to subtraction?:Yes
+
+EnhanceOrSuppressFeatures:[module_num:17|svn_version:\'Unknown\'|variable_revision_number:6|show_window:True|notes:\x5B\'The mitochondria signal is often dim. To enhance the precence of mitochondria and diminish the importance of their absolute intensity the tubeness filter is applied to the mitochondria channel.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:mito
+    Name the output image:mito_tubeness
+    Select the operation:Enhance
+    Feature size:10
+    Feature type:Neurites
+    Range of hole sizes:1,10
+    Smoothing scale:1
+    Shear angle:0.0
+    Decay:0.95
+    Enhancement method:Tubeness
+    Speed and accuracy:Fast
+
+Threshold:[module_num:18|svn_version:\'Unknown\'|variable_revision_number:10|show_window:True|notes:\x5B\'Thresholding the mitochondria will allow the measurement of their positioning.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:mito_tubeness
+    Name the output image:mito_bw
+    Threshold strategy:Global
+    Thresholding method:Minimum cross entropy
+    Threshold smoothing scale:1.3488
+    Threshold correction factor:1
+    Lower and upper bounds on threshold:0.0, 1.0
+    Manual threshold:0.0
+    Select the measurement to threshold with:None
+    Two-class or three-class thresholding?:Two classes
+    Assign pixels in the middle intensity class to the foreground or the background?:Foreground
+    Size of adaptive window:10
+    Lower outlier fraction:0.05
+    Upper outlier fraction:0.05
+    Averaging method:Mean
+    Variance method:Standard deviation
+    # of deviations:2
+    Thresholding method:Otsu
+
+MorphologicalSkeleton:[module_num:19|svn_version:\'Unknown\'|variable_revision_number:1|show_window:True|notes:\x5B\'Transforming the mitochondria into a skeletonized mesh will treat the mitochondria as a network and provide the measurement of features specific to networks, such as statistics about branches.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:mito_bw
+    Name the output image:mito_skel
+
+MeasureObjectSkeleton:[module_num:20|svn_version:\'Unknown\'|variable_revision_number:3|show_window:True|notes:\x5B\'Aspects unique to skeletonized images and networks are quantified.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the seed objects:Nuclei
+    Select the skeletonized image:mito_skel
+    Retain the branchpoint image?:Yes
+    Name the branchpoint image:BranchpointImage
+    Fill small holes?:Yes
+    Maximum hole size:10
+    Export the skeleton graph relationships?:No
+    Intensity image:mito_tubeness
+    File output directory:Default Output Folder\x7Cmito_network
+    Vertex file name:vertices.csv
+    Edge file name:edges.csv
+
+ImageMath:[module_num:21|svn_version:\'Unknown\'|variable_revision_number:4|show_window:True|notes:\x5B\'The "waffle image" was created to analyze the mitochondria on a grid that is larger than a pixel, but smaller than the compartments defined by the cell segmentation. Image math imposes the grid upon the image.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Operation:Multiply
+    Raise the power of the result by:1.0
+    Multiply the result by:1.0
+    Add to result:0.0
+    Set values less than 0 equal to 0?:Yes
+    Set values greater than 1 equal to 1?:Yes
+    Ignore the image masks?:No
+    Name the output image:mito_grid
+    Image or measurement?:Image
+    Select the first image:mito_bw
+    Multiply the first image by:1.0
+    Measurement:
+    Image or measurement?:Image
+    Select the second image:waffleimage
+    Multiply the second image by:0.5
+    Measurement:
+
+IdentifyPrimaryObjects:[module_num:22|svn_version:\'Unknown\'|variable_revision_number:13|show_window:True|notes:\x5B\'The mitochondria are segmented across the grid.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:mito_grid
+    Name the primary objects to be identified:mito
+    Typical diameter of objects, in pixel units (Min,Max):1,20
+    Discard objects outside the diameter range?:No
+    Discard objects touching the border of the image?:No
+    Method to distinguish clumped objects:None
+    Method to draw dividing lines between clumped objects:Intensity
+    Size of smoothing filter:10
+    Suppress local maxima that are closer than this minimum allowed distance:7.0
+    Speed up by using lower-resolution image to find local maxima?:Yes
+    Fill holes in identified objects?:Never
+    Automatically calculate size of smoothing filter for declumping?:Yes
+    Automatically calculate minimum allowed distance between local maxima?:Yes
+    Handling of objects if excessive number of objects identified:Continue
+    Maximum number of objects:500
+    Use advanced settings?:Yes
+    Threshold setting version:9
+    Threshold strategy:Global
+    Thresholding method:Manual
+    Threshold smoothing scale:1.3488
+    Threshold correction factor:1.0
+    Lower and upper bounds on threshold:0.0,1.0
+    Manual threshold:0.5
+    Select the measurement to threshold with:None
+    Two-class or three-class thresholding?:Two classes
+    Assign pixels in the middle intensity class to the foreground or the background?:Foreground
+    Size of adaptive window:10
+    Lower outlier fraction:0.05
+    Upper outlier fraction:0.05
+    Averaging method:Mean
+    Variance method:Standard deviation
+    # of deviations:2
+    Thresholding method:Otsu
+
+MeasureObjectIntensityDistribution:[module_num:23|svn_version:\'Unknown\'|variable_revision_number:5|show_window:True|notes:\x5B\'One way to measure distribution of mitochondria is by quantifying the intensity of the mitochondria in rings that are concentric with the nucleus.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Hidden:1
+    Hidden:3
+    Hidden:1
+    Hidden:1
+    Calculate intensity Zernikes?:None
+    Maximum zernike moment:9
+    Select an image to measure:mito_tubeness
+    Select objects to measure:Cells
+    Object to use as center?:Centers of other objects
+    Select objects to use as centers:Nuclei
+    Select objects to measure:Cytoplasm
+    Object to use as center?:Centers of other objects
+    Select objects to use as centers:Nuclei
+    Select objects to measure:CytoplasmRound
+    Object to use as center?:These objects
+    Select objects to use as centers:None
+    Scale the bins?:Yes
+    Number of bins:16
+    Maximum radius:100
+    Image:None
+    Objects to display:Cytoplasm
+    Number of bins:16
+    Measurement:Fraction at Distance
+    Color map:Default
+    Save display as image?:Yes
+    Output image name:mito_radial_heatmap
+
+MeasureObjectIntensityDistribution:[module_num:24|svn_version:\'Unknown\'|variable_revision_number:5|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Hidden:1
+    Hidden:3
+    Hidden:1
+    Hidden:1
+    Calculate intensity Zernikes?:None
+    Maximum zernike moment:9
+    Select an image to measure:mito_tubeness
+    Select objects to measure:Cells
+    Object to use as center?:Centers of other objects
+    Select objects to use as centers:Nuclei
+    Select objects to measure:Cytoplasm
+    Object to use as center?:Centers of other objects
+    Select objects to use as centers:Nuclei
+    Select objects to measure:CytoplasmRound
+    Object to use as center?:These objects
+    Select objects to use as centers:None
+    Scale the bins?:No
+    Number of bins:16
+    Maximum radius:100
+    Image:None
+    Objects to display:Cytoplasm
+    Number of bins:16
+    Measurement:Fraction at Distance
+    Color map:Default
+    Save display as image?:Yes
+    Output image name:mito_radial_heatmap_unscaled
+
+SaveImages:[module_num:25|svn_version:\'Unknown\'|variable_revision_number:13|show_window:True|notes:\x5B\'Save the visualization of the "rings" around the nuclei.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the type of image to save:Image
+    Select the image to save:mito_radial_heatmap
+    Select method for constructing file names:Single name
+    Select image name for file prefix:None
+    Enter single file name:mito_radial_heatmap_\\\\g<imnum>
+    Number of digits:4
+    Append a suffix to the image file name?:No
+    Text to append to the image name:
+    Saved file format:png
+    Output file location:Default Output Folder sub-folder\x7Cheatmap
+    Image bit depth:8-bit integer
+    Overwrite existing files without warning?:Yes
+    When to save:Every cycle
+    Record the file and path information to the saved image?:Yes
+    Create subfolders in the output folder?:No
+    Base image folder:Elsewhere...\x7C
+
+SaveImages:[module_num:26|svn_version:\'Unknown\'|variable_revision_number:13|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the type of image to save:Image
+    Select the image to save:mito_radial_heatmap_unscaled
+    Select method for constructing file names:Single name
+    Select image name for file prefix:None
+    Enter single file name:mito_radial_heatmap_unscaled_\\\\g<imnum>
+    Number of digits:4
+    Append a suffix to the image file name?:No
+    Text to append to the image name:
+    Saved file format:png
+    Output file location:Default Output Folder sub-folder\x7Cheatmap
+    Image bit depth:8-bit integer
+    Overwrite existing files without warning?:Yes
+    When to save:Every cycle
+    Record the file and path information to the saved image?:Yes
+    Create subfolders in the output folder?:No
+    Base image folder:Elsewhere...\x7C
+
+MeasureRadialEntropy:[module_num:27|svn_version:\'Unknown\'|variable_revision_number:1|show_window:False|notes:\x5B\'Another way to measure distribution is the measure the entropy of the mitochondria intensities within wedges that circle the nucleus, like slices of a pizza.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select an image to measure:mito_tubeness
+    Select objects to measure:Cells
+    Which intensity measurement should be used?:Integrated
+    Input number of bins:16
+
+MeasureRadialEntropy:[module_num:28|svn_version:\'Unknown\'|variable_revision_number:1|show_window:False|notes:\x5B\'Another way to measure distribution is the measure the entropy of the mitochondria intensities within wedges that circle the nucleus, like slices of a pizza.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select an image to measure:mito_tubeness
+    Select objects to measure:Cells_Round
+    Which intensity measurement should be used?:Mean
+    Input number of bins:16
+
+MeasureObjectSizeShape:[module_num:29|svn_version:\'Unknown\'|variable_revision_number:1|show_window:True|notes:\x5B\'The distribution of mitochondria could have a relationship to the shape of the cell or nucleus, so these aspects of the cells are also quantified.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select objects to measure:Cells
+    Select objects to measure:Cytoplasm
+    Select objects to measure:Nuclei
+    Select objects to measure:mito
+    Select objects to measure:CytoplasmRound
+    Select objects to measure:Cells_mito
+    Calculate the Zernike features?:No
+
+MeasureObjectIntensity:[module_num:30|svn_version:\'Unknown\'|variable_revision_number:3|show_window:True|notes:\x5B\'The intensity of the mitochondria, or other measured channels, could also have significance, so these too are measured. The dapi channel and actin channel can also be used to detect segmentation errors.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Hidden:3
+    Select an image to measure:actin
+    Select an image to measure:dapi
+    Select an image to measure:mito
+    Select objects to measure:Cells
+    Select objects to measure:Cytoplasm
+    Select objects to measure:Nuclei
+    Select objects to measure:mito
+    Select objects to measure:CytoplasmRound
+
+MeasureTexture:[module_num:31|svn_version:\'Unknown\'|variable_revision_number:5|show_window:True|notes:\x5B\'The mitochondria, being punctate, are good candidates for providing information through texture measurements.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Hidden:3
+    Hidden:4
+    Hidden:3
+    Select an image to measure:actin
+    Select an image to measure:mito
+    Select an image to measure:dapi
+    Select objects to measure:Cells
+    Select objects to measure:Nuclei
+    Select objects to measure:Cytoplasm
+    Select objects to measure:CytoplasmRound
+    Texture scale to measure:8
+    Texture scale to measure:4
+    Texture scale to measure:16
+    Measure images or objects?:Objects
+
+RelateObjects:[module_num:32|svn_version:\'Unknown\'|variable_revision_number:3|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Parent objects:Cells
+    Child objects:mito
+    Calculate child-parent distances?:Centroid
+    Calculate per-parent means for all child measurements?:Yes
+    Calculate distances to other parents?:No
+    Parent name:None
+
+OverlayOutlines:[module_num:33|svn_version:\'Unknown\'|variable_revision_number:4|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Display outlines on a blank image?:No
+    Select image on which to display outlines:mito
+    Name the output image:Mito2Overlay
+    Outline display mode:Color
+    Select method to determine brightness of outlines:Max of image
+    How to outline:Inner
+    Select outline color:Red
+    Select objects to display:mito
+    Select outline color:cyan
+    Select objects to display:Nuclei
+    Select outline color:yellow
+    Select objects to display:Cells
+
+DisplayDataOnImage:[module_num:34|svn_version:\'Unknown\'|variable_revision_number:6|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Display object or image measurements?:Object
+    Select the input objects:Nuclei
+    Measurement to display:Number_Object_Number
+    Select the image on which to display the measurements:Mito2Overlay
+    Text color:#80FF80
+    Name the output image that has the measurements displayed:CountCells
+    Font size (points):20
+    Number of decimals:0
+    Image elements to save:Image
+    Annotation offset (in pixels):0
+    Display mode:Text
+    Color map:Default
+    Display background image?:Yes
+    Color map scale:Use this image\'s measurement range
+    Color map range:0.0,1.0
+
+RescaleIntensity:[module_num:35|svn_version:\'Unknown\'|variable_revision_number:3|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:actin
+    Name the output image:actin_dim
+    Rescaling method:Divide each image by the same value
+    Method to calculate the minimum intensity:Custom
+    Method to calculate the maximum intensity:Custom
+    Lower intensity limit for the input image:0.0
+    Upper intensity limit for the input image:1.0
+    Intensity range for the input image:0.0,1.0
+    Intensity range for the output image:0.0,1.0
+    Select image to match in maximum intensity:None
+    Divisor value:1.5
+    Divisor measurement:None
+
+GrayToColor:[module_num:36|svn_version:\'Unknown\'|variable_revision_number:3|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select a color scheme:RGB
+    Select the image to be colored red:mito
+    Select the image to be colored green:actin_dim
+    Select the image to be colored blue:dapi
+    Name the output image:ColorImage
+    Relative weight for the red image:1.0
+    Relative weight for the green image:1.0
+    Relative weight for the blue image:1.0
+    Select the image to be colored cyan:Leave this black
+    Select the image to be colored magenta:Leave this black
+    Select the image to be colored yellow:Leave this black
+    Select the image that determines brightness:Leave this black
+    Relative weight for the cyan image:1.0
+    Relative weight for the magenta image:1.0
+    Relative weight for the yellow image:1.0
+    Relative weight for the brightness image:1.0
+    Hidden:1
+    Image name:None
+    Color:#ff0000
+    Weight:1.0
+
+DisplayDataOnImage:[module_num:37|svn_version:\'Unknown\'|variable_revision_number:6|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Display object or image measurements?:Object
+    Select the input objects:Nuclei
+    Measurement to display:Number_Object_Number
+    Select the image on which to display the measurements:ColorImage
+    Text color:#F7FF21
+    Name the output image that has the measurements displayed:CountCells2
+    Font size (points):20
+    Number of decimals:0
+    Image elements to save:Image
+    Annotation offset (in pixels):0
+    Display mode:Text
+    Color map:Default
+    Display background image?:Yes
+    Color map scale:Use this image\'s measurement range
+    Color map range:0.0,1.0
+
+SaveImages:[module_num:38|svn_version:\'Unknown\'|variable_revision_number:13|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:True]
+    Select the type of image to save:Image
+    Select the image to save:CountCells
+    Select method for constructing file names:From image filename
+    Select image name for file prefix:mito
+    Enter single file name:OrigBlue
+    Number of digits:4
+    Append a suffix to the image file name?:Yes
+    Text to append to the image name:_CountCells_\\\\g<imnum>
+    Saved file format:png
+    Output file location:Default Output Folder sub-folder\x7Cimages_countnuclei
+    Image bit depth:8-bit integer
+    Overwrite existing files without warning?:Yes
+    When to save:Every cycle
+    Record the file and path information to the saved image?:Yes
+    Create subfolders in the output folder?:No
+    Base image folder:Elsewhere...\x7C
+
+SaveImages:[module_num:39|svn_version:\'Unknown\'|variable_revision_number:13|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the type of image to save:Image
+    Select the image to save:CountCells2
+    Select method for constructing file names:From image filename
+    Select image name for file prefix:actin
+    Enter single file name:OrigBlue
+    Number of digits:4
+    Append a suffix to the image file name?:Yes
+    Text to append to the image name:_CountCells2_\\\\g<imnum>
+    Saved file format:png
+    Output file location:Default Output Folder sub-folder\x7Cimages_countnuclei2
+    Image bit depth:8-bit integer
+    Overwrite existing files without warning?:Yes
+    When to save:Every cycle
+    Record the file and path information to the saved image?:Yes
+    Create subfolders in the output folder?:No
+    Base image folder:Elsewhere...\x7C
+
+ExportToSpreadsheet:[module_num:40|svn_version:\'Unknown\'|variable_revision_number:12|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:True]
+    Select the column delimiter:Comma (",")
+    Add image metadata columns to your object data file?:No
+    Select the measurements to export:No
+    Calculate the per-image mean values for object measurements?:No
+    Calculate the per-image median values for object measurements?:No
+    Calculate the per-image standard deviation values for object measurements?:No
+    Output file location:Default Output Folder\x7C
+    Create a GenePattern GCT file?:No
+    Select source of sample row name:Metadata
+    Select the image to use as the identifier:None
+    Select the metadata to use as the identifier:None
+    Export all measurement types?:Yes
+    Press button to select measurements:
+    Representation of Nan/Inf:NaN
+    Add a prefix to file names?:Yes
+    Filename prefix:_analysis
+    Overwrite existing files without warning?:Yes
+    Data to export:Do not use
+    Combine these object measurements with those of the previous object?:No
+    File name:DATA.csv
+    Use the object name for the file name?:Yes

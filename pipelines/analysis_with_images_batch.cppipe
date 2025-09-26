@@ -1,0 +1,802 @@
+CellProfiler Pipeline: http://www.cellprofiler.org
+Version:3
+DateRevision:20160302210837
+GitHash:1b13225
+ModuleCount:38
+HasImagePlaneDetails:False
+
+Images:[module_num:1|svn_version:\'Unknown\'|variable_revision_number:2|show_window:True|notes:\x5B\'To begin creating your project, use the Images module to compile a list of files and/or folders that you want to analyze. You can also specify a set of rules to include only the desired files in your selected folders.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    :
+    Filter images?:Images only
+    Select the rule criteria:and (extension does isimage) (directory doesnot containregexp "\x5B\\\\\\\\\\\\\\\\/\x5D\\\\\\\\.")
+
+Metadata:[module_num:2|svn_version:\'Unknown\'|variable_revision_number:4|show_window:True|notes:\x5B\'The Metadata module optionally allows you to extract information describing your images (i.e, metadata) which will be stored along with your measurements. This information can be contained in the file name and/or location, or in an external file.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Extract metadata?:Yes
+    Metadata data type:Text
+    Metadata types:{}
+    Extraction method count:3
+    Metadata extraction method:Extract from file/folder names
+    Metadata source:File name
+    Regular expression:^(?P<setname>\x5B^\\\\.\x5D+)\\\\s(?P<imnum>\\\\d+)_c(?P<ChannelNumber>\x5B0-9\x5D{1})
+    Regular expression:(?P<Date>\x5B0-9\x5D{4}_\x5B0-9\x5D{2}_\x5B0-9\x5D{2})$
+    Extract metadata from:All images
+    Select the filtering criteria:and (file does contain "")
+    Metadata file location:
+    Match file and image metadata:\x5B\x5D
+    Use case insensitive matching?:No
+    Metadata extraction method:Extract from file/folder names
+    Metadata source:Folder name
+    Regular expression:^(?P<Plate>.*)_(?P<Well>\x5BA-P\x5D\x5B0-9\x5D{2})_s(?P<Site>\x5B0-9\x5D)_w(?P<ChannelNumber>\x5B0-9\x5D)
+    Regular expression:(?P<foldername>\x5B^\\\\\\\\/\x5D+)$
+    Extract metadata from:All images
+    Select the filtering criteria:and (file does contain "")
+    Metadata file location:
+    Match file and image metadata:\x5B\x5D
+    Use case insensitive matching?:No
+    Metadata extraction method:Extract from file/folder names
+    Metadata source:File name
+    Regular expression:^(?P<wafflename>waffle)(?P<wafflenum>\\\\d+)
+    Regular expression:(?P<Date>\x5B0-9\x5D{4}_\x5B0-9\x5D{2}_\x5B0-9\x5D{2})$
+    Extract metadata from:All images
+    Select the filtering criteria:and (file does contain "")
+    Metadata file location:
+    Match file and image metadata:\x5B\x5D
+    Use case insensitive matching?:No
+
+NamesAndTypes:[module_num:3|svn_version:\'Unknown\'|variable_revision_number:6|show_window:True|notes:\x5B\'The NamesAndTypes module allows you to assign a meaningful name to each image by which other modules will refer to it.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Assign a name to:Images matching rules
+    Select the image type:Grayscale image
+    Name to assign these images:DNA
+    Match metadata:\x5B{u\'dapi\'\x3A u\'foldername\', u\'mito\'\x3A u\'foldername\', u\'waffleimage\'\x3A None, u\'actin\'\x3A u\'foldername\'}, {u\'dapi\'\x3A u\'setname\', u\'mito\'\x3A u\'setname\', u\'waffleimage\'\x3A None, u\'actin\'\x3A u\'setname\'}, {u\'dapi\'\x3A u\'imnum\', u\'mito\'\x3A u\'imnum\', u\'waffleimage\'\x3A None, u\'actin\'\x3A u\'imnum\'}\x5D
+    Image set matching method:Metadata
+    Set intensity range from:Image metadata
+    Assignments count:4
+    Single images count:0
+    Maximum intensity:255.0
+    Select the rule criteria:and (metadata does ChannelNumber "1")
+    Name to assign these images:dapi
+    Name to assign these objects:Cell
+    Select the image type:Grayscale image
+    Set intensity range from:Image metadata
+    Retain outlines of loaded objects?:No
+    Name the outline image:LoadedOutlines
+    Maximum intensity:255.0
+    Select the rule criteria:and (metadata does ChannelNumber "2")
+    Name to assign these images:actin
+    Name to assign these objects:Cell
+    Select the image type:Grayscale image
+    Set intensity range from:Image metadata
+    Retain outlines of loaded objects?:No
+    Name the outline image:LoadedOutlines
+    Maximum intensity:255.0
+    Select the rule criteria:and (metadata does ChannelNumber "3")
+    Name to assign these images:mito
+    Name to assign these objects:Cell
+    Select the image type:Grayscale image
+    Set intensity range from:Image metadata
+    Retain outlines of loaded objects?:No
+    Name the outline image:LoadedOutlines
+    Maximum intensity:255.0
+    Select the rule criteria:and (metadata does wafflenum "2")
+    Name to assign these images:waffleimage
+    Name to assign these objects:Nucleus
+    Select the image type:Grayscale image
+    Set intensity range from:Image metadata
+    Retain outlines of loaded objects?:No
+    Name the outline image:LoadedOutlines
+    Maximum intensity:255.0
+
+Groups:[module_num:4|svn_version:\'Unknown\'|variable_revision_number:2|show_window:True|notes:\x5B\'The Groups module optionally allows you to split your list of images into image subsets (groups) which will be processed independently of each other. Examples of groupings include screening batches, microtiter plates, time-lapse movies, etc.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Do you want to group your images?:Yes
+    grouping metadata count:1
+    Metadata category:foldername
+
+Resize:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:4|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:dapi
+    Name the output image:dapi_resized
+    Resizing method:Resize by a fraction or multiple of the original size
+    Resizing factor:0.25
+    Width of the final image:100
+    Height of the final image:100
+    Interpolation method:Nearest Neighbor
+    Method to specify the dimensions:Manual
+    Select the image with the desired dimensions:None
+    Additional image count:0
+
+Morph:[module_num:6|svn_version:\'Unknown\'|variable_revision_number:4|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:dapi_resized
+    Name the output image:dapi_resized_morph
+    Select the operation to perform:close
+    Number of times to repeat operation:Once
+    Repetition number:2
+    Diameter:5
+    Structuring element:Disk
+    X offset:1.0
+    Y offset:1.0
+    Angle:0.0
+    Width:3.0
+    Height:3.0
+    Custom:5,5,1111111111111111111111111
+    Rescale values from 0 to 1?:Yes
+
+IdentifyPrimaryObjects:[module_num:7|svn_version:\'Unknown\'|variable_revision_number:10|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:dapi_resized_morph
+    Name the primary objects to be identified:Nuclei_resized
+    Typical diameter of objects, in pixel units (Min,Max):20,40
+    Discard objects outside the diameter range?:No
+    Try to merge too small objects with nearby larger objects?:No
+    Discard objects touching the border of the image?:No
+    Method to distinguish clumped objects:Intensity
+    Method to draw dividing lines between clumped objects:Intensity
+    Size of smoothing filter:90
+    Suppress local maxima that are closer than this minimum allowed distance:7.0
+    Speed up by using lower-resolution image to find local maxima?:Yes
+    Name the outline image:NucleiOutlines
+    Fill holes in identified objects?:After both thresholding and declumping
+    Automatically calculate size of smoothing filter for declumping?:No
+    Automatically calculate minimum allowed distance between local maxima?:Yes
+    Retain outlines of the identified objects?:No
+    Automatically calculate the threshold using the Otsu method?:Yes
+    Enter Laplacian of Gaussian threshold:0.5
+    Automatically calculate the size of objects for the Laplacian of Gaussian filter?:Yes
+    Enter LoG filter diameter:5.0
+    Handling of objects if excessive number of objects identified:Continue
+    Maximum number of objects:500
+    Threshold setting version:2
+    Threshold strategy:Global
+    Thresholding method:Otsu
+    Select the smoothing method for thresholding:Automatic
+    Threshold smoothing scale:1.0
+    Threshold correction factor:1.0
+    Lower and upper bounds on threshold:0.0,1.0
+    Approximate fraction of image covered by objects?:0.01
+    Manual threshold:0.0
+    Select the measurement to threshold with:None
+    Select binary image:None
+    Masking objects:None
+    Two-class or three-class thresholding?:Three classes
+    Minimize the weighted variance or the entropy?:Weighted variance
+    Assign pixels in the middle intensity class to the foreground or the background?:Foreground
+    Method to calculate adaptive window size:Image size
+    Size of adaptive window:10
+    Use default parameters?:Default
+    Lower outlier fraction:0.05
+    Upper outlier fraction:0.05
+    Averaging method:Mean
+    Variance method:Standard deviation
+    # of deviations:2.0
+
+ConvertObjectsToImage:[module_num:8|svn_version:\'Unknown\'|variable_revision_number:1|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input objects:Nuclei_resized
+    Name the output image:Nuclei_resized_image
+    Select the color format:Binary (black & white)
+    Select the colormap:Default
+
+Resize:[module_num:9|svn_version:\'Unknown\'|variable_revision_number:4|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:Nuclei_resized_image
+    Name the output image:Nuclei_image
+    Resizing method:Resize by a fraction or multiple of the original size
+    Resizing factor:4
+    Width of the final image:100
+    Height of the final image:100
+    Interpolation method:Nearest Neighbor
+    Method to specify the dimensions:Manual
+    Select the image with the desired dimensions:None
+    Additional image count:0
+
+IdentifyPrimaryObjects:[module_num:10|svn_version:\'Unknown\'|variable_revision_number:10|show_window:True|notes:\x5B\'A convert image to objects module would be helpful.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:Nuclei_image
+    Name the primary objects to be identified:Nuclei
+    Typical diameter of objects, in pixel units (Min,Max):20,300
+    Discard objects outside the diameter range?:Yes
+    Try to merge too small objects with nearby larger objects?:No
+    Discard objects touching the border of the image?:No
+    Method to distinguish clumped objects:Shape
+    Method to draw dividing lines between clumped objects:Shape
+    Size of smoothing filter:10
+    Suppress local maxima that are closer than this minimum allowed distance:50
+    Speed up by using lower-resolution image to find local maxima?:No
+    Name the outline image:NucleiOutlines
+    Fill holes in identified objects?:After both thresholding and declumping
+    Automatically calculate size of smoothing filter for declumping?:Yes
+    Automatically calculate minimum allowed distance between local maxima?:No
+    Retain outlines of the identified objects?:Yes
+    Automatically calculate the threshold using the Otsu method?:Yes
+    Enter Laplacian of Gaussian threshold:0.5
+    Automatically calculate the size of objects for the Laplacian of Gaussian filter?:Yes
+    Enter LoG filter diameter:5.0
+    Handling of objects if excessive number of objects identified:Continue
+    Maximum number of objects:500
+    Threshold setting version:2
+    Threshold strategy:Binary image
+    Thresholding method:Otsu
+    Select the smoothing method for thresholding:Automatic
+    Threshold smoothing scale:1.0
+    Threshold correction factor:1.0
+    Lower and upper bounds on threshold:0.0,1.0
+    Approximate fraction of image covered by objects?:0.01
+    Manual threshold:0.0
+    Select the measurement to threshold with:None
+    Select binary image:Nuclei_image
+    Masking objects:None
+    Two-class or three-class thresholding?:Two classes
+    Minimize the weighted variance or the entropy?:Weighted variance
+    Assign pixels in the middle intensity class to the foreground or the background?:Foreground
+    Method to calculate adaptive window size:Image size
+    Size of adaptive window:10
+    Use default parameters?:Default
+    Lower outlier fraction:0.05
+    Upper outlier fraction:0.05
+    Averaging method:Mean
+    Variance method:Standard deviation
+    # of deviations:2.0
+
+Morph:[module_num:11|svn_version:\'Unknown\'|variable_revision_number:4|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:mito
+    Name the output image:mito_morph
+    Select the operation to perform:close
+    Number of times to repeat operation:Once
+    Repetition number:2
+    Diameter:10
+    Structuring element:Disk
+    X offset:1.0
+    Y offset:1.0
+    Angle:0.0
+    Width:3.0
+    Height:3.0
+    Custom:5,5,1111111111111111111111111
+    Rescale values from 0 to 1?:Yes
+
+Smooth:[module_num:12|svn_version:\'Unknown\'|variable_revision_number:2|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:mito_morph
+    Name the output image:mito_smooth
+    Select smoothing method:Gaussian Filter
+    Calculate artifact diameter automatically?:No
+    Typical artifact diameter:20
+    Edge intensity difference:0.1
+    Clip intensities to 0 and 1?:Yes
+
+IdentifySecondaryObjects:[module_num:13|svn_version:\'Unknown\'|variable_revision_number:9|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input objects:Nuclei
+    Name the objects to be identified:Cells0
+    Select the method to identify the secondary objects:Watershed - Image
+    Select the input image:mito_smooth
+    Number of pixels by which to expand the primary objects:150
+    Regularization factor:0.05
+    Name the outline image:SecondaryOutlines
+    Retain outlines of the identified secondary objects?:No
+    Discard secondary objects touching the border of the image?:No
+    Discard the associated primary objects?:No
+    Name the new primary objects:FilteredNuclei
+    Retain outlines of the new primary objects?:No
+    Name the new primary object outlines:FilteredNucleiOutlines
+    Fill holes in identified objects?:Yes
+    Threshold setting version:2
+    Threshold strategy:Global
+    Thresholding method:Otsu
+    Select the smoothing method for thresholding:No smoothing
+    Threshold smoothing scale:1.0
+    Threshold correction factor:1.0
+    Lower and upper bounds on threshold:0.0,1.0
+    Approximate fraction of image covered by objects?:0.01
+    Manual threshold:0.0
+    Select the measurement to threshold with:None
+    Select binary image:None
+    Masking objects:None
+    Two-class or three-class thresholding?:Two classes
+    Minimize the weighted variance or the entropy?:Weighted variance
+    Assign pixels in the middle intensity class to the foreground or the background?:Foreground
+    Method to calculate adaptive window size:Image size
+    Size of adaptive window:10
+    Use default parameters?:Default
+    Lower outlier fraction:0.05
+    Upper outlier fraction:0.05
+    Averaging method:Mean
+    Variance method:Standard deviation
+    # of deviations:2.0
+
+IdentifySecondaryObjects:[module_num:14|svn_version:\'Unknown\'|variable_revision_number:9|show_window:True|notes:\x5B\'The combination of secondary objects is to accomplish the following\x3A First the distribution of the mitochondria is used to define cell boundaries. Second, the actin network is explored to capture cell regions that do not have mitochondria.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input objects:Cells0
+    Name the objects to be identified:Cells
+    Select the method to identify the secondary objects:Distance - B
+    Select the input image:actin
+    Number of pixels by which to expand the primary objects:200
+    Regularization factor:0.05
+    Name the outline image:CellsOutlines
+    Retain outlines of the identified secondary objects?:Yes
+    Discard secondary objects touching the border of the image?:No
+    Discard the associated primary objects?:No
+    Name the new primary objects:FilteredNuclei
+    Retain outlines of the new primary objects?:No
+    Name the new primary object outlines:FilteredNucleiOutlines
+    Fill holes in identified objects?:Yes
+    Threshold setting version:2
+    Threshold strategy:Automatic
+    Thresholding method:Otsu
+    Select the smoothing method for thresholding:No smoothing
+    Threshold smoothing scale:1.0
+    Threshold correction factor:1.0
+    Lower and upper bounds on threshold:0.0,1.0
+    Approximate fraction of image covered by objects?:0.01
+    Manual threshold:0.0
+    Select the measurement to threshold with:None
+    Select binary image:None
+    Masking objects:None
+    Two-class or three-class thresholding?:Two classes
+    Minimize the weighted variance or the entropy?:Weighted variance
+    Assign pixels in the middle intensity class to the foreground or the background?:Foreground
+    Method to calculate adaptive window size:Image size
+    Size of adaptive window:10
+    Use default parameters?:Default
+    Lower outlier fraction:0.05
+    Upper outlier fraction:0.05
+    Averaging method:Mean
+    Variance method:Standard deviation
+    # of deviations:2.0
+
+IdentifySecondaryObjects:[module_num:15|svn_version:\'Unknown\'|variable_revision_number:9|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input objects:Nuclei
+    Name the objects to be identified:Cells_Round
+    Select the method to identify the secondary objects:Distance - N
+    Select the input image:actin
+    Number of pixels by which to expand the primary objects:100
+    Regularization factor:0.05
+    Name the outline image:SecondaryOutlines
+    Retain outlines of the identified secondary objects?:No
+    Discard secondary objects touching the border of the image?:No
+    Discard the associated primary objects?:No
+    Name the new primary objects:FilteredNuclei
+    Retain outlines of the new primary objects?:No
+    Name the new primary object outlines:FilteredNucleiOutlines
+    Fill holes in identified objects?:Yes
+    Threshold setting version:2
+    Threshold strategy:Automatic
+    Thresholding method:Otsu
+    Select the smoothing method for thresholding:No smoothing
+    Threshold smoothing scale:1.0
+    Threshold correction factor:1.0
+    Lower and upper bounds on threshold:0.0,1.0
+    Approximate fraction of image covered by objects?:0.01
+    Manual threshold:0.0
+    Select the measurement to threshold with:None
+    Select binary image:None
+    Masking objects:None
+    Two-class or three-class thresholding?:Two classes
+    Minimize the weighted variance or the entropy?:Weighted variance
+    Assign pixels in the middle intensity class to the foreground or the background?:Foreground
+    Method to calculate adaptive window size:Image size
+    Size of adaptive window:10
+    Use default parameters?:Default
+    Lower outlier fraction:0.05
+    Upper outlier fraction:0.05
+    Averaging method:Mean
+    Variance method:Standard deviation
+    # of deviations:2.0
+
+IdentifyTertiaryObjects:[module_num:16|svn_version:\'Unknown\'|variable_revision_number:2|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the larger identified objects:Cells
+    Select the smaller identified objects:Nuclei
+    Name the tertiary objects to be identified:Cytoplasm
+    Name the outline image:CytoplasmOutlines
+    Retain outlines of the tertiary objects?:Yes
+    Shrink smaller object prior to subtraction?:Yes
+
+IdentifyTertiaryObjects:[module_num:17|svn_version:\'Unknown\'|variable_revision_number:2|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the larger identified objects:Cells_Round
+    Select the smaller identified objects:Nuclei
+    Name the tertiary objects to be identified:CytoplasmRound
+    Name the outline image:CytoplasmOutlines
+    Retain outlines of the tertiary objects?:Yes
+    Shrink smaller object prior to subtraction?:Yes
+
+EnhanceOrSuppressFeatures:[module_num:18|svn_version:\'Unknown\'|variable_revision_number:5|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:mito
+    Name the output image:mito_tubeness
+    Select the operation:Enhance
+    Feature size:10
+    Feature type:Neurites
+    Range of hole sizes:1,10
+    Smoothing scale:1
+    Shear angle:0.0
+    Decay:0.95
+    Enhancement method:Tubeness
+    Speed and accuracy:Fast / hexagonal
+
+ApplyThreshold:[module_num:19|svn_version:\'Unknown\'|variable_revision_number:7|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:mito_tubeness
+    Name the output image:mito_bw
+    Select the output image type:Binary (black and white)
+    Set pixels below or above the threshold to zero?:Below threshold
+    Subtract the threshold value from the remaining pixel intensities?:No
+    Number of pixels by which to expand the thresholding around those excluded bright pixels:0.0
+    Threshold setting version:2
+    Threshold strategy:Automatic
+    Thresholding method:Otsu
+    Select the smoothing method for thresholding:No smoothing
+    Threshold smoothing scale:1.0
+    Threshold correction factor:1.0
+    Lower and upper bounds on threshold:0.0,1.0
+    Approximate fraction of image covered by objects?:0.01
+    Manual threshold:0.0
+    Select the measurement to threshold with:None
+    Select binary image:None
+    Masking objects:None
+    Two-class or three-class thresholding?:Two classes
+    Minimize the weighted variance or the entropy?:Weighted variance
+    Assign pixels in the middle intensity class to the foreground or the background?:Foreground
+    Method to calculate adaptive window size:Image size
+    Size of adaptive window:10
+    Use default parameters?:Default
+    Lower outlier fraction:0.05
+    Upper outlier fraction:0.05
+    Averaging method:Mean
+    Variance method:Standard deviation
+    # of deviations:2.0
+
+Morph:[module_num:20|svn_version:\'Unknown\'|variable_revision_number:4|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:mito_bw
+    Name the output image:mito_skel
+    Select the operation to perform:skel
+    Number of times to repeat operation:Forever
+    Repetition number:2
+    Diameter:3.0
+    Structuring element:Disk
+    X offset:1.0
+    Y offset:1.0
+    Angle:0.0
+    Width:3.0
+    Height:3.0
+    Custom:5,5,1111111111111111111111111
+    Rescale values from 0 to 1?:Yes
+
+ImageMath:[module_num:21|svn_version:\'Unknown\'|variable_revision_number:4|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Operation:Multiply
+    Raise the power of the result by:1.0
+    Multiply the result by:1.0
+    Add to result:0.0
+    Set values less than 0 equal to 0?:Yes
+    Set values greater than 1 equal to 1?:Yes
+    Ignore the image masks?:No
+    Name the output image:mito_grid
+    Image or measurement?:Image
+    Select the first image:mito_bw
+    Multiply the first image by:1.0
+    Measurement:
+    Image or measurement?:Image
+    Select the second image:waffleimage
+    Multiply the second image by:0.5
+    Measurement:
+
+IdentifyPrimaryObjects:[module_num:22|svn_version:\'Unknown\'|variable_revision_number:10|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:mito_grid
+    Name the primary objects to be identified:mito
+    Typical diameter of objects, in pixel units (Min,Max):1,20
+    Discard objects outside the diameter range?:No
+    Try to merge too small objects with nearby larger objects?:No
+    Discard objects touching the border of the image?:No
+    Method to distinguish clumped objects:None
+    Method to draw dividing lines between clumped objects:Intensity
+    Size of smoothing filter:10
+    Suppress local maxima that are closer than this minimum allowed distance:7.0
+    Speed up by using lower-resolution image to find local maxima?:Yes
+    Name the outline image:MitochondriaOutlines
+    Fill holes in identified objects?:Never
+    Automatically calculate size of smoothing filter for declumping?:Yes
+    Automatically calculate minimum allowed distance between local maxima?:Yes
+    Retain outlines of the identified objects?:Yes
+    Automatically calculate the threshold using the Otsu method?:Yes
+    Enter Laplacian of Gaussian threshold:0.5
+    Automatically calculate the size of objects for the Laplacian of Gaussian filter?:Yes
+    Enter LoG filter diameter:5.0
+    Handling of objects if excessive number of objects identified:Continue
+    Maximum number of objects:500
+    Threshold setting version:2
+    Threshold strategy:Manual
+    Thresholding method:Otsu
+    Select the smoothing method for thresholding:Automatic
+    Threshold smoothing scale:1.0
+    Threshold correction factor:1.0
+    Lower and upper bounds on threshold:0.0,1.0
+    Approximate fraction of image covered by objects?:0.01
+    Manual threshold:0.5
+    Select the measurement to threshold with:None
+    Select binary image:None
+    Masking objects:None
+    Two-class or three-class thresholding?:Two classes
+    Minimize the weighted variance or the entropy?:Weighted variance
+    Assign pixels in the middle intensity class to the foreground or the background?:Foreground
+    Method to calculate adaptive window size:Image size
+    Size of adaptive window:10
+    Use default parameters?:Default
+    Lower outlier fraction:0.05
+    Upper outlier fraction:0.05
+    Averaging method:Mean
+    Variance method:Standard deviation
+    # of deviations:2.0
+
+MeasureNeurons:[module_num:23|svn_version:\'Unknown\'|variable_revision_number:3|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the seed objects:Nuclei
+    Select the skeletonized image:mito_skel
+    Retain the branchpoint image?:Yes
+    Name the branchpoint image:BranchpointImage
+    Fill small holes?:Yes
+    Maximum hole size:10
+    Export the neuron graph relationships?:No
+    Intensity image:None
+    File output directory:Default Output Folder\x7C
+    Vertex file name:vertices.csv
+    Edge file name:edges.csv
+
+MeasureObjectRadialDistribution:[module_num:24|svn_version:\'Unknown\'|variable_revision_number:4|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Hidden:1
+    Hidden:3
+    Hidden:2
+    Hidden:1
+    Select an image to measure:mito_tubeness
+    Select objects to measure:Cells
+    Object to use as center?:Centers of other objects
+    Select objects to use as centers:Nuclei
+    Select objects to measure:Cytoplasm
+    Object to use as center?:Centers of other objects
+    Select objects to use as centers:Nuclei
+    Select objects to measure:CytoplasmRound
+    Object to use as center?:These objects
+    Select objects to use as centers:None
+    Scale the bins?:Yes
+    Number of bins:16
+    Maximum radius:100
+    Scale the bins?:No
+    Number of bins:20
+    Maximum radius:200
+    Image:None
+    Objects to display:Cytoplasm
+    Number of bins:16
+    Measurement:Fraction at Distance
+    Color map:Default
+    Save display as image?:Yes
+    Output image name:mito_radial_heatmap
+
+SaveImages:[module_num:25|svn_version:\'Unknown\'|variable_revision_number:11|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the type of image to save:Image
+    Select the image to save:mito_radial_heatmap
+    Select the objects to save:None
+    Select the module display window to save:None
+    Select method for constructing file names:Single name
+    Select image name for file prefix:None
+    Enter single file name:mito_radial_heatmap_\\\\g<imnum>
+    Number of digits:4
+    Append a suffix to the image file name?:No
+    Text to append to the image name:
+    Saved file format:png
+    Output file location:Default Output Folder sub-folder\x7Cheatmap
+    Image bit depth:8-bit integer
+    Overwrite existing files without warning?:Yes
+    When to save:Every cycle
+    Rescale the images? :No
+    Save as grayscale or color image?:Grayscale
+    Select colormap:gray
+    Record the file and path information to the saved image?:Yes
+    Create subfolders in the output folder?:No
+    Base image folder:Elsewhere...\x7C
+    Saved movie format:avi
+
+MeasureObjectSizeShape:[module_num:26|svn_version:\'Unknown\'|variable_revision_number:1|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select objects to measure:Cells
+    Select objects to measure:Cytoplasm
+    Select objects to measure:Nuclei
+    Select objects to measure:mito
+    Select objects to measure:CytoplasmRound
+    Calculate the Zernike features?:No
+
+MeasureObjectIntensity:[module_num:27|svn_version:\'Unknown\'|variable_revision_number:3|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Hidden:3
+    Select an image to measure:actin
+    Select an image to measure:dapi
+    Select an image to measure:mito
+    Select objects to measure:Cells
+    Select objects to measure:Cytoplasm
+    Select objects to measure:Nuclei
+    Select objects to measure:mito
+    Select objects to measure:CytoplasmRound
+
+MeasureTexture:[module_num:28|svn_version:\'Unknown\'|variable_revision_number:4|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Hidden:3
+    Hidden:4
+    Hidden:1
+    Select an image to measure:actin
+    Select an image to measure:mito
+    Select an image to measure:dapi
+    Select objects to measure:Cells
+    Select objects to measure:Nuclei
+    Select objects to measure:Cytoplasm
+    Select objects to measure:CytoplasmRound
+    Texture scale to measure:8
+    Angles to measure:Horizontal,Vertical,Diagonal,Anti-diagonal
+    Measure Gabor features?:No
+    Number of angles to compute for Gabor:4
+    Measure images or objects?:Objects
+
+RelateObjects:[module_num:29|svn_version:\'Unknown\'|variable_revision_number:2|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input child objects:mito
+    Select the input parent objects:Cells
+    Calculate child-parent distances?:Centroid
+    Calculate per-parent means for all child measurements?:Yes
+    Calculate distances to other parents?:No
+    Parent name:None
+
+OverlayOutlines:[module_num:30|svn_version:\'Unknown\'|variable_revision_number:3|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Display outlines on a blank image?:No
+    Select image on which to display outlines:mito
+    Name the output image:Mito2Overlay
+    Outline display mode:Color
+    Select method to determine brightness of outlines:Max of image
+    Width of outlines:2
+    Select outlines to display:None
+    Select outline color:Red
+    Load outlines from an image or objects?:Objects
+    Select objects to display:mito
+    Select outlines to display:None
+    Select outline color:cyan
+    Load outlines from an image or objects?:Objects
+    Select objects to display:Nuclei
+    Select outlines to display:None
+    Select outline color:yellow
+    Load outlines from an image or objects?:Objects
+    Select objects to display:Cells
+
+DisplayDataOnImage:[module_num:31|svn_version:\'Unknown\'|variable_revision_number:6|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Display object or image measurements?:Object
+    Select the input objects:Nuclei
+    Measurement to display:Number_Object_Number
+    Select the image on which to display the measurements:Mito2Overlay
+    Text color:#80FF80
+    Name the output image that has the measurements displayed:CountCells
+    Font size (points):20
+    Number of decimals:0
+    Image elements to save:Image
+    Annotation offset (in pixels):0
+    Display mode:Text
+    Color map:Default
+    Display background image?:Yes
+    Color map scale:Use this image\'s measurement range
+    Color map range:0.0,1.0
+
+RescaleIntensity:[module_num:32|svn_version:\'Unknown\'|variable_revision_number:2|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:actin
+    Name the output image:actin_dim
+    Rescaling method:Divide each image by the same value
+    Method to calculate the minimum intensity:Custom
+    Method to calculate the maximum intensity:Custom
+    Lower intensity limit for the input image:0.0
+    Upper intensity limit for the input image:1.0
+    Intensity range for the input image:0.0,1.0
+    Intensity range for the output image:0.0,1.0
+    Method to rescale pixels below the lower limit:Mask pixels
+    Custom value for pixels below lower limit:0.0
+    Method to rescale pixels above the upper limit:Mask pixels
+    Custom value for pixels above upper limit:0.0
+    Select image to match in maximum intensity:None
+    Divisor value:1.5
+    Divisor measurement:None
+
+GrayToColor:[module_num:33|svn_version:\'Unknown\'|variable_revision_number:3|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select a color scheme:RGB
+    Select the image to be colored red:mito
+    Select the image to be colored green:actin_dim
+    Select the image to be colored blue:dapi
+    Name the output image:ColorImage
+    Relative weight for the red image:1.0
+    Relative weight for the green image:1.0
+    Relative weight for the blue image:1.0
+    Select the image to be colored cyan:Leave this black
+    Select the image to be colored magenta:Leave this black
+    Select the image to be colored yellow:Leave this black
+    Select the image that determines brightness:Leave this black
+    Relative weight for the cyan image:1.0
+    Relative weight for the magenta image:1.0
+    Relative weight for the yellow image:1.0
+    Relative weight for the brightness image:1.0
+    Hidden:1
+    Image name:None
+    Color:#ff0000
+    Weight:1.0
+
+DisplayDataOnImage:[module_num:34|svn_version:\'Unknown\'|variable_revision_number:6|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Display object or image measurements?:Object
+    Select the input objects:Nuclei
+    Measurement to display:Number_Object_Number
+    Select the image on which to display the measurements:ColorImage
+    Text color:#F7FF21
+    Name the output image that has the measurements displayed:CountCells2
+    Font size (points):20
+    Number of decimals:0
+    Image elements to save:Image
+    Annotation offset (in pixels):0
+    Display mode:Text
+    Color map:Default
+    Display background image?:Yes
+    Color map scale:Use this image\'s measurement range
+    Color map range:0.0,1.0
+
+SaveImages:[module_num:35|svn_version:\'Unknown\'|variable_revision_number:11|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:True]
+    Select the type of image to save:Image
+    Select the image to save:CountCells
+    Select the objects to save:None
+    Select the module display window to save:None
+    Select method for constructing file names:From image filename
+    Select image name for file prefix:mito
+    Enter single file name:OrigBlue
+    Number of digits:4
+    Append a suffix to the image file name?:Yes
+    Text to append to the image name:_CountCells_\\\\g<imnum>
+    Saved file format:png
+    Output file location:Default Output Folder sub-folder\x7Cimages_countnuclei
+    Image bit depth:8-bit integer
+    Overwrite existing files without warning?:Yes
+    When to save:Every cycle
+    Rescale the images? :No
+    Save as grayscale or color image?:Grayscale
+    Select colormap:gray
+    Record the file and path information to the saved image?:Yes
+    Create subfolders in the output folder?:No
+    Base image folder:Elsewhere...\x7C
+    Saved movie format:avi
+
+SaveImages:[module_num:36|svn_version:\'Unknown\'|variable_revision_number:11|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the type of image to save:Image
+    Select the image to save:CountCells2
+    Select the objects to save:None
+    Select the module display window to save:None
+    Select method for constructing file names:From image filename
+    Select image name for file prefix:actin
+    Enter single file name:OrigBlue
+    Number of digits:4
+    Append a suffix to the image file name?:Yes
+    Text to append to the image name:_CountCells2_\\\\g<imnum>
+    Saved file format:png
+    Output file location:Default Output Folder sub-folder\x7Cimages_countnuclei2
+    Image bit depth:8-bit integer
+    Overwrite existing files without warning?:Yes
+    When to save:Every cycle
+    Rescale the images? :No
+    Save as grayscale or color image?:Grayscale
+    Select colormap:Spectral
+    Record the file and path information to the saved image?:Yes
+    Create subfolders in the output folder?:No
+    Base image folder:Elsewhere...\x7C
+    Saved movie format:avi
+
+ExportToSpreadsheet:[module_num:37|svn_version:\'Unknown\'|variable_revision_number:11|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the column delimiter:Comma (",")
+    Add image metadata columns to your object data file?:No
+    Limit output to a size that is allowed in Excel?:No
+    Select the measurements to export:Yes
+    Calculate the per-image mean values for object measurements?:No
+    Calculate the per-image median values for object measurements?:No
+    Calculate the per-image standard deviation values for object measurements?:No
+    Output file location:Default Output Folder\x7C
+    Create a GenePattern GCT file?:No
+    Select source of sample row name:Metadata
+    Select the image to use as the identifier:None
+    Select the metadata to use as the identifier:None
+    Export all measurement types?:Yes
+    :Cytoplasm\x7CParent_Cells,Cytoplasm\x7CParent_Nuclei,Cytoplasm\x7CIntensity_MassDisplacement_dapi,Cytoplasm\x7CIntensity_MassDisplacement_mito,Cytoplasm\x7CIntensity_MassDisplacement_actin,Cytoplasm\x7CIntensity_MinIntensity_dapi,Cytoplasm\x7CIntensity_MinIntensity_mito,Cytoplasm\x7CIntensity_MinIntensity_actin,Cytoplasm\x7CIntensity_StdIntensity_dapi,Cytoplasm\x7CIntensity_StdIntensity_mito,Cytoplasm\x7CIntensity_StdIntensity_actin,Cytoplasm\x7CIntensity_IntegratedIntensityEdge_dapi,Cytoplasm\x7CIntensity_IntegratedIntensityEdge_mito,Cytoplasm\x7CIntensity_IntegratedIntensityEdge_actin,Cytoplasm\x7CIntensity_UpperQuartileIntensity_dapi,Cytoplasm\x7CIntensity_UpperQuartileIntensity_mito,Cytoplasm\x7CIntensity_UpperQuartileIntensity_actin,Cytoplasm\x7CIntensity_LowerQuartileIntensity_dapi,Cytoplasm\x7CIntensity_LowerQuartileIntensity_mito,Cytoplasm\x7CIntensity_LowerQuartileIntensity_actin,Cytoplasm\x7CIntensity_MinIntensityEdge_dapi,Cytoplasm\x7CIntensity_MinIntensityEdge_mito,Cytoplasm\x7CIntensity_MinIntensityEdge_actin,Cytoplasm\x7CIntensity_MADIntensity_dapi,Cytoplasm\x7CIntensity_MADIntensity_mito,Cytoplasm\x7CIntensity_MADIntensity_actin,Cytoplasm\x7CIntensity_IntegratedIntensity_dapi,Cytoplasm\x7CIntensity_IntegratedIntensity_mito,Cytoplasm\x7CIntensity_IntegratedIntensity_actin,Cytoplasm\x7CIntensity_MeanIntensityEdge_dapi,Cytoplasm\x7CIntensity_MeanIntensityEdge_mito,Cytoplasm\x7CIntensity_MeanIntensityEdge_actin,Cytoplasm\x7CIntensity_MaxIntensity_dapi,Cytoplasm\x7CIntensity_MaxIntensity_mito,Cytoplasm\x7CIntensity_MaxIntensity_actin,Cytoplasm\x7CIntensity_MedianIntensity_dapi,Cytoplasm\x7CIntensity_MedianIntensity_mito,Cytoplasm\x7CIntensity_MedianIntensity_actin,Cytoplasm\x7CIntensity_MeanIntensity_dapi,Cytoplasm\x7CIntensity_MeanIntensity_mito,Cytoplasm\x7CIntensity_MeanIntensity_actin,Cytoplasm\x7CIntensity_StdIntensityEdge_dapi,Cytoplasm\x7CIntensity_StdIntensityEdge_mito,Cytoplasm\x7CIntensity_StdIntensityEdge_actin,Cytoplasm\x7CIntensity_MaxIntensityEdge_dapi,Cytoplasm\x7CIntensity_MaxIntensityEdge_mito,Cytoplasm\x7CIntensity_MaxIntensityEdge_actin,Cytoplasm\x7CTexture_InfoMeas2_dapi_8_90,Cytoplasm\x7CTexture_InfoMeas2_dapi_8_45,Cytoplasm\x7CTexture_InfoMeas2_dapi_8_135,Cytoplasm\x7CTexture_InfoMeas2_dapi_8_0,Cytoplasm\x7CTexture_InfoMeas2_mito_8_0,Cytoplasm\x7CTexture_InfoMeas2_mito_8_45,Cytoplasm\x7CTexture_InfoMeas2_mito_8_135,Cytoplasm\x7CTexture_InfoMeas2_mito_8_90,Cytoplasm\x7CTexture_InfoMeas2_actin_8_0,Cytoplasm\x7CTexture_InfoMeas2_actin_8_45,Cytoplasm\x7CTexture_InfoMeas2_actin_8_135,Cytoplasm\x7CTexture_InfoMeas2_actin_8_90,Cytoplasm\x7CTexture_InfoMeas1_dapi_8_0,Cytoplasm\x7CTexture_InfoMeas1_dapi_8_45,Cytoplasm\x7CTexture_InfoMeas1_dapi_8_135,Cytoplasm\x7CTexture_InfoMeas1_dapi_8_90,Cytoplasm\x7CTexture_InfoMeas1_mito_8_90,Cytoplasm\x7CTexture_InfoMeas1_mito_8_45,Cytoplasm\x7CTexture_InfoMeas1_mito_8_135,Cytoplasm\x7CTexture_InfoMeas1_mito_8_0,Cytoplasm\x7CTexture_InfoMeas1_actin_8_90,Cytoplasm\x7CTexture_InfoMeas1_actin_8_45,Cytoplasm\x7CTexture_InfoMeas1_actin_8_135,Cytoplasm\x7CTexture_InfoMeas1_actin_8_0,Cytoplasm\x7CTexture_SumVariance_dapi_8_90,Cytoplasm\x7CTexture_SumVariance_dapi_8_45,Cytoplasm\x7CTexture_SumVariance_dapi_8_135,Cytoplasm\x7CTexture_SumVariance_dapi_8_0,Cytoplasm\x7CTexture_SumVariance_mito_8_0,Cytoplasm\x7CTexture_SumVariance_mito_8_45,Cytoplasm\x7CTexture_SumVariance_mito_8_135,Cytoplasm\x7CTexture_SumVariance_mito_8_90,Cytoplasm\x7CTexture_SumVariance_actin_8_90,Cytoplasm\x7CTexture_SumVariance_actin_8_45,Cytoplasm\x7CTexture_SumVariance_actin_8_135,Cytoplasm\x7CTexture_SumVariance_actin_8_0,Cytoplasm\x7CTexture_DifferenceVariance_dapi_8_0,Cytoplasm\x7CTexture_DifferenceVariance_dapi_8_45,Cytoplasm\x7CTexture_DifferenceVariance_dapi_8_135,Cytoplasm\x7CTexture_DifferenceVariance_dapi_8_90,Cytoplasm\x7CTexture_DifferenceVariance_mito_8_0,Cytoplasm\x7CTexture_DifferenceVariance_mito_8_45,Cytoplasm\x7CTexture_DifferenceVariance_mito_8_135,Cytoplasm\x7CTexture_DifferenceVariance_mito_8_90,Cytoplasm\x7CTexture_DifferenceVariance_actin_8_0,Cytoplasm\x7CTexture_DifferenceVariance_actin_8_45,Cytoplasm\x7CTexture_DifferenceVariance_actin_8_135,Cytoplasm\x7CTexture_DifferenceVariance_actin_8_90,Cytoplasm\x7CTexture_DifferenceEntropy_dapi_8_0,Cytoplasm\x7CTexture_DifferenceEntropy_dapi_8_45,Cytoplasm\x7CTexture_DifferenceEntropy_dapi_8_135,Cytoplasm\x7CTexture_DifferenceEntropy_dapi_8_90,Cytoplasm\x7CTexture_DifferenceEntropy_mito_8_0,Cytoplasm\x7CTexture_DifferenceEntropy_mito_8_45,Cytoplasm\x7CTexture_DifferenceEntropy_mito_8_135,Cytoplasm\x7CTexture_DifferenceEntropy_mito_8_90,Cytoplasm\x7CTexture_DifferenceEntropy_actin_8_0,Cytoplasm\x7CTexture_DifferenceEntropy_actin_8_45,Cytoplasm\x7CTexture_DifferenceEntropy_actin_8_135,Cytoplasm\x7CTexture_DifferenceEntropy_actin_8_90,Cytoplasm\x7CTexture_AngularSecondMoment_dapi_8_90,Cytoplasm\x7CTexture_AngularSecondMoment_dapi_8_45,Cytoplasm\x7CTexture_AngularSecondMoment_dapi_8_135,Cytoplasm\x7CTexture_AngularSecondMoment_dapi_8_0,Cytoplasm\x7CTexture_AngularSecondMoment_mito_8_90,Cytoplasm\x7CTexture_AngularSecondMoment_mito_8_45,Cytoplasm\x7CTexture_AngularSecondMoment_mito_8_135,Cytoplasm\x7CTexture_AngularSecondMoment_mito_8_0,Cytoplasm\x7CTexture_AngularSecondMoment_actin_8_90,Cytoplasm\x7CTexture_AngularSecondMoment_actin_8_45,Cytoplasm\x7CTexture_AngularSecondMoment_actin_8_135,Cytoplasm\x7CTexture_AngularSecondMoment_actin_8_0,Cytoplasm\x7CTexture_Entropy_dapi_8_0,Cytoplasm\x7CTexture_Entropy_dapi_8_45,Cytoplasm\x7CTexture_Entropy_dapi_8_135,Cytoplasm\x7CTexture_Entropy_dapi_8_90,Cytoplasm\x7CTexture_Entropy_mito_8_0,Cytoplasm\x7CTexture_Entropy_mito_8_45,Cytoplasm\x7CTexture_Entropy_mito_8_135,Cytoplasm\x7CTexture_Entropy_mito_8_90,Cytoplasm\x7CTexture_Entropy_actin_8_90,Cytoplasm\x7CTexture_Entropy_actin_8_45,Cytoplasm\x7CTexture_Entropy_actin_8_135,Cytoplasm\x7CTexture_Entropy_actin_8_0,Cytoplasm\x7CTexture_Correlation_dapi_8_0,Cytoplasm\x7CTexture_Correlation_dapi_8_45,Cytoplasm\x7CTexture_Correlation_dapi_8_135,Cytoplasm\x7CTexture_Correlation_dapi_8_90,Cytoplasm\x7CTexture_Correlation_mito_8_0,Cytoplasm\x7CTexture_Correlation_mito_8_45,Cytoplasm\x7CTexture_Correlation_mito_8_135,Cytoplasm\x7CTexture_Correlation_mito_8_90,Cytoplasm\x7CTexture_Correlation_actin_8_0,Cytoplasm\x7CTexture_Correlation_actin_8_45,Cytoplasm\x7CTexture_Correlation_actin_8_135,Cytoplasm\x7CTexture_Correlation_actin_8_90,Cytoplasm\x7CTexture_SumAverage_dapi_8_0,Cytoplasm\x7CTexture_SumAverage_dapi_8_45,Cytoplasm\x7CTexture_SumAverage_dapi_8_135,Cytoplasm\x7CTexture_SumAverage_dapi_8_90,Cytoplasm\x7CTexture_SumAverage_mito_8_0,Cytoplasm\x7CTexture_SumAverage_mito_8_45,Cytoplasm\x7CTexture_SumAverage_mito_8_135,Cytoplasm\x7CTexture_SumAverage_mito_8_90,Cytoplasm\x7CTexture_SumAverage_actin_8_90,Cytoplasm\x7CTexture_SumAverage_actin_8_45,Cytoplasm\x7CTexture_SumAverage_actin_8_135,Cytoplasm\x7CTexture_SumAverage_actin_8_0,Cytoplasm\x7CTexture_Variance_dapi_8_0,Cytoplasm\x7CTexture_Variance_dapi_8_45,Cytoplasm\x7CTexture_Variance_dapi_8_135,Cytoplasm\x7CTexture_Variance_dapi_8_90,Cytoplasm\x7CTexture_Variance_mito_8_0,Cytoplasm\x7CTexture_Variance_mito_8_45,Cytoplasm\x7CTexture_Variance_mito_8_135,Cytoplasm\x7CTexture_Variance_mito_8_90,Cytoplasm\x7CTexture_Variance_actin_8_0,Cytoplasm\x7CTexture_Variance_actin_8_45,Cytoplasm\x7CTexture_Variance_actin_8_135,Cytoplasm\x7CTexture_Variance_actin_8_90,Cytoplasm\x7CTexture_SumEntropy_dapi_8_0,Cytoplasm\x7CTexture_SumEntropy_dapi_8_45,Cytoplasm\x7CTexture_SumEntropy_dapi_8_135,Cytoplasm\x7CTexture_SumEntropy_dapi_8_90,Cytoplasm\x7CTexture_SumEntropy_mito_8_90,Cytoplasm\x7CTexture_SumEntropy_mito_8_45,Cytoplasm\x7CTexture_SumEntropy_mito_8_135,Cytoplasm\x7CTexture_SumEntropy_mito_8_0,Cytoplasm\x7CTexture_SumEntropy_actin_8_0,Cytoplasm\x7CTexture_SumEntropy_actin_8_45,Cytoplasm\x7CTexture_SumEntropy_actin_8_135,Cytoplasm\x7CTexture_SumEntropy_actin_8_90,Cytoplasm\x7CTexture_InverseDifferenceMoment_dapi_8_0,Cytoplasm\x7CTexture_InverseDifferenceMoment_dapi_8_45,Cytoplasm\x7CTexture_InverseDifferenceMoment_dapi_8_135,Cytoplasm\x7CTexture_InverseDifferenceMoment_dapi_8_90,Cytoplasm\x7CTexture_InverseDifferenceMoment_mito_8_0,Cytoplasm\x7CTexture_InverseDifferenceMoment_mito_8_45,Cytoplasm\x7CTexture_InverseDifferenceMoment_mito_8_135,Cytoplasm\x7CTexture_InverseDifferenceMoment_mito_8_90,Cytoplasm\x7CTexture_InverseDifferenceMoment_actin_8_0,Cytoplasm\x7CTexture_InverseDifferenceMoment_actin_8_45,Cytoplasm\x7CTexture_InverseDifferenceMoment_actin_8_135,Cytoplasm\x7CTexture_InverseDifferenceMoment_actin_8_90,Cytoplasm\x7CTexture_Contrast_dapi_8_0,Cytoplasm\x7CTexture_Contrast_dapi_8_45,Cytoplasm\x7CTexture_Contrast_dapi_8_135,Cytoplasm\x7CTexture_Contrast_dapi_8_90,Cytoplasm\x7CTexture_Contrast_mito_8_90,Cytoplasm\x7CTexture_Contrast_mito_8_45,Cytoplasm\x7CTexture_Contrast_mito_8_135,Cytoplasm\x7CTexture_Contrast_mito_8_0,Cytoplasm\x7CTexture_Contrast_actin_8_0,Cytoplasm\x7CTexture_Contrast_actin_8_45,Cytoplasm\x7CTexture_Contrast_actin_8_135,Cytoplasm\x7CTexture_Contrast_actin_8_90,Cytoplasm\x7CNumber_Object_Number,Cytoplasm\x7CLocation_MaxIntensity_Y_dapi,Cytoplasm\x7CLocation_MaxIntensity_Y_mito,Cytoplasm\x7CLocation_MaxIntensity_Y_actin,Cytoplasm\x7CLocation_MaxIntensity_X_dapi,Cytoplasm\x7CLocation_MaxIntensity_X_mito,Cytoplasm\x7CLocation_MaxIntensity_X_actin,Cytoplasm\x7CLocation_Center_Y,Cytoplasm\x7CLocation_Center_X,Cytoplasm\x7CLocation_CenterMassIntensity_Y_dapi,Cytoplasm\x7CLocation_CenterMassIntensity_Y_mito,Cytoplasm\x7CLocation_CenterMassIntensity_Y_actin,Cytoplasm\x7CLocation_CenterMassIntensity_X_dapi,Cytoplasm\x7CLocation_CenterMassIntensity_X_mito,Cytoplasm\x7CLocation_CenterMassIntensity_X_actin,Cytoplasm\x7CAreaShape_Perimeter,Cytoplasm\x7CAreaShape_FormFactor,Cytoplasm\x7CAreaShape_MeanRadius,Cytoplasm\x7CAreaShape_Orientation,Cytoplasm\x7CAreaShape_MajorAxisLength,Cytoplasm\x7CAreaShape_MinFeretDiameter,Cytoplasm\x7CAreaShape_Area,Cytoplasm\x7CAreaShape_MaxFeretDiameter,Cytoplasm\x7CAreaShape_Solidity,Cytoplasm\x7CAreaShape_EulerNumber,Cytoplasm\x7CAreaShape_MedianRadius,Cytoplasm\x7CAreaShape_Compactness,Cytoplasm\x7CAreaShape_Extent,Cytoplasm\x7CAreaShape_Eccentricity,Cytoplasm\x7CAreaShape_MaximumRadius,Cytoplasm\x7CAreaShape_MinorAxisLength,Cytoplasm\x7CAreaShape_Center_Y,Cytoplasm\x7CAreaShape_Center_X,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_13of16,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_3of16,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_5of16,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_9of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_18of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_20of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_15of16,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_4of16,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_11of16,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_6of16,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_1of16,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_14of16,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_16of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_10of16,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_Overflow,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_7of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_16of16,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_17of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_5of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_2of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_8of16,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_3of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_19of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_15of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_1of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_4of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_13of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_9of16,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_6of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_14of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_12of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_2of16,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_8of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_7of16,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_11of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_10of20,Cytoplasm\x7CRadialDistribution_FracAtD_mito_tubeness_12of16,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_13of16,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_3of16,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_5of16,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_9of20,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_18of20,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_12of16,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_15of16,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_4of16,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_11of16,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_6of16,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_1of16,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_14of16,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_16of20,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_10of16,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_Overflow,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_7of20,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_16of16,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_8of16,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_5of20,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_2of20,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_17of20,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_3of20,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_19of20,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_15of20,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_1of20,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_4of20,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_13of20,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_9of16,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_6of20,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_14of20,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_12of20,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_2of16,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_8of20,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_7of16,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_11of20,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_10of20,Cytoplasm\x7CRadialDistribution_RadialCV_mito_tubeness_20of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_13of16,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_3of16,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_5of16,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_9of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_18of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_20of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_15of16,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_4of16,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_11of16,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_6of16,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_1of16,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_14of16,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_16of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_10of16,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_Overflow,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_7of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_16of16,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_17of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_5of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_2of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_8of16,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_3of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_19of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_15of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_1of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_4of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_13of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_9of16,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_6of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_14of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_12of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_2of16,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_8of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_7of16,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_11of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_10of20,Cytoplasm\x7CRadialDistribution_MeanFrac_mito_tubeness_12of16,Cells\x7CChildren_mito_Count,Cells\x7CChildren_Cytoplasm_Count,Cells\x7CParent_Cells0,Cells\x7CTexture_InfoMeas2_dapi_8_90,Cells\x7CTexture_InfoMeas2_dapi_8_45,Cells\x7CTexture_InfoMeas2_dapi_8_135,Cells\x7CTexture_InfoMeas2_dapi_8_0,Cells\x7CTexture_InfoMeas2_mito_8_0,Cells\x7CTexture_InfoMeas2_mito_8_45,Cells\x7CTexture_InfoMeas2_mito_8_135,Cells\x7CTexture_InfoMeas2_mito_8_90,Cells\x7CTexture_InfoMeas2_actin_8_0,Cells\x7CTexture_InfoMeas2_actin_8_45,Cells\x7CTexture_InfoMeas2_actin_8_135,Cells\x7CTexture_InfoMeas2_actin_8_90,Cells\x7CTexture_DifferenceVariance_dapi_8_0,Cells\x7CTexture_DifferenceVariance_dapi_8_45,Cells\x7CTexture_DifferenceVariance_dapi_8_135,Cells\x7CTexture_DifferenceVariance_dapi_8_90,Cells\x7CTexture_DifferenceVariance_mito_8_90,Cells\x7CTexture_DifferenceVariance_mito_8_45,Cells\x7CTexture_DifferenceVariance_mito_8_135,Cells\x7CTexture_DifferenceVariance_mito_8_0,Cells\x7CTexture_DifferenceVariance_actin_8_0,Cells\x7CTexture_DifferenceVariance_actin_8_45,Cells\x7CTexture_DifferenceVariance_actin_8_135,Cells\x7CTexture_DifferenceVariance_actin_8_90,Cells\x7CTexture_SumVariance_dapi_8_90,Cells\x7CTexture_SumVariance_dapi_8_45,Cells\x7CTexture_SumVariance_dapi_8_135,Cells\x7CTexture_SumVariance_dapi_8_0,Cells\x7CTexture_SumVariance_mito_8_90,Cells\x7CTexture_SumVariance_mito_8_45,Cells\x7CTexture_SumVariance_mito_8_135,Cells\x7CTexture_SumVariance_mito_8_0,Cells\x7CTexture_SumVariance_actin_8_90,Cells\x7CTexture_SumVariance_actin_8_45,Cells\x7CTexture_SumVariance_actin_8_135,Cells\x7CTexture_SumVariance_actin_8_0,Cells\x7CTexture_DifferenceEntropy_dapi_8_90,Cells\x7CTexture_DifferenceEntropy_dapi_8_45,Cells\x7CTexture_DifferenceEntropy_dapi_8_135,Cells\x7CTexture_DifferenceEntropy_dapi_8_0,Cells\x7CTexture_DifferenceEntropy_mito_8_0,Cells\x7CTexture_DifferenceEntropy_mito_8_45,Cells\x7CTexture_DifferenceEntropy_mito_8_135,Cells\x7CTexture_DifferenceEntropy_mito_8_90,Cells\x7CTexture_DifferenceEntropy_actin_8_0,Cells\x7CTexture_DifferenceEntropy_actin_8_45,Cells\x7CTexture_DifferenceEntropy_actin_8_135,Cells\x7CTexture_DifferenceEntropy_actin_8_90,Cells\x7CTexture_Correlation_dapi_8_90,Cells\x7CTexture_Correlation_dapi_8_45,Cells\x7CTexture_Correlation_dapi_8_135,Cells\x7CTexture_Correlation_dapi_8_0,Cells\x7CTexture_Correlation_mito_8_90,Cells\x7CTexture_Correlation_mito_8_45,Cells\x7CTexture_Correlation_mito_8_135,Cells\x7CTexture_Correlation_mito_8_0,Cells\x7CTexture_Correlation_actin_8_90,Cells\x7CTexture_Correlation_actin_8_45,Cells\x7CTexture_Correlation_actin_8_135,Cells\x7CTexture_Correlation_actin_8_0,Cells\x7CTexture_Entropy_dapi_8_90,Cells\x7CTexture_Entropy_dapi_8_45,Cells\x7CTexture_Entropy_dapi_8_135,Cells\x7CTexture_Entropy_dapi_8_0,Cells\x7CTexture_Entropy_mito_8_90,Cells\x7CTexture_Entropy_mito_8_45,Cells\x7CTexture_Entropy_mito_8_135,Cells\x7CTexture_Entropy_mito_8_0,Cells\x7CTexture_Entropy_actin_8_0,Cells\x7CTexture_Entropy_actin_8_45,Cells\x7CTexture_Entropy_actin_8_135,Cells\x7CTexture_Entropy_actin_8_90,Cells\x7CTexture_AngularSecondMoment_dapi_8_0,Cells\x7CTexture_AngularSecondMoment_dapi_8_45,Cells\x7CTexture_AngularSecondMoment_dapi_8_135,Cells\x7CTexture_AngularSecondMoment_dapi_8_90,Cells\x7CTexture_AngularSecondMoment_mito_8_0,Cells\x7CTexture_AngularSecondMoment_mito_8_45,Cells\x7CTexture_AngularSecondMoment_mito_8_135,Cells\x7CTexture_AngularSecondMoment_mito_8_90,Cells\x7CTexture_AngularSecondMoment_actin_8_0,Cells\x7CTexture_AngularSecondMoment_actin_8_45,Cells\x7CTexture_AngularSecondMoment_actin_8_135,Cells\x7CTexture_AngularSecondMoment_actin_8_90,Cells\x7CTexture_SumAverage_dapi_8_0,Cells\x7CTexture_SumAverage_dapi_8_45,Cells\x7CTexture_SumAverage_dapi_8_135,Cells\x7CTexture_SumAverage_dapi_8_90,Cells\x7CTexture_SumAverage_mito_8_90,Cells\x7CTexture_SumAverage_mito_8_45,Cells\x7CTexture_SumAverage_mito_8_135,Cells\x7CTexture_SumAverage_mito_8_0,Cells\x7CTexture_SumAverage_actin_8_0,Cells\x7CTexture_SumAverage_actin_8_45,Cells\x7CTexture_SumAverage_actin_8_135,Cells\x7CTexture_SumAverage_actin_8_90,Cells\x7CTexture_Variance_dapi_8_90,Cells\x7CTexture_Variance_dapi_8_45,Cells\x7CTexture_Variance_dapi_8_135,Cells\x7CTexture_Variance_dapi_8_0,Cells\x7CTexture_Variance_mito_8_0,Cells\x7CTexture_Variance_mito_8_45,Cells\x7CTexture_Variance_mito_8_135,Cells\x7CTexture_Variance_mito_8_90,Cells\x7CTexture_Variance_actin_8_90,Cells\x7CTexture_Variance_actin_8_45,Cells\x7CTexture_Variance_actin_8_135,Cells\x7CTexture_Variance_actin_8_0,Cells\x7CTexture_InverseDifferenceMoment_dapi_8_90,Cells\x7CTexture_InverseDifferenceMoment_dapi_8_45,Cells\x7CTexture_InverseDifferenceMoment_dapi_8_135,Cells\x7CTexture_InverseDifferenceMoment_dapi_8_0,Cells\x7CTexture_InverseDifferenceMoment_mito_8_0,Cells\x7CTexture_InverseDifferenceMoment_mito_8_45,Cells\x7CTexture_InverseDifferenceMoment_mito_8_135,Cells\x7CTexture_InverseDifferenceMoment_mito_8_90,Cells\x7CTexture_InverseDifferenceMoment_actin_8_90,Cells\x7CTexture_InverseDifferenceMoment_actin_8_45,Cells\x7CTexture_InverseDifferenceMoment_actin_8_135,Cells\x7CTexture_InverseDifferenceMoment_actin_8_0,Cells\x7CTexture_SumEntropy_dapi_8_0,Cells\x7CTexture_SumEntropy_dapi_8_45,Cells\x7CTexture_SumEntropy_dapi_8_135,Cells\x7CTexture_SumEntropy_dapi_8_90,Cells\x7CTexture_SumEntropy_mito_8_0,Cells\x7CTexture_SumEntropy_mito_8_45,Cells\x7CTexture_SumEntropy_mito_8_135,Cells\x7CTexture_SumEntropy_mito_8_90,Cells\x7CTexture_SumEntropy_actin_8_0,Cells\x7CTexture_SumEntropy_actin_8_45,Cells\x7CTexture_SumEntropy_actin_8_135,Cells\x7CTexture_SumEntropy_actin_8_90,Cells\x7CTexture_Contrast_dapi_8_90,Cells\x7CTexture_Contrast_dapi_8_45,Cells\x7CTexture_Contrast_dapi_8_135,Cells\x7CTexture_Contrast_dapi_8_0,Cells\x7CTexture_Contrast_mito_8_0,Cells\x7CTexture_Contrast_mito_8_45,Cells\x7CTexture_Contrast_mito_8_135,Cells\x7CTexture_Contrast_mito_8_90,Cells\x7CTexture_Contrast_actin_8_90,Cells\x7CTexture_Contrast_actin_8_45,Cells\x7CTexture_Contrast_actin_8_135,Cells\x7CTexture_Contrast_actin_8_0,Cells\x7CTexture_InfoMeas1_dapi_8_0,Cells\x7CTexture_InfoMeas1_dapi_8_45,Cells\x7CTexture_InfoMeas1_dapi_8_135,Cells\x7CTexture_InfoMeas1_dapi_8_90,Cells\x7CTexture_InfoMeas1_mito_8_90,Cells\x7CTexture_InfoMeas1_mito_8_45,Cells\x7CTexture_InfoMeas1_mito_8_135,Cells\x7CTexture_InfoMeas1_mito_8_0,Cells\x7CTexture_InfoMeas1_actin_8_0,Cells\x7CTexture_InfoMeas1_actin_8_45,Cells\x7CTexture_InfoMeas1_actin_8_135,Cells\x7CTexture_InfoMeas1_actin_8_90,Cells\x7CNumber_Object_Number,Cells\x7CIntensity_MassDisplacement_dapi,Cells\x7CIntensity_MassDisplacement_mito,Cells\x7CIntensity_MassDisplacement_actin,Cells\x7CIntensity_MinIntensity_dapi,Cells\x7CIntensity_MinIntensity_mito,Cells\x7CIntensity_MinIntensity_actin,Cells\x7CIntensity_StdIntensity_dapi,Cells\x7CIntensity_StdIntensity_mito,Cells\x7CIntensity_StdIntensity_actin,Cells\x7CIntensity_IntegratedIntensityEdge_dapi,Cells\x7CIntensity_IntegratedIntensityEdge_mito,Cells\x7CIntensity_IntegratedIntensityEdge_actin,Cells\x7CIntensity_MinIntensityEdge_dapi,Cells\x7CIntensity_MinIntensityEdge_mito,Cells\x7CIntensity_MinIntensityEdge_actin,Cells\x7CIntensity_LowerQuartileIntensity_dapi,Cells\x7CIntensity_LowerQuartileIntensity_mito,Cells\x7CIntensity_LowerQuartileIntensity_actin,Cells\x7CIntensity_UpperQuartileIntensity_dapi,Cells\x7CIntensity_UpperQuartileIntensity_mito,Cells\x7CIntensity_UpperQuartileIntensity_actin,Cells\x7CIntensity_MADIntensity_dapi,Cells\x7CIntensity_MADIntensity_mito,Cells\x7CIntensity_MADIntensity_actin,Cells\x7CIntensity_MeanIntensity_dapi,Cells\x7CIntensity_MeanIntensity_mito,Cells\x7CIntensity_MeanIntensity_actin,Cells\x7CIntensity_MeanIntensityEdge_dapi,Cells\x7CIntensity_MeanIntensityEdge_mito,Cells\x7CIntensity_MeanIntensityEdge_actin,Cells\x7CIntensity_MaxIntensity_dapi,Cells\x7CIntensity_MaxIntensity_mito,Cells\x7CIntensity_MaxIntensity_actin,Cells\x7CIntensity_MedianIntensity_dapi,Cells\x7CIntensity_MedianIntensity_mito,Cells\x7CIntensity_MedianIntensity_actin,Cells\x7CIntensity_IntegratedIntensity_dapi,Cells\x7CIntensity_IntegratedIntensity_mito,Cells\x7CIntensity_IntegratedIntensity_actin,Cells\x7CIntensity_MaxIntensityEdge_dapi,Cells\x7CIntensity_MaxIntensityEdge_mito,Cells\x7CIntensity_MaxIntensityEdge_actin,Cells\x7CIntensity_StdIntensityEdge_dapi,Cells\x7CIntensity_StdIntensityEdge_mito,Cells\x7CIntensity_StdIntensityEdge_actin,Cells\x7CLocation_MaxIntensity_Y_dapi,Cells\x7CLocation_MaxIntensity_Y_mito,Cells\x7CLocation_MaxIntensity_Y_actin,Cells\x7CLocation_MaxIntensity_X_dapi,Cells\x7CLocation_MaxIntensity_X_mito,Cells\x7CLocation_MaxIntensity_X_actin,Cells\x7CLocation_CenterMassIntensity_Y_dapi,Cells\x7CLocation_CenterMassIntensity_Y_mito,Cells\x7CLocation_CenterMassIntensity_Y_actin,Cells\x7CLocation_CenterMassIntensity_X_dapi,Cells\x7CLocation_CenterMassIntensity_X_mito,Cells\x7CLocation_CenterMassIntensity_X_actin,Cells\x7CLocation_Center_Y,Cells\x7CLocation_Center_X,Cells\x7CAreaShape_Perimeter,Cells\x7CAreaShape_FormFactor,Cells\x7CAreaShape_Solidity,Cells\x7CAreaShape_Orientation,Cells\x7CAreaShape_MajorAxisLength,Cells\x7CAreaShape_MinFeretDiameter,Cells\x7CAreaShape_MaxFeretDiameter,Cells\x7CAreaShape_MeanRadius,Cells\x7CAreaShape_EulerNumber,Cells\x7CAreaShape_MedianRadius,Cells\x7CAreaShape_Compactness,Cells\x7CAreaShape_Extent,Cells\x7CAreaShape_Eccentricity,Cells\x7CAreaShape_MaximumRadius,Cells\x7CAreaShape_MinorAxisLength,Cells\x7CAreaShape_Area,Cells\x7CAreaShape_Center_Y,Cells\x7CAreaShape_Center_X,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_13of16,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_3of16,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_5of16,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_9of20,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_18of20,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_12of16,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_15of16,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_4of16,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_11of16,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_6of16,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_1of16,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_14of16,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_16of20,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_10of16,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_Overflow,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_7of20,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_1of20,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_17of20,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_5of20,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_2of20,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_8of16,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_3of20,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_19of20,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_15of20,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_16of16,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_4of20,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_13of20,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_9of16,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_6of20,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_14of20,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_12of20,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_2of16,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_8of20,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_7of16,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_11of20,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_10of20,Cells\x7CRadialDistribution_FracAtD_mito_tubeness_20of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_13of16,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_3of16,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_5of16,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_9of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_18of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_12of16,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_15of16,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_4of16,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_11of16,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_6of16,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_1of16,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_14of16,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_16of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_10of16,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_Overflow,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_7of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_1of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_8of16,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_5of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_2of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_17of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_13of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_19of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_15of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_11of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_4of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_3of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_9of16,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_6of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_14of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_12of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_2of16,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_8of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_7of16,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_16of16,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_10of20,Cells\x7CRadialDistribution_RadialCV_mito_tubeness_20of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_13of16,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_3of16,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_5of16,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_9of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_18of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_20of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_15of16,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_4of16,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_11of16,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_6of16,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_1of16,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_14of16,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_16of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_10of16,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_Overflow,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_7of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_16of16,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_8of16,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_5of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_2of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_17of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_13of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_19of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_15of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_1of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_4of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_3of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_9of16,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_6of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_14of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_12of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_2of16,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_8of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_7of16,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_11of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_10of20,Cells\x7CRadialDistribution_MeanFrac_mito_tubeness_12of16,Cells\x7CMean_mito_Distance_Centroid_Cells,Cells\x7CMean_mito_Number_Object_Number,Cells\x7CMean_mito_Intensity_StdIntensityEdge_dapi,Cells\x7CMean_mito_Intensity_StdIntensityEdge_mito,Cells\x7CMean_mito_Intensity_StdIntensityEdge_actin,Cells\x7CMean_mito_Intensity_MinIntensity_dapi,Cells\x7CMean_mito_Intensity_MinIntensity_mito,Cells\x7CMean_mito_Intensity_MinIntensity_actin,Cells\x7CMean_mito_Intensity_IntegratedIntensityEdge_dapi,Cells\x7CMean_mito_Intensity_IntegratedIntensityEdge_mito,Cells\x7CMean_mito_Intensity_IntegratedIntensityEdge_actin,Cells\x7CMean_mito_Intensity_StdIntensity_dapi,Cells\x7CMean_mito_Intensity_StdIntensity_mito,Cells\x7CMean_mito_Intensity_StdIntensity_actin,Cells\x7CMean_mito_Intensity_MassDisplacement_dapi,Cells\x7CMean_mito_Intensity_MassDisplacement_mito,Cells\x7CMean_mito_Intensity_MassDisplacement_actin,Cells\x7CMean_mito_Intensity_MinIntensityEdge_dapi,Cells\x7CMean_mito_Intensity_MinIntensityEdge_mito,Cells\x7CMean_mito_Intensity_MinIntensityEdge_actin,Cells\x7CMean_mito_Intensity_IntegratedIntensity_dapi,Cells\x7CMean_mito_Intensity_IntegratedIntensity_mito,Cells\x7CMean_mito_Intensity_IntegratedIntensity_actin,Cells\x7CMean_mito_Intensity_UpperQuartileIntensity_dapi,Cells\x7CMean_mito_Intensity_UpperQuartileIntensity_mito,Cells\x7CMean_mito_Intensity_UpperQuartileIntensity_actin,Cells\x7CMean_mito_Intensity_MADIntensity_dapi,Cells\x7CMean_mito_Intensity_MADIntensity_mito,Cells\x7CMean_mito_Intensity_MADIntensity_actin,Cells\x7CMean_mito_Intensity_MeanIntensity_dapi,Cells\x7CMean_mito_Intensity_MeanIntensity_mito,Cells\x7CMean_mito_Intensity_MeanIntensity_actin,Cells\x7CMean_mito_Intensity_MeanIntensityEdge_dapi,Cells\x7CMean_mito_Intensity_MeanIntensityEdge_mito,Cells\x7CMean_mito_Intensity_MeanIntensityEdge_actin,Cells\x7CMean_mito_Intensity_MaxIntensity_dapi,Cells\x7CMean_mito_Intensity_MaxIntensity_mito,Cells\x7CMean_mito_Intensity_MaxIntensity_actin,Cells\x7CMean_mito_Intensity_MedianIntensity_dapi,Cells\x7CMean_mito_Intensity_MedianIntensity_mito,Cells\x7CMean_mito_Intensity_MedianIntensity_actin,Cells\x7CMean_mito_Intensity_LowerQuartileIntensity_dapi,Cells\x7CMean_mito_Intensity_LowerQuartileIntensity_mito,Cells\x7CMean_mito_Intensity_LowerQuartileIntensity_actin,Cells\x7CMean_mito_Intensity_MaxIntensityEdge_dapi,Cells\x7CMean_mito_Intensity_MaxIntensityEdge_mito,Cells\x7CMean_mito_Intensity_MaxIntensityEdge_actin,Cells\x7CMean_mito_Location_MaxIntensity_Y_dapi,Cells\x7CMean_mito_Location_MaxIntensity_Y_mito,Cells\x7CMean_mito_Location_MaxIntensity_Y_actin,Cells\x7CMean_mito_Location_MaxIntensity_X_dapi,Cells\x7CMean_mito_Location_MaxIntensity_X_mito,Cells\x7CMean_mito_Location_MaxIntensity_X_actin,Cells\x7CMean_mito_Location_CenterMassIntensity_Y_dapi,Cells\x7CMean_mito_Location_CenterMassIntensity_Y_mito,Cells\x7CMean_mito_Location_CenterMassIntensity_Y_actin,Cells\x7CMean_mito_Location_CenterMassIntensity_X_dapi,Cells\x7CMean_mito_Location_CenterMassIntensity_X_mito,Cells\x7CMean_mito_Location_CenterMassIntensity_X_actin,Cells\x7CMean_mito_Location_Center_Y,Cells\x7CMean_mito_Location_Center_X,Cells\x7CMean_mito_AreaShape_Perimeter,Cells\x7CMean_mito_AreaShape_FormFactor,Cells\x7CMean_mito_AreaShape_Center_Y,Cells\x7CMean_mito_AreaShape_Center_X,Cells\x7CMean_mito_AreaShape_Area,Cells\x7CMean_mito_AreaShape_MinFeretDiameter,Cells\x7CMean_mito_AreaShape_Solidity,Cells\x7CMean_mito_AreaShape_MaxFeretDiameter,Cells\x7CMean_mito_AreaShape_EulerNumber,Cells\x7CMean_mito_AreaShape_Eccentricity,Cells\x7CMean_mito_AreaShape_Compactness,Cells\x7CMean_mito_AreaShape_Extent,Cells\x7CMean_mito_AreaShape_Orientation,Cells\x7CMean_mito_AreaShape_MedianRadius,Cells\x7CMean_mito_AreaShape_MaximumRadius,Cells\x7CMean_mito_AreaShape_MinorAxisLength,Cells\x7CMean_mito_AreaShape_MajorAxisLength,Cells\x7CMean_mito_AreaShape_MeanRadius,mito\x7CDistance_Centroid_Cells,mito\x7CParent_Cells,mito\x7CNumber_Object_Number,mito\x7CIntensity_MassDisplacement_dapi,mito\x7CIntensity_MassDisplacement_mito,mito\x7CIntensity_MassDisplacement_actin,mito\x7CIntensity_MinIntensity_dapi,mito\x7CIntensity_MinIntensity_mito,mito\x7CIntensity_MinIntensity_actin,mito\x7CIntensity_IntegratedIntensityEdge_dapi,mito\x7CIntensity_IntegratedIntensityEdge_mito,mito\x7CIntensity_IntegratedIntensityEdge_actin,mito\x7CIntensity_StdIntensity_dapi,mito\x7CIntensity_StdIntensity_mito,mito\x7CIntensity_StdIntensity_actin,mito\x7CIntensity_UpperQuartileIntensity_dapi,mito\x7CIntensity_UpperQuartileIntensity_mito,mito\x7CIntensity_UpperQuartileIntensity_actin,mito\x7CIntensity_IntegratedIntensity_dapi,mito\x7CIntensity_IntegratedIntensity_mito,mito\x7CIntensity_IntegratedIntensity_actin,mito\x7CIntensity_MinIntensityEdge_dapi,mito\x7CIntensity_MinIntensityEdge_mito,mito\x7CIntensity_MinIntensityEdge_actin,mito\x7CIntensity_MADIntensity_dapi,mito\x7CIntensity_MADIntensity_mito,mito\x7CIntensity_MADIntensity_actin,mito\x7CIntensity_StdIntensityEdge_dapi,mito\x7CIntensity_StdIntensityEdge_mito,mito\x7CIntensity_StdIntensityEdge_actin,mito\x7CIntensity_MeanIntensityEdge_dapi,mito\x7CIntensity_MeanIntensityEdge_mito,mito\x7CIntensity_MeanIntensityEdge_actin,mito\x7CIntensity_MaxIntensity_dapi,mito\x7CIntensity_MaxIntensity_mito,mito\x7CIntensity_MaxIntensity_actin,mito\x7CIntensity_MedianIntensity_dapi,mito\x7CIntensity_MedianIntensity_mito,mito\x7CIntensity_MedianIntensity_actin,mito\x7CIntensity_MeanIntensity_dapi,mito\x7CIntensity_MeanIntensity_mito,mito\x7CIntensity_MeanIntensity_actin,mito\x7CIntensity_LowerQuartileIntensity_dapi,mito\x7CIntensity_LowerQuartileIntensity_mito,mito\x7CIntensity_LowerQuartileIntensity_actin,mito\x7CIntensity_MaxIntensityEdge_dapi,mito\x7CIntensity_MaxIntensityEdge_mito,mito\x7CIntensity_MaxIntensityEdge_actin,mito\x7CLocation_MaxIntensity_Y_dapi,mito\x7CLocation_MaxIntensity_Y_mito,mito\x7CLocation_MaxIntensity_Y_actin,mito\x7CLocation_MaxIntensity_X_dapi,mito\x7CLocation_MaxIntensity_X_mito,mito\x7CLocation_MaxIntensity_X_actin,mito\x7CLocation_Center_Y,mito\x7CLocation_Center_X,mito\x7CLocation_CenterMassIntensity_Y_dapi,mito\x7CLocation_CenterMassIntensity_Y_mito,mito\x7CLocation_CenterMassIntensity_Y_actin,mito\x7CLocation_CenterMassIntensity_X_dapi,mito\x7CLocation_CenterMassIntensity_X_mito,mito\x7CLocation_CenterMassIntensity_X_actin,mito\x7CAreaShape_Perimeter,mito\x7CAreaShape_FormFactor,mito\x7CAreaShape_Solidity,mito\x7CAreaShape_Center_Y,mito\x7CAreaShape_Center_X,mito\x7CAreaShape_MaxFeretDiameter,mito\x7CAreaShape_MinFeretDiameter,mito\x7CAreaShape_MajorAxisLength,mito\x7CAreaShape_EulerNumber,mito\x7CAreaShape_Eccentricity,mito\x7CAreaShape_Compactness,mito\x7CAreaShape_Extent,mito\x7CAreaShape_MinorAxisLength,mito\x7CAreaShape_MedianRadius,mito\x7CAreaShape_MaximumRadius,mito\x7CAreaShape_MeanRadius,mito\x7CAreaShape_Area,mito\x7CAreaShape_Orientation,Experiment\x7CPipeline_Pipeline,Experiment\x7CRun_Timestamp,Experiment\x7CCellProfiler_Version,Experiment\x7CModification_Timestamp,Experiment\x7CMetadata_GroupingTags,CytoplasmRound\x7CParent_Nuclei,CytoplasmRound\x7CParent_Cells_Round,CytoplasmRound\x7CTexture_InfoMeas2_dapi_8_90,CytoplasmRound\x7CTexture_InfoMeas2_dapi_8_45,CytoplasmRound\x7CTexture_InfoMeas2_dapi_8_135,CytoplasmRound\x7CTexture_InfoMeas2_dapi_8_0,CytoplasmRound\x7CTexture_InfoMeas2_mito_8_0,CytoplasmRound\x7CTexture_InfoMeas2_mito_8_45,CytoplasmRound\x7CTexture_InfoMeas2_mito_8_135,CytoplasmRound\x7CTexture_InfoMeas2_mito_8_90,CytoplasmRound\x7CTexture_InfoMeas2_actin_8_90,CytoplasmRound\x7CTexture_InfoMeas2_actin_8_45,CytoplasmRound\x7CTexture_InfoMeas2_actin_8_135,CytoplasmRound\x7CTexture_InfoMeas2_actin_8_0,CytoplasmRound\x7CTexture_InfoMeas1_dapi_8_90,CytoplasmRound\x7CTexture_InfoMeas1_dapi_8_45,CytoplasmRound\x7CTexture_InfoMeas1_dapi_8_135,CytoplasmRound\x7CTexture_InfoMeas1_dapi_8_0,CytoplasmRound\x7CTexture_InfoMeas1_mito_8_0,CytoplasmRound\x7CTexture_InfoMeas1_mito_8_45,CytoplasmRound\x7CTexture_InfoMeas1_mito_8_135,CytoplasmRound\x7CTexture_InfoMeas1_mito_8_90,CytoplasmRound\x7CTexture_InfoMeas1_actin_8_90,CytoplasmRound\x7CTexture_InfoMeas1_actin_8_45,CytoplasmRound\x7CTexture_InfoMeas1_actin_8_135,CytoplasmRound\x7CTexture_InfoMeas1_actin_8_0,CytoplasmRound\x7CTexture_SumVariance_dapi_8_0,CytoplasmRound\x7CTexture_SumVariance_dapi_8_45,CytoplasmRound\x7CTexture_SumVariance_dapi_8_135,CytoplasmRound\x7CTexture_SumVariance_dapi_8_90,CytoplasmRound\x7CTexture_SumVariance_mito_8_0,CytoplasmRound\x7CTexture_SumVariance_mito_8_45,CytoplasmRound\x7CTexture_SumVariance_mito_8_135,CytoplasmRound\x7CTexture_SumVariance_mito_8_90,CytoplasmRound\x7CTexture_SumVariance_actin_8_0,CytoplasmRound\x7CTexture_SumVariance_actin_8_45,CytoplasmRound\x7CTexture_SumVariance_actin_8_135,CytoplasmRound\x7CTexture_SumVariance_actin_8_90,CytoplasmRound\x7CTexture_DifferenceVariance_dapi_8_90,CytoplasmRound\x7CTexture_DifferenceVariance_dapi_8_45,CytoplasmRound\x7CTexture_DifferenceVariance_dapi_8_135,CytoplasmRound\x7CTexture_DifferenceVariance_dapi_8_0,CytoplasmRound\x7CTexture_DifferenceVariance_mito_8_0,CytoplasmRound\x7CTexture_DifferenceVariance_mito_8_45,CytoplasmRound\x7CTexture_DifferenceVariance_mito_8_135,CytoplasmRound\x7CTexture_DifferenceVariance_mito_8_90,CytoplasmRound\x7CTexture_DifferenceVariance_actin_8_0,CytoplasmRound\x7CTexture_DifferenceVariance_actin_8_45,CytoplasmRound\x7CTexture_DifferenceVariance_actin_8_135,CytoplasmRound\x7CTexture_DifferenceVariance_actin_8_90,CytoplasmRound\x7CTexture_DifferenceEntropy_dapi_8_0,CytoplasmRound\x7CTexture_DifferenceEntropy_dapi_8_45,CytoplasmRound\x7CTexture_DifferenceEntropy_dapi_8_135,CytoplasmRound\x7CTexture_DifferenceEntropy_dapi_8_90,CytoplasmRound\x7CTexture_DifferenceEntropy_mito_8_90,CytoplasmRound\x7CTexture_DifferenceEntropy_mito_8_45,CytoplasmRound\x7CTexture_DifferenceEntropy_mito_8_135,CytoplasmRound\x7CTexture_DifferenceEntropy_mito_8_0,CytoplasmRound\x7CTexture_DifferenceEntropy_actin_8_90,CytoplasmRound\x7CTexture_DifferenceEntropy_actin_8_45,CytoplasmRound\x7CTexture_DifferenceEntropy_actin_8_135,CytoplasmRound\x7CTexture_DifferenceEntropy_actin_8_0,CytoplasmRound\x7CTexture_AngularSecondMoment_dapi_8_0,CytoplasmRound\x7CTexture_AngularSecondMoment_dapi_8_45,CytoplasmRound\x7CTexture_AngularSecondMoment_dapi_8_135,CytoplasmRound\x7CTexture_AngularSecondMoment_dapi_8_90,CytoplasmRound\x7CTexture_AngularSecondMoment_mito_8_90,CytoplasmRound\x7CTexture_AngularSecondMoment_mito_8_45,CytoplasmRound\x7CTexture_AngularSecondMoment_mito_8_135,CytoplasmRound\x7CTexture_AngularSecondMoment_mito_8_0,CytoplasmRound\x7CTexture_AngularSecondMoment_actin_8_0,CytoplasmRound\x7CTexture_AngularSecondMoment_actin_8_45,CytoplasmRound\x7CTexture_AngularSecondMoment_actin_8_135,CytoplasmRound\x7CTexture_AngularSecondMoment_actin_8_90,CytoplasmRound\x7CTexture_Entropy_dapi_8_90,CytoplasmRound\x7CTexture_Entropy_dapi_8_45,CytoplasmRound\x7CTexture_Entropy_dapi_8_135,CytoplasmRound\x7CTexture_Entropy_dapi_8_0,CytoplasmRound\x7CTexture_Entropy_mito_8_0,CytoplasmRound\x7CTexture_Entropy_mito_8_45,CytoplasmRound\x7CTexture_Entropy_mito_8_135,CytoplasmRound\x7CTexture_Entropy_mito_8_90,CytoplasmRound\x7CTexture_Entropy_actin_8_0,CytoplasmRound\x7CTexture_Entropy_actin_8_45,CytoplasmRound\x7CTexture_Entropy_actin_8_135,CytoplasmRound\x7CTexture_Entropy_actin_8_90,CytoplasmRound\x7CTexture_Correlation_dapi_8_90,CytoplasmRound\x7CTexture_Correlation_dapi_8_45,CytoplasmRound\x7CTexture_Correlation_dapi_8_135,CytoplasmRound\x7CTexture_Correlation_dapi_8_0,CytoplasmRound\x7CTexture_Correlation_mito_8_0,CytoplasmRound\x7CTexture_Correlation_mito_8_45,CytoplasmRound\x7CTexture_Correlation_mito_8_135,CytoplasmRound\x7CTexture_Correlation_mito_8_90,CytoplasmRound\x7CTexture_Correlation_actin_8_0,CytoplasmRound\x7CTexture_Correlation_actin_8_45,CytoplasmRound\x7CTexture_Correlation_actin_8_135,CytoplasmRound\x7CTexture_Correlation_actin_8_90,CytoplasmRound\x7CTexture_SumAverage_dapi_8_90,CytoplasmRound\x7CTexture_SumAverage_dapi_8_45,CytoplasmRound\x7CTexture_SumAverage_dapi_8_135,CytoplasmRound\x7CTexture_SumAverage_dapi_8_0,CytoplasmRound\x7CTexture_SumAverage_mito_8_0,CytoplasmRound\x7CTexture_SumAverage_mito_8_45,CytoplasmRound\x7CTexture_SumAverage_mito_8_135,CytoplasmRound\x7CTexture_SumAverage_mito_8_90,CytoplasmRound\x7CTexture_SumAverage_actin_8_90,CytoplasmRound\x7CTexture_SumAverage_actin_8_45,CytoplasmRound\x7CTexture_SumAverage_actin_8_135,CytoplasmRound\x7CTexture_SumAverage_actin_8_0,CytoplasmRound\x7CTexture_Variance_dapi_8_90,CytoplasmRound\x7CTexture_Variance_dapi_8_45,CytoplasmRound\x7CTexture_Variance_dapi_8_135,CytoplasmRound\x7CTexture_Variance_dapi_8_0,CytoplasmRound\x7CTexture_Variance_mito_8_90,CytoplasmRound\x7CTexture_Variance_mito_8_45,CytoplasmRound\x7CTexture_Variance_mito_8_135,CytoplasmRound\x7CTexture_Variance_mito_8_0,CytoplasmRound\x7CTexture_Variance_actin_8_0,CytoplasmRound\x7CTexture_Variance_actin_8_45,CytoplasmRound\x7CTexture_Variance_actin_8_135,CytoplasmRound\x7CTexture_Variance_actin_8_90,CytoplasmRound\x7CTexture_InverseDifferenceMoment_dapi_8_0,CytoplasmRound\x7CTexture_InverseDifferenceMoment_dapi_8_45,CytoplasmRound\x7CTexture_InverseDifferenceMoment_dapi_8_135,CytoplasmRound\x7CTexture_InverseDifferenceMoment_dapi_8_90,CytoplasmRound\x7CTexture_InverseDifferenceMoment_mito_8_90,CytoplasmRound\x7CTexture_InverseDifferenceMoment_mito_8_45,CytoplasmRound\x7CTexture_InverseDifferenceMoment_mito_8_135,CytoplasmRound\x7CTexture_InverseDifferenceMoment_mito_8_0,CytoplasmRound\x7CTexture_InverseDifferenceMoment_actin_8_0,CytoplasmRound\x7CTexture_InverseDifferenceMoment_actin_8_45,CytoplasmRound\x7CTexture_InverseDifferenceMoment_actin_8_135,CytoplasmRound\x7CTexture_InverseDifferenceMoment_actin_8_90,CytoplasmRound\x7CTexture_SumEntropy_dapi_8_0,CytoplasmRound\x7CTexture_SumEntropy_dapi_8_45,CytoplasmRound\x7CTexture_SumEntropy_dapi_8_135,CytoplasmRound\x7CTexture_SumEntropy_dapi_8_90,CytoplasmRound\x7CTexture_SumEntropy_mito_8_90,CytoplasmRound\x7CTexture_SumEntropy_mito_8_45,CytoplasmRound\x7CTexture_SumEntropy_mito_8_135,CytoplasmRound\x7CTexture_SumEntropy_mito_8_0,CytoplasmRound\x7CTexture_SumEntropy_actin_8_0,CytoplasmRound\x7CTexture_SumEntropy_actin_8_45,CytoplasmRound\x7CTexture_SumEntropy_actin_8_135,CytoplasmRound\x7CTexture_SumEntropy_actin_8_90,CytoplasmRound\x7CTexture_Contrast_dapi_8_0,CytoplasmRound\x7CTexture_Contrast_dapi_8_45,CytoplasmRound\x7CTexture_Contrast_dapi_8_135,CytoplasmRound\x7CTexture_Contrast_dapi_8_90,CytoplasmRound\x7CTexture_Contrast_mito_8_0,CytoplasmRound\x7CTexture_Contrast_mito_8_45,CytoplasmRound\x7CTexture_Contrast_mito_8_135,CytoplasmRound\x7CTexture_Contrast_mito_8_90,CytoplasmRound\x7CTexture_Contrast_actin_8_0,CytoplasmRound\x7CTexture_Contrast_actin_8_45,CytoplasmRound\x7CTexture_Contrast_actin_8_135,CytoplasmRound\x7CTexture_Contrast_actin_8_90,CytoplasmRound\x7CNumber_Object_Number,CytoplasmRound\x7CIntensity_StdIntensityEdge_dapi,CytoplasmRound\x7CIntensity_StdIntensityEdge_mito,CytoplasmRound\x7CIntensity_StdIntensityEdge_actin,CytoplasmRound\x7CIntensity_MinIntensity_dapi,CytoplasmRound\x7CIntensity_MinIntensity_mito,CytoplasmRound\x7CIntensity_MinIntensity_actin,CytoplasmRound\x7CIntensity_StdIntensity_dapi,CytoplasmRound\x7CIntensity_StdIntensity_mito,CytoplasmRound\x7CIntensity_StdIntensity_actin,CytoplasmRound\x7CIntensity_IntegratedIntensityEdge_dapi,CytoplasmRound\x7CIntensity_IntegratedIntensityEdge_mito,CytoplasmRound\x7CIntensity_IntegratedIntensityEdge_actin,CytoplasmRound\x7CIntensity_MassDisplacement_dapi,CytoplasmRound\x7CIntensity_MassDisplacement_mito,CytoplasmRound\x7CIntensity_MassDisplacement_actin,CytoplasmRound\x7CIntensity_UpperQuartileIntensity_dapi,CytoplasmRound\x7CIntensity_UpperQuartileIntensity_mito,CytoplasmRound\x7CIntensity_UpperQuartileIntensity_actin,CytoplasmRound\x7CIntensity_MinIntensityEdge_dapi,CytoplasmRound\x7CIntensity_MinIntensityEdge_mito,CytoplasmRound\x7CIntensity_MinIntensityEdge_actin,CytoplasmRound\x7CIntensity_MADIntensity_dapi,CytoplasmRound\x7CIntensity_MADIntensity_mito,CytoplasmRound\x7CIntensity_MADIntensity_actin,CytoplasmRound\x7CIntensity_LowerQuartileIntensity_dapi,CytoplasmRound\x7CIntensity_LowerQuartileIntensity_mito,CytoplasmRound\x7CIntensity_LowerQuartileIntensity_actin,CytoplasmRound\x7CIntensity_MeanIntensityEdge_dapi,CytoplasmRound\x7CIntensity_MeanIntensityEdge_mito,CytoplasmRound\x7CIntensity_MeanIntensityEdge_actin,CytoplasmRound\x7CIntensity_MaxIntensity_dapi,CytoplasmRound\x7CIntensity_MaxIntensity_mito,CytoplasmRound\x7CIntensity_MaxIntensity_actin,CytoplasmRound\x7CIntensity_MedianIntensity_dapi,CytoplasmRound\x7CIntensity_MedianIntensity_mito,CytoplasmRound\x7CIntensity_MedianIntensity_actin,CytoplasmRound\x7CIntensity_MeanIntensity_dapi,CytoplasmRound\x7CIntensity_MeanIntensity_mito,CytoplasmRound\x7CIntensity_MeanIntensity_actin,CytoplasmRound\x7CIntensity_IntegratedIntensity_dapi,CytoplasmRound\x7CIntensity_IntegratedIntensity_mito,CytoplasmRound\x7CIntensity_IntegratedIntensity_actin,CytoplasmRound\x7CIntensity_MaxIntensityEdge_dapi,CytoplasmRound\x7CIntensity_MaxIntensityEdge_mito,CytoplasmRound\x7CIntensity_MaxIntensityEdge_actin,CytoplasmRound\x7CLocation_MaxIntensity_Y_dapi,CytoplasmRound\x7CLocation_MaxIntensity_Y_mito,CytoplasmRound\x7CLocation_MaxIntensity_Y_actin,CytoplasmRound\x7CLocation_MaxIntensity_X_dapi,CytoplasmRound\x7CLocation_MaxIntensity_X_mito,CytoplasmRound\x7CLocation_MaxIntensity_X_actin,CytoplasmRound\x7CLocation_CenterMassIntensity_Y_dapi,CytoplasmRound\x7CLocation_CenterMassIntensity_Y_mito,CytoplasmRound\x7CLocation_CenterMassIntensity_Y_actin,CytoplasmRound\x7CLocation_CenterMassIntensity_X_dapi,CytoplasmRound\x7CLocation_CenterMassIntensity_X_mito,CytoplasmRound\x7CLocation_CenterMassIntensity_X_actin,CytoplasmRound\x7CLocation_Center_Y,CytoplasmRound\x7CLocation_Center_X,CytoplasmRound\x7CAreaShape_Perimeter,CytoplasmRound\x7CAreaShape_FormFactor,CytoplasmRound\x7CAreaShape_Solidity,CytoplasmRound\x7CAreaShape_Center_Y,CytoplasmRound\x7CAreaShape_Center_X,CytoplasmRound\x7CAreaShape_Area,CytoplasmRound\x7CAreaShape_MinFeretDiameter,CytoplasmRound\x7CAreaShape_MaxFeretDiameter,CytoplasmRound\x7CAreaShape_EulerNumber,CytoplasmRound\x7CAreaShape_Eccentricity,CytoplasmRound\x7CAreaShape_Compactness,CytoplasmRound\x7CAreaShape_Extent,CytoplasmRound\x7CAreaShape_Orientation,CytoplasmRound\x7CAreaShape_MedianRadius,CytoplasmRound\x7CAreaShape_MaximumRadius,CytoplasmRound\x7CAreaShape_MinorAxisLength,CytoplasmRound\x7CAreaShape_MajorAxisLength,CytoplasmRound\x7CAreaShape_MeanRadius,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_13of16,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_3of16,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_5of16,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_9of20,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_18of20,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_12of16,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_15of16,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_4of16,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_11of16,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_6of16,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_1of16,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_14of16,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_16of20,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_10of16,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_Overflow,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_7of20,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_16of16,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_8of16,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_5of20,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_2of20,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_17of20,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_13of20,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_19of20,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_15of20,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_11of20,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_4of20,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_3of20,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_9of16,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_6of20,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_14of20,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_12of20,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_2of16,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_8of20,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_7of16,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_1of20,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_10of20,CytoplasmRound\x7CRadialDistribution_RadialCV_mito_tubeness_20of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_13of16,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_3of16,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_5of16,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_9of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_18of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_12of16,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_15of16,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_4of16,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_11of16,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_6of16,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_1of16,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_14of16,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_11of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_16of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_10of16,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_Overflow,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_7of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_17of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_5of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_2of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_8of16,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_13of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_19of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_15of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_16of16,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_4of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_3of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_9of16,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_6of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_14of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_12of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_2of16,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_8of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_7of16,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_1of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_10of20,CytoplasmRound\x7CRadialDistribution_FracAtD_mito_tubeness_20of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_13of16,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_3of16,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_5of16,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_9of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_18of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_12of16,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_15of16,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_4of16,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_11of16,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_6of16,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_1of16,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_14of16,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_16of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_10of16,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_Overflow,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_7of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_16of16,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_8of16,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_5of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_2of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_17of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_13of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_19of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_15of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_1of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_4of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_3of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_9of16,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_6of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_14of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_12of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_2of16,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_8of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_7of16,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_11of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_10of20,CytoplasmRound\x7CRadialDistribution_MeanFrac_mito_tubeness_20of20,Nuclei\x7CNeuron_NumberTrunks_mito_skel,Nuclei\x7CNeuron_NumberNonTrunkBranches_mito_skel,Nuclei\x7CNeuron_NumberBranchEnds_mito_skel,Nuclei\x7CNeuron_TotalNeuriteLength_mito_skel,Nuclei\x7CTexture_InfoMeas1_dapi_8_0,Nuclei\x7CTexture_InfoMeas1_dapi_8_45,Nuclei\x7CTexture_InfoMeas1_dapi_8_135,Nuclei\x7CTexture_InfoMeas1_dapi_8_90,Nuclei\x7CTexture_InfoMeas1_mito_8_0,Nuclei\x7CTexture_InfoMeas1_mito_8_45,Nuclei\x7CTexture_InfoMeas1_mito_8_135,Nuclei\x7CTexture_InfoMeas1_mito_8_90,Nuclei\x7CTexture_InfoMeas1_actin_8_0,Nuclei\x7CTexture_InfoMeas1_actin_8_45,Nuclei\x7CTexture_InfoMeas1_actin_8_135,Nuclei\x7CTexture_InfoMeas1_actin_8_90,Nuclei\x7CTexture_DifferenceVariance_dapi_8_0,Nuclei\x7CTexture_DifferenceVariance_dapi_8_45,Nuclei\x7CTexture_DifferenceVariance_dapi_8_135,Nuclei\x7CTexture_DifferenceVariance_dapi_8_90,Nuclei\x7CTexture_DifferenceVariance_mito_8_90,Nuclei\x7CTexture_DifferenceVariance_mito_8_45,Nuclei\x7CTexture_DifferenceVariance_mito_8_135,Nuclei\x7CTexture_DifferenceVariance_mito_8_0,Nuclei\x7CTexture_DifferenceVariance_actin_8_90,Nuclei\x7CTexture_DifferenceVariance_actin_8_45,Nuclei\x7CTexture_DifferenceVariance_actin_8_135,Nuclei\x7CTexture_DifferenceVariance_actin_8_0,Nuclei\x7CTexture_SumVariance_dapi_8_90,Nuclei\x7CTexture_SumVariance_dapi_8_45,Nuclei\x7CTexture_SumVariance_dapi_8_135,Nuclei\x7CTexture_SumVariance_dapi_8_0,Nuclei\x7CTexture_SumVariance_mito_8_0,Nuclei\x7CTexture_SumVariance_mito_8_45,Nuclei\x7CTexture_SumVariance_mito_8_135,Nuclei\x7CTexture_SumVariance_mito_8_90,Nuclei\x7CTexture_SumVariance_actin_8_0,Nuclei\x7CTexture_SumVariance_actin_8_45,Nuclei\x7CTexture_SumVariance_actin_8_135,Nuclei\x7CTexture_SumVariance_actin_8_90,Nuclei\x7CTexture_DifferenceEntropy_dapi_8_90,Nuclei\x7CTexture_DifferenceEntropy_dapi_8_45,Nuclei\x7CTexture_DifferenceEntropy_dapi_8_135,Nuclei\x7CTexture_DifferenceEntropy_dapi_8_0,Nuclei\x7CTexture_DifferenceEntropy_mito_8_90,Nuclei\x7CTexture_DifferenceEntropy_mito_8_45,Nuclei\x7CTexture_DifferenceEntropy_mito_8_135,Nuclei\x7CTexture_DifferenceEntropy_mito_8_0,Nuclei\x7CTexture_DifferenceEntropy_actin_8_0,Nuclei\x7CTexture_DifferenceEntropy_actin_8_45,Nuclei\x7CTexture_DifferenceEntropy_actin_8_135,Nuclei\x7CTexture_DifferenceEntropy_actin_8_90,Nuclei\x7CTexture_AngularSecondMoment_dapi_8_90,Nuclei\x7CTexture_AngularSecondMoment_dapi_8_45,Nuclei\x7CTexture_AngularSecondMoment_dapi_8_135,Nuclei\x7CTexture_AngularSecondMoment_dapi_8_0,Nuclei\x7CTexture_AngularSecondMoment_mito_8_0,Nuclei\x7CTexture_AngularSecondMoment_mito_8_45,Nuclei\x7CTexture_AngularSecondMoment_mito_8_135,Nuclei\x7CTexture_AngularSecondMoment_mito_8_90,Nuclei\x7CTexture_AngularSecondMoment_actin_8_0,Nuclei\x7CTexture_AngularSecondMoment_actin_8_45,Nuclei\x7CTexture_AngularSecondMoment_actin_8_135,Nuclei\x7CTexture_AngularSecondMoment_actin_8_90,Nuclei\x7CTexture_Entropy_dapi_8_0,Nuclei\x7CTexture_Entropy_dapi_8_45,Nuclei\x7CTexture_Entropy_dapi_8_135,Nuclei\x7CTexture_Entropy_dapi_8_90,Nuclei\x7CTexture_Entropy_mito_8_0,Nuclei\x7CTexture_Entropy_mito_8_45,Nuclei\x7CTexture_Entropy_mito_8_135,Nuclei\x7CTexture_Entropy_mito_8_90,Nuclei\x7CTexture_Entropy_actin_8_90,Nuclei\x7CTexture_Entropy_actin_8_45,Nuclei\x7CTexture_Entropy_actin_8_135,Nuclei\x7CTexture_Entropy_actin_8_0,Nuclei\x7CTexture_Correlation_dapi_8_90,Nuclei\x7CTexture_Correlation_dapi_8_45,Nuclei\x7CTexture_Correlation_dapi_8_135,Nuclei\x7CTexture_Correlation_dapi_8_0,Nuclei\x7CTexture_Correlation_mito_8_0,Nuclei\x7CTexture_Correlation_mito_8_45,Nuclei\x7CTexture_Correlation_mito_8_135,Nuclei\x7CTexture_Correlation_mito_8_90,Nuclei\x7CTexture_Correlation_actin_8_90,Nuclei\x7CTexture_Correlation_actin_8_45,Nuclei\x7CTexture_Correlation_actin_8_135,Nuclei\x7CTexture_Correlation_actin_8_0,Nuclei\x7CTexture_SumAverage_dapi_8_0,Nuclei\x7CTexture_SumAverage_dapi_8_45,Nuclei\x7CTexture_SumAverage_dapi_8_135,Nuclei\x7CTexture_SumAverage_dapi_8_90,Nuclei\x7CTexture_SumAverage_mito_8_0,Nuclei\x7CTexture_SumAverage_mito_8_45,Nuclei\x7CTexture_SumAverage_mito_8_135,Nuclei\x7CTexture_SumAverage_mito_8_90,Nuclei\x7CTexture_SumAverage_actin_8_90,Nuclei\x7CTexture_SumAverage_actin_8_45,Nuclei\x7CTexture_SumAverage_actin_8_135,Nuclei\x7CTexture_SumAverage_actin_8_0,Nuclei\x7CTexture_Variance_dapi_8_90,Nuclei\x7CTexture_Variance_dapi_8_45,Nuclei\x7CTexture_Variance_dapi_8_135,Nuclei\x7CTexture_Variance_dapi_8_0,Nuclei\x7CTexture_Variance_mito_8_0,Nuclei\x7CTexture_Variance_mito_8_45,Nuclei\x7CTexture_Variance_mito_8_135,Nuclei\x7CTexture_Variance_mito_8_90,Nuclei\x7CTexture_Variance_actin_8_90,Nuclei\x7CTexture_Variance_actin_8_45,Nuclei\x7CTexture_Variance_actin_8_135,Nuclei\x7CTexture_Variance_actin_8_0,Nuclei\x7CTexture_SumEntropy_dapi_8_0,Nuclei\x7CTexture_SumEntropy_dapi_8_45,Nuclei\x7CTexture_SumEntropy_dapi_8_135,Nuclei\x7CTexture_SumEntropy_dapi_8_90,Nuclei\x7CTexture_SumEntropy_mito_8_90,Nuclei\x7CTexture_SumEntropy_mito_8_45,Nuclei\x7CTexture_SumEntropy_mito_8_135,Nuclei\x7CTexture_SumEntropy_mito_8_0,Nuclei\x7CTexture_SumEntropy_actin_8_0,Nuclei\x7CTexture_SumEntropy_actin_8_45,Nuclei\x7CTexture_SumEntropy_actin_8_135,Nuclei\x7CTexture_SumEntropy_actin_8_90,Nuclei\x7CTexture_InverseDifferenceMoment_dapi_8_0,Nuclei\x7CTexture_InverseDifferenceMoment_dapi_8_45,Nuclei\x7CTexture_InverseDifferenceMoment_dapi_8_135,Nuclei\x7CTexture_InverseDifferenceMoment_dapi_8_90,Nuclei\x7CTexture_InverseDifferenceMoment_mito_8_90,Nuclei\x7CTexture_InverseDifferenceMoment_mito_8_45,Nuclei\x7CTexture_InverseDifferenceMoment_mito_8_135,Nuclei\x7CTexture_InverseDifferenceMoment_mito_8_0,Nuclei\x7CTexture_InverseDifferenceMoment_actin_8_0,Nuclei\x7CTexture_InverseDifferenceMoment_actin_8_45,Nuclei\x7CTexture_InverseDifferenceMoment_actin_8_135,Nuclei\x7CTexture_InverseDifferenceMoment_actin_8_90,Nuclei\x7CTexture_Contrast_dapi_8_90,Nuclei\x7CTexture_Contrast_dapi_8_45,Nuclei\x7CTexture_Contrast_dapi_8_135,Nuclei\x7CTexture_Contrast_dapi_8_0,Nuclei\x7CTexture_Contrast_mito_8_0,Nuclei\x7CTexture_Contrast_mito_8_45,Nuclei\x7CTexture_Contrast_mito_8_135,Nuclei\x7CTexture_Contrast_mito_8_90,Nuclei\x7CTexture_Contrast_actin_8_90,Nuclei\x7CTexture_Contrast_actin_8_45,Nuclei\x7CTexture_Contrast_actin_8_135,Nuclei\x7CTexture_Contrast_actin_8_0,Nuclei\x7CTexture_InfoMeas2_dapi_8_0,Nuclei\x7CTexture_InfoMeas2_dapi_8_45,Nuclei\x7CTexture_InfoMeas2_dapi_8_135,Nuclei\x7CTexture_InfoMeas2_dapi_8_90,Nuclei\x7CTexture_InfoMeas2_mito_8_0,Nuclei\x7CTexture_InfoMeas2_mito_8_45,Nuclei\x7CTexture_InfoMeas2_mito_8_135,Nuclei\x7CTexture_InfoMeas2_mito_8_90,Nuclei\x7CTexture_InfoMeas2_actin_8_0,Nuclei\x7CTexture_InfoMeas2_actin_8_45,Nuclei\x7CTexture_InfoMeas2_actin_8_135,Nuclei\x7CTexture_InfoMeas2_actin_8_90,Nuclei\x7CNumber_Object_Number,Nuclei\x7CIntensity_StdIntensityEdge_dapi,Nuclei\x7CIntensity_StdIntensityEdge_mito,Nuclei\x7CIntensity_StdIntensityEdge_actin,Nuclei\x7CIntensity_MinIntensity_dapi,Nuclei\x7CIntensity_MinIntensity_mito,Nuclei\x7CIntensity_MinIntensity_actin,Nuclei\x7CIntensity_IntegratedIntensityEdge_dapi,Nuclei\x7CIntensity_IntegratedIntensityEdge_mito,Nuclei\x7CIntensity_IntegratedIntensityEdge_actin,Nuclei\x7CIntensity_StdIntensity_dapi,Nuclei\x7CIntensity_StdIntensity_mito,Nuclei\x7CIntensity_StdIntensity_actin,Nuclei\x7CIntensity_MassDisplacement_dapi,Nuclei\x7CIntensity_MassDisplacement_mito,Nuclei\x7CIntensity_MassDisplacement_actin,Nuclei\x7CIntensity_MinIntensityEdge_dapi,Nuclei\x7CIntensity_MinIntensityEdge_mito,Nuclei\x7CIntensity_MinIntensityEdge_actin,Nuclei\x7CIntensity_UpperQuartileIntensity_dapi,Nuclei\x7CIntensity_UpperQuartileIntensity_mito,Nuclei\x7CIntensity_UpperQuartileIntensity_actin,Nuclei\x7CIntensity_MADIntensity_dapi,Nuclei\x7CIntensity_MADIntensity_mito,Nuclei\x7CIntensity_MADIntensity_actin,Nuclei\x7CIntensity_IntegratedIntensity_dapi,Nuclei\x7CIntensity_IntegratedIntensity_mito,Nuclei\x7CIntensity_IntegratedIntensity_actin,Nuclei\x7CIntensity_MeanIntensityEdge_dapi,Nuclei\x7CIntensity_MeanIntensityEdge_mito,Nuclei\x7CIntensity_MeanIntensityEdge_actin,Nuclei\x7CIntensity_MaxIntensity_dapi,Nuclei\x7CIntensity_MaxIntensity_mito,Nuclei\x7CIntensity_MaxIntensity_actin,Nuclei\x7CIntensity_MedianIntensity_dapi,Nuclei\x7CIntensity_MedianIntensity_mito,Nuclei\x7CIntensity_MedianIntensity_actin,Nuclei\x7CIntensity_MeanIntensity_dapi,Nuclei\x7CIntensity_MeanIntensity_mito,Nuclei\x7CIntensity_MeanIntensity_actin,Nuclei\x7CIntensity_LowerQuartileIntensity_dapi,Nuclei\x7CIntensity_LowerQuartileIntensity_mito,Nuclei\x7CIntensity_LowerQuartileIntensity_actin,Nuclei\x7CIntensity_MaxIntensityEdge_dapi,Nuclei\x7CIntensity_MaxIntensityEdge_mito,Nuclei\x7CIntensity_MaxIntensityEdge_actin,Nuclei\x7CLocation_MaxIntensity_Y_dapi,Nuclei\x7CLocation_MaxIntensity_Y_mito,Nuclei\x7CLocation_MaxIntensity_Y_actin,Nuclei\x7CLocation_MaxIntensity_X_dapi,Nuclei\x7CLocation_MaxIntensity_X_mito,Nuclei\x7CLocation_MaxIntensity_X_actin,Nuclei\x7CLocation_CenterMassIntensity_Y_dapi,Nuclei\x7CLocation_CenterMassIntensity_Y_mito,Nuclei\x7CLocation_CenterMassIntensity_Y_actin,Nuclei\x7CLocation_CenterMassIntensity_X_dapi,Nuclei\x7CLocation_CenterMassIntensity_X_mito,Nuclei\x7CLocation_CenterMassIntensity_X_actin,Nuclei\x7CLocation_Center_Y,Nuclei\x7CLocation_Center_X,Nuclei\x7CAreaShape_Perimeter,Nuclei\x7CAreaShape_FormFactor,Nuclei\x7CAreaShape_Center_Y,Nuclei\x7CAreaShape_Center_X,Nuclei\x7CAreaShape_Area,Nuclei\x7CAreaShape_MinFeretDiameter,Nuclei\x7CAreaShape_Solidity,Nuclei\x7CAreaShape_MaxFeretDiameter,Nuclei\x7CAreaShape_EulerNumber,Nuclei\x7CAreaShape_MedianRadius,Nuclei\x7CAreaShape_Compactness,Nuclei\x7CAreaShape_Extent,Nuclei\x7CAreaShape_Orientation,Nuclei\x7CAreaShape_Eccentricity,Nuclei\x7CAreaShape_MaximumRadius,Nuclei\x7CAreaShape_MinorAxisLength,Nuclei\x7CAreaShape_MajorAxisLength,Nuclei\x7CAreaShape_MeanRadius,Nuclei\x7CChildren_Cytoplasm_Count,Nuclei\x7CChildren_Cells0_Count,Nuclei\x7CChildren_Cells_Round_Count,Nuclei\x7CChildren_CytoplasmRound_Count,Image\x7CCount_Cytoplasm,Image\x7CCount_Cells,Image\x7CCount_Cells_Round,Image\x7CCount_mito,Image\x7CCount_CytoplasmRound,Image\x7CCount_Nuclei,Image\x7CCount_Nuclei_resized,Image\x7CCount_Cells0,Image\x7CWidth_dapi,Image\x7CWidth_mito,Image\x7CWidth_waffleimage,Image\x7CWidth_actin,Image\x7CModuleError_17IdentifyTertiaryObjects,Image\x7CModuleError_33GrayToColor,Image\x7CModuleError_22IdentifyPrimaryObjects,Image\x7CModuleError_29RelateObjects,Image\x7CModuleError_03NamesAndTypes,Image\x7CModuleError_31DisplayDataOnImage,Image\x7CModuleError_21ImageMath,Image\x7CModuleError_23MeasureNeurons,Image\x7CModuleError_06Morph,Image\x7CModuleError_12Smooth,Image\x7CModuleError_04Groups,Image\x7CModuleError_07IdentifyPrimaryObjects,Image\x7CModuleError_02Metadata,Image\x7CModuleError_28MeasureTexture,Image\x7CModuleError_25SaveImages,Image\x7CModuleError_34DisplayDataOnImage,Image\x7CModuleError_10IdentifyPrimaryObjects,Image\x7CModuleError_19ApplyThreshold,Image\x7CModuleError_16IdentifyTertiaryObjects,Image\x7CModuleError_24MeasureObjectRadialDistribution,Image\x7CModuleError_36SaveImages,Image\x7CModuleError_01Images,Image\x7CModuleError_13IdentifySecondaryObjects,Image\x7CModuleError_09Resize,Image\x7CModuleError_26MeasureObjectSizeShape,Image\x7CModuleError_15IdentifySecondaryObjects,Image\x7CModuleError_20Morph,Image\x7CModuleError_14IdentifySecondaryObjects,Image\x7CModuleError_30OverlayOutlines,Image\x7CModuleError_27MeasureObjectIntensity,Image\x7CModuleError_32RescaleIntensity,Image\x7CModuleError_35SaveImages,Image\x7CModuleError_11Morph,Image\x7CModuleError_08ConvertObjectsToImage,Image\x7CModuleError_05Resize,Image\x7CModuleError_18EnhanceOrSuppressFeatures,Image\x7CExecutionTime_33GrayToColor,Image\x7CExecutionTime_22IdentifyPrimaryObjects,Image\x7CExecutionTime_29RelateObjects,Image\x7CExecutionTime_03NamesAndTypes,Image\x7CExecutionTime_31DisplayDataOnImage,Image\x7CExecutionTime_21ImageMath,Image\x7CExecutionTime_23MeasureNeurons,Image\x7CExecutionTime_06Morph,Image\x7CExecutionTime_12Smooth,Image\x7CExecutionTime_04Groups,Image\x7CExecutionTime_07IdentifyPrimaryObjects,Image\x7CExecutionTime_02Metadata,Image\x7CExecutionTime_28MeasureTexture,Image\x7CExecutionTime_25SaveImages,Image\x7CExecutionTime_34DisplayDataOnImage,Image\x7CExecutionTime_10IdentifyPrimaryObjects,Image\x7CExecutionTime_19ApplyThreshold,Image\x7CExecutionTime_16IdentifyTertiaryObjects,Image\x7CExecutionTime_24MeasureObjectRadialDistribution,Image\x7CExecutionTime_36SaveImages,Image\x7CExecutionTime_01Images,Image\x7CExecutionTime_13IdentifySecondaryObjects,Image\x7CExecutionTime_09Resize,Image\x7CExecutionTime_26MeasureObjectSizeShape,Image\x7CExecutionTime_15IdentifySecondaryObjects,Image\x7CExecutionTime_20Morph,Image\x7CExecutionTime_14IdentifySecondaryObjects,Image\x7CExecutionTime_18EnhanceOrSuppressFeatures,Image\x7CExecutionTime_27MeasureObjectIntensity,Image\x7CExecutionTime_32RescaleIntensity,Image\x7CExecutionTime_35SaveImages,Image\x7CExecutionTime_17IdentifyTertiaryObjects,Image\x7CExecutionTime_08ConvertObjectsToImage,Image\x7CExecutionTime_05Resize,Image\x7CExecutionTime_11Morph,Image\x7CExecutionTime_30OverlayOutlines,Image\x7CSeries_dapi,Image\x7CSeries_mito,Image\x7CSeries_waffleimage,Image\x7CSeries_actin,Image\x7CFrame_dapi,Image\x7CFrame_mito,Image\x7CFrame_waffleimage,Image\x7CFrame_actin,Image\x7CMD5Digest_dapi,Image\x7CMD5Digest_mito,Image\x7CMD5Digest_waffleimage,Image\x7CMD5Digest_actin,Image\x7CFileName_dapi,Image\x7CFileName_CountCells2,Image\x7CFileName_waffleimage,Image\x7CFileName_mito,Image\x7CFileName_mito_radial_heatmap,Image\x7CFileName_actin,Image\x7CFileName_CountCells,Image\x7CScaling_dapi,Image\x7CScaling_mito,Image\x7CScaling_waffleimage,Image\x7CScaling_actin,Image\x7CURL_dapi,Image\x7CURL_mito,Image\x7CURL_waffleimage,Image\x7CURL_actin,Image\x7CPathName_dapi,Image\x7CPathName_CountCells2,Image\x7CPathName_waffleimage,Image\x7CPathName_mito,Image\x7CPathName_mito_radial_heatmap,Image\x7CPathName_actin,Image\x7CPathName_CountCells,Image\x7CThreshold_OrigThreshold_mito,Image\x7CThreshold_OrigThreshold_mito_bw,Image\x7CThreshold_OrigThreshold_Cells0,Image\x7CThreshold_OrigThreshold_Nuclei_resized,Image\x7CThreshold_OrigThreshold_Cells,Image\x7CThreshold_SumOfEntropies_mito,Image\x7CThreshold_SumOfEntropies_mito_bw,Image\x7CThreshold_SumOfEntropies_Cells0,Image\x7CThreshold_SumOfEntropies_Cells,Image\x7CThreshold_SumOfEntropies_Nuclei,Image\x7CThreshold_SumOfEntropies_Nuclei_resized,Image\x7CThreshold_WeightedVariance_mito,Image\x7CThreshold_WeightedVariance_mito_bw,Image\x7CThreshold_WeightedVariance_Nuclei,Image\x7CThreshold_WeightedVariance_Nuclei_resized,Image\x7CThreshold_WeightedVariance_Cells0,Image\x7CThreshold_WeightedVariance_Cells,Image\x7CThreshold_FinalThreshold_mito,Image\x7CThreshold_FinalThreshold_mito_bw,Image\x7CThreshold_FinalThreshold_Cells0,Image\x7CThreshold_FinalThreshold_Nuclei_resized,Image\x7CThreshold_FinalThreshold_Cells,Image\x7CGroup_Index,Image\x7CGroup_Number,Image\x7CHeight_dapi,Image\x7CHeight_mito,Image\x7CHeight_waffleimage,Image\x7CHeight_actin,Image\x7CMetadata_FileLocation,Image\x7CMetadata_setname,Image\x7CMetadata_Series,Image\x7CMetadata_Frame,Image\x7CMetadata_foldername,Image\x7CMetadata_ChannelNumber,Image\x7CMetadata_wafflenum,Image\x7CMetadata_imnum,Image\x7CMetadata_wafflename
+    Representation of Nan/Inf:NaN
+    Add a prefix to file names?:Yes
+    Filename prefix:analysis_
+    Overwrite existing files without warning?:No
+    Data to export:Do not use
+    Combine these object measurements with those of the previous object?:No
+    File name:DATA.csv
+    Use the object name for the file name?:Yes
+
+CreateBatchFiles:[module_num:38|svn_version:\'Unknown\'|variable_revision_number:7|show_window:True|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Store batch files in default output folder?:Yes
+    Output folder path:C\x3A\\\\Users\\\\karhohs\\\\Documents\\\\donna\\\\output
+    Are the cluster computers running Windows?:No
+    Hidden\x3A in batch mode:No
+    Hidden\x3A in distributed mode:No
+    Hidden\x3A default input folder at time of save:C\x3A\\\\Users\\\\karhohs\\\\Documents\\\\GitHub\\\\2016_08_01_RadialMitochondriaDistribution_donna\\\\pipelines
+    Hidden\x3A revision number:0
+    Hidden\x3A from old matlab:No
+    Launch BatchProfiler:No

@@ -1,0 +1,412 @@
+CellProfiler Pipeline: http://www.cellprofiler.org
+Version:3
+DateRevision:300
+GitHash:
+ModuleCount:32
+HasImagePlaneDetails:False
+
+Images:[module_num:1|svn_version:\'Unknown\'|variable_revision_number:2|show_window:False|notes:\x5B\'To begin creating your project, use the Images module to compile a list of files and/or folders that you want to analyze. You can also specify a set of rules to include only the desired files in your selected folders.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    :
+    Filter images?:Images only
+    Select the rule criteria:and (extension does isimage) (directory doesnot containregexp "\x5B\\\\\\\\\\\\\\\\/\x5D\\\\\\\\.")
+
+Metadata:[module_num:2|svn_version:\'Unknown\'|variable_revision_number:4|show_window:False|notes:\x5B\'The Metadata module optionally allows you to extract information describing your images (i.e, metadata) which will be stored along with your measurements. This information can be contained in the file name and/or location, or in an external file.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Extract metadata?:Yes
+    Metadata data type:Text
+    Metadata types:{}
+    Extraction method count:1
+    Metadata extraction method:Extract from file/folder names
+    Metadata source:File name
+    Regular expression to extract from file name:^(?P<MyDate>.*)_(?P<Experiment>.*)_D(?P<DiffDay>\x5B0-9\x5D+)_(?P<Subject>\x5B0-9\x5D+)_(?P<Field>\x5B0-9\x5D+)_c(?P<mychan>\x5B0-9\x5D)
+    Regular expression to extract from folder name:(?P<Date>\x5B0-9\x5D{4}_\x5B0-9\x5D{2}_\x5B0-9\x5D{2})$
+    Extract metadata from:All images
+    Select the filtering criteria:and (file does contain "")
+    Metadata file location:
+    Match file and image metadata:\x5B\x5D
+    Use case insensitive matching?:No
+
+NamesAndTypes:[module_num:3|svn_version:\'Unknown\'|variable_revision_number:8|show_window:False|notes:\x5B\'The NamesAndTypes module allows you to assign a meaningful name to each image by which other modules will refer to it.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Assign a name to:Images matching rules
+    Select the image type:Grayscale image
+    Name to assign these images:DNA
+    Match metadata:\x5B\x5D
+    Image set matching method:Order
+    Set intensity range from:Image metadata
+    Assignments count:3
+    Single images count:0
+    Maximum intensity:255.0
+    Process as 3D?:No
+    Relative pixel spacing in X:1.0
+    Relative pixel spacing in Y:1.0
+    Relative pixel spacing in Z:1.0
+    Select the rule criteria:and (metadata does mychan "1")
+    Name to assign these images:mdp
+    Name to assign these objects:Cell
+    Select the image type:Grayscale image
+    Set intensity range from:Image metadata
+    Maximum intensity:255.0
+    Select the rule criteria:and (metadata does mychan "2")
+    Name to assign these images:dna
+    Name to assign these objects:Cell
+    Select the image type:Grayscale image
+    Set intensity range from:Image metadata
+    Maximum intensity:255.0
+    Select the rule criteria:and (metadata does mychan "3")
+    Name to assign these images:o4
+    Name to assign these objects:Cell
+    Select the image type:Grayscale image
+    Set intensity range from:Image metadata
+    Maximum intensity:255.0
+
+Groups:[module_num:4|svn_version:\'Unknown\'|variable_revision_number:2|show_window:False|notes:\x5B\'The Groups module optionally allows you to split your list of images into image subsets (groups) which will be processed independently of each other. Examples of groupings include screening batches, microtiter plates, time-lapse movies, etc.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Do you want to group your images?:No
+    grouping metadata count:1
+    Metadata category:None
+
+Resize:[module_num:5|svn_version:\'Unknown\'|variable_revision_number:4|show_window:False|notes:\x5B\'Smooth dna image and speed up processing\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:dna
+    Name the output image:ResizeDownDna
+    Resizing method:Resize by a fraction or multiple of the original size
+    Resizing factor:0.25
+    Width of the final image:100
+    Height of the final image:100
+    Interpolation method:Nearest Neighbor
+    Method to specify the dimensions:Manual
+    Select the image with the desired dimensions:None
+    Additional image count:0
+
+Opening:[module_num:6|svn_version:\'Unknown\'|variable_revision_number:1|show_window:False|notes:\x5B\'Opening finds the background behind the nuclei.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:ResizeDownDna
+    Name the output image:OpeningDna
+    Structuring element:disk,25
+
+Resize:[module_num:7|svn_version:\'Unknown\'|variable_revision_number:4|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:OpeningDna
+    Name the output image:ResizeUpDna
+    Resizing method:Resize by a fraction or multiple of the original size
+    Resizing factor:4
+    Width of the final image:100
+    Height of the final image:100
+    Interpolation method:Nearest Neighbor
+    Method to specify the dimensions:Manual
+    Select the image with the desired dimensions:None
+    Additional image count:0
+
+GaussianFilter:[module_num:8|svn_version:\'Unknown\'|variable_revision_number:1|show_window:False|notes:\x5B\'Smooth the background finding operation, i.e. the output of the opening module.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:ResizeUpDna
+    Name the output image:dnaBackground
+    Sigma:35
+
+SaveImages:[module_num:9|svn_version:\'Unknown\'|variable_revision_number:13|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the type of image to save:Image
+    Select the image to save:dnaBackground
+    Select method for constructing file names:From image filename
+    Select image name for file prefix:dna
+    Enter single file name:OrigBlue
+    Number of digits:4
+    Append a suffix to the image file name?:Yes
+    Text to append to the image name:_background
+    Saved file format:png
+    Output file location:Default Output Folder sub-folder\x7Cbackground_images
+    Image bit depth:8-bit integer
+    Overwrite existing files without warning?:Yes
+    When to save:Every cycle
+    Record the file and path information to the saved image?:Yes
+    Create subfolders in the output folder?:No
+    Base image folder:Default Output Folder sub-folder\x7Cbackground_images
+
+MeasureImageIntensity:[module_num:10|svn_version:\'Unknown\'|variable_revision_number:2|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the image to measure:dnaBackground
+    Measure the intensity only from areas enclosed by objects?:No
+    Select the input objects:None
+
+ImageMath:[module_num:11|svn_version:\'Unknown\'|variable_revision_number:4|show_window:False|notes:\x5B\'Find fold change between all pixels and the "dimmest" pixel.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Operation:Divide
+    Raise the power of the result by:1.0
+    Multiply the result by:1.0
+    Add to result:0.0
+    Set values less than 0 equal to 0?:No
+    Set values greater than 1 equal to 1?:No
+    Ignore the image masks?:No
+    Name the output image:dnaBackgroundNormalized
+    Image or measurement?:Image
+    Select the first image:dnaBackground
+    Multiply the first image by:1.0
+    Measurement:
+    Image or measurement?:Measurement
+    Select the second image:
+    Multiply the second image by:1.0
+    Measurement:Intensity_MinIntensity_dnaBackground
+
+ImageMath:[module_num:12|svn_version:\'Unknown\'|variable_revision_number:4|show_window:False|notes:\x5B\'Negatively weight the brighter pixels, such that they will have the same intensity as the dimmest pixel.\'\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Operation:Divide
+    Raise the power of the result by:1.0
+    Multiply the result by:1.0
+    Add to result:0.0
+    Set values less than 0 equal to 0?:Yes
+    Set values greater than 1 equal to 1?:Yes
+    Ignore the image masks?:No
+    Name the output image:dnaCorrected
+    Image or measurement?:Image
+    Select the first image:dna
+    Multiply the first image by:1.0
+    Measurement:
+    Image or measurement?:Image
+    Select the second image:dnaBackgroundNormalized
+    Multiply the second image by:1.0
+    Measurement:
+
+Resize:[module_num:13|svn_version:\'Unknown\'|variable_revision_number:4|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:mdp
+    Name the output image:ResizeDownMdp
+    Resizing method:Resize by a fraction or multiple of the original size
+    Resizing factor:0.25
+    Width of the final image:100
+    Height of the final image:100
+    Interpolation method:Nearest Neighbor
+    Method to specify the dimensions:Manual
+    Select the image with the desired dimensions:None
+    Additional image count:0
+
+Opening:[module_num:14|svn_version:\'Unknown\'|variable_revision_number:1|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:ResizeDownMdp
+    Name the output image:OpeningMdp
+    Structuring element:disk,25
+
+Resize:[module_num:15|svn_version:\'Unknown\'|variable_revision_number:4|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:OpeningMdp
+    Name the output image:ResizeUpMdp
+    Resizing method:Resize by a fraction or multiple of the original size
+    Resizing factor:4
+    Width of the final image:100
+    Height of the final image:100
+    Interpolation method:Nearest Neighbor
+    Method to specify the dimensions:Manual
+    Select the image with the desired dimensions:None
+    Additional image count:0
+
+GaussianFilter:[module_num:16|svn_version:\'Unknown\'|variable_revision_number:1|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:ResizeUpMdp
+    Name the output image:mdpBackground
+    Sigma:35
+
+SaveImages:[module_num:17|svn_version:\'Unknown\'|variable_revision_number:13|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the type of image to save:Image
+    Select the image to save:mdpBackground
+    Select method for constructing file names:From image filename
+    Select image name for file prefix:mdp
+    Enter single file name:OrigBlue
+    Number of digits:4
+    Append a suffix to the image file name?:Yes
+    Text to append to the image name:_background
+    Saved file format:png
+    Output file location:Default Output Folder sub-folder\x7Cbackground_images
+    Image bit depth:8-bit integer
+    Overwrite existing files without warning?:Yes
+    When to save:Every cycle
+    Record the file and path information to the saved image?:Yes
+    Create subfolders in the output folder?:No
+    Base image folder:Default Output Folder sub-folder\x7Cbackground_images
+
+MeasureImageIntensity:[module_num:18|svn_version:\'Unknown\'|variable_revision_number:2|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the image to measure:mdpBackground
+    Measure the intensity only from areas enclosed by objects?:No
+    Select the input objects:None
+
+ImageMath:[module_num:19|svn_version:\'Unknown\'|variable_revision_number:4|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Operation:Divide
+    Raise the power of the result by:1.0
+    Multiply the result by:1.0
+    Add to result:0.0
+    Set values less than 0 equal to 0?:No
+    Set values greater than 1 equal to 1?:No
+    Ignore the image masks?:No
+    Name the output image:mdpBackgroundNormalized
+    Image or measurement?:Image
+    Select the first image:mdpBackground
+    Multiply the first image by:1.0
+    Measurement:
+    Image or measurement?:Measurement
+    Select the second image:
+    Multiply the second image by:1.0
+    Measurement:Intensity_MinIntensity_mdpBackground
+
+ImageMath:[module_num:20|svn_version:\'Unknown\'|variable_revision_number:4|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Operation:Divide
+    Raise the power of the result by:1.0
+    Multiply the result by:1.0
+    Add to result:0.0
+    Set values less than 0 equal to 0?:Yes
+    Set values greater than 1 equal to 1?:Yes
+    Ignore the image masks?:No
+    Name the output image:mdpCorrected
+    Image or measurement?:Image
+    Select the first image:mdp
+    Multiply the first image by:1.0
+    Measurement:
+    Image or measurement?:Image
+    Select the second image:mdpBackgroundNormalized
+    Multiply the second image by:1.0
+    Measurement:
+
+Resize:[module_num:21|svn_version:\'Unknown\'|variable_revision_number:4|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:o4
+    Name the output image:ResizeDowno4
+    Resizing method:Resize by a fraction or multiple of the original size
+    Resizing factor:0.25
+    Width of the final image:100
+    Height of the final image:100
+    Interpolation method:Nearest Neighbor
+    Method to specify the dimensions:Manual
+    Select the image with the desired dimensions:None
+    Additional image count:0
+
+Opening:[module_num:22|svn_version:\'Unknown\'|variable_revision_number:1|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:ResizeDowno4
+    Name the output image:Openingo4
+    Structuring element:disk,25
+
+Resize:[module_num:23|svn_version:\'Unknown\'|variable_revision_number:4|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:Openingo4
+    Name the output image:ResizeUpo4
+    Resizing method:Resize by a fraction or multiple of the original size
+    Resizing factor:4
+    Width of the final image:100
+    Height of the final image:100
+    Interpolation method:Nearest Neighbor
+    Method to specify the dimensions:Manual
+    Select the image with the desired dimensions:None
+    Additional image count:0
+
+GaussianFilter:[module_num:24|svn_version:\'Unknown\'|variable_revision_number:1|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:ResizeUpo4
+    Name the output image:o4Background
+    Sigma:35
+
+SaveImages:[module_num:25|svn_version:\'Unknown\'|variable_revision_number:13|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the type of image to save:Image
+    Select the image to save:o4Background
+    Select method for constructing file names:From image filename
+    Select image name for file prefix:o4
+    Enter single file name:OrigBlue
+    Number of digits:4
+    Append a suffix to the image file name?:Yes
+    Text to append to the image name:_background
+    Saved file format:png
+    Output file location:Default Output Folder sub-folder\x7Cbackground_images
+    Image bit depth:8-bit integer
+    Overwrite existing files without warning?:Yes
+    When to save:Every cycle
+    Record the file and path information to the saved image?:Yes
+    Create subfolders in the output folder?:No
+    Base image folder:Default Output Folder sub-folder\x7Cbackground_images
+
+MeasureImageIntensity:[module_num:26|svn_version:\'Unknown\'|variable_revision_number:2|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the image to measure:o4Background
+    Measure the intensity only from areas enclosed by objects?:No
+    Select the input objects:None
+
+ImageMath:[module_num:27|svn_version:\'Unknown\'|variable_revision_number:4|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Operation:Divide
+    Raise the power of the result by:1.0
+    Multiply the result by:1.0
+    Add to result:0.0
+    Set values less than 0 equal to 0?:No
+    Set values greater than 1 equal to 1?:No
+    Ignore the image masks?:No
+    Name the output image:o4BackgroundNormalized
+    Image or measurement?:Image
+    Select the first image:o4Background
+    Multiply the first image by:1.0
+    Measurement:
+    Image or measurement?:Measurement
+    Select the second image:
+    Multiply the second image by:1.0
+    Measurement:Intensity_MinIntensity_o4Background
+
+ImageMath:[module_num:28|svn_version:\'Unknown\'|variable_revision_number:4|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Operation:Divide
+    Raise the power of the result by:1.0
+    Multiply the result by:1.0
+    Add to result:0.0
+    Set values less than 0 equal to 0?:Yes
+    Set values greater than 1 equal to 1?:Yes
+    Ignore the image masks?:No
+    Name the output image:o4Corrected
+    Image or measurement?:Image
+    Select the first image:o4
+    Multiply the first image by:1.0
+    Measurement:
+    Image or measurement?:Image
+    Select the second image:o4BackgroundNormalized
+    Multiply the second image by:1.0
+    Measurement:
+
+IdentifyPrimaryObjects:[module_num:29|svn_version:\'Unknown\'|variable_revision_number:13|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the input image:dnaCorrected
+    Name the primary objects to be identified:nuclei
+    Typical diameter of objects, in pixel units (Min,Max):10,40
+    Discard objects outside the diameter range?:Yes
+    Discard objects touching the border of the image?:Yes
+    Method to distinguish clumped objects:Shape
+    Method to draw dividing lines between clumped objects:Intensity
+    Size of smoothing filter:1
+    Suppress local maxima that are closer than this minimum allowed distance:3
+    Speed up by using lower-resolution image to find local maxima?:No
+    Fill holes in identified objects?:After both thresholding and declumping
+    Automatically calculate size of smoothing filter for declumping?:No
+    Automatically calculate minimum allowed distance between local maxima?:Yes
+    Handling of objects if excessive number of objects identified:Continue
+    Maximum number of objects:500
+    Use advanced settings?:Yes
+    Threshold setting version:10
+    Threshold strategy:Global
+    Thresholding method:Minimum cross entropy
+    Threshold smoothing scale:1.0
+    Threshold correction factor:1.0
+    Lower and upper bounds on threshold:0.0,1.0
+    Manual threshold:0.0
+    Select the measurement to threshold with:None
+    Two-class or three-class thresholding?:Two classes
+    Assign pixels in the middle intensity class to the foreground or the background?:Foreground
+    Size of adaptive window:50
+    Lower outlier fraction:0.05
+    Upper outlier fraction:0.05
+    Averaging method:Mean
+    Variance method:Standard deviation
+    # of deviations:2.0
+    Thresholding method:Otsu
+
+MeasureObjectIntensity:[module_num:30|svn_version:\'Unknown\'|variable_revision_number:3|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Hidden:3
+    Select an image to measure:o4Corrected
+    Select an image to measure:mdpCorrected
+    Select an image to measure:dnaCorrected
+    Select objects to measure:nuclei
+
+MeasureObjectSizeShape:[module_num:31|svn_version:\'Unknown\'|variable_revision_number:1|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select objects to measure:nuclei
+    Calculate the Zernike features?:Yes
+
+ExportToSpreadsheet:[module_num:32|svn_version:\'Unknown\'|variable_revision_number:12|show_window:False|notes:\x5B\x5D|batch_state:array(\x5B\x5D, dtype=uint8)|enabled:True|wants_pause:False]
+    Select the column delimiter:Comma (",")
+    Add image metadata columns to your object data file?:Yes
+    Select the measurements to export:No
+    Calculate the per-image mean values for object measurements?:No
+    Calculate the per-image median values for object measurements?:No
+    Calculate the per-image standard deviation values for object measurements?:No
+    Output file location:Default Output Folder\x7C
+    Create a GenePattern GCT file?:No
+    Select source of sample row name:Metadata
+    Select the image to use as the identifier:None
+    Select the metadata to use as the identifier:None
+    Export all measurement types?:Yes
+    Press button to select measurements:
+    Representation of Nan/Inf:NaN
+    Add a prefix to file names?:Yes
+    Filename prefix:oligodendrocytes_
+    Overwrite existing files without warning?:Yes
+    Data to export:Do not use
+    Combine these object measurements with those of the previous object?:No
+    File name:DATA.csv
+    Use the object name for the file name?:Yes
