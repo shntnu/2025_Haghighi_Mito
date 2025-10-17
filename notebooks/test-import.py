@@ -15,10 +15,10 @@
 # # Test singlecell-morph import
 
 # %%
+from singlecell.preprocess import extract_cpfeature_names, handle_nans
+from singlecell.process import precision_recall, statistical_tests
 from singlecell.read import read_single_cell_sql
-from singlecell.preprocess import handle_nans, extract_cpfeature_names
-from singlecell.visualize import visualize_n_SingleCell, cluster
-from singlecell.process import statistical_tests, precision_recall
+from singlecell.visualize import cluster, visualize_n_SingleCell
 
 # %%
 print("Successfully imported singlecell-morph!")
