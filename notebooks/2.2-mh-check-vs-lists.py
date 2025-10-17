@@ -292,7 +292,7 @@ target_bh_corrected_critical_dict = {}
 filtering_stats = pd.DataFrame(
     columns=["raw", "target feature significance", "orth filter", "both filters"]
 )
-for dataset, dataset_meta_hue in zip(
+for dataset, dataset_meta_hue in zip(  # noqa: B007
     ["taorf", "lincs", "CDRP", "jump_orf", "jump_crispr", "jump_compound"],
     [
         "Metadata_moa",
@@ -365,12 +365,7 @@ for dataset, dataset_meta_hue in zip(
     if 0:
         res_df[["p_orth", "t_orth", "Count_Cells_avg"]].hist(bins=100, figsize=(10, 5))
 
-    if 1:
-        res_df_hcc = res_df.copy()
-    else:
-        res_df_hcc = res_df[
-            res_df["Count_Cells_avg"] > res_df["Count_Cells_avg"].quantile(0.1)
-        ].reset_index(drop=True)
+    res_df_hcc = res_df.copy() if 1 else res_df[res_df["Count_Cells_avg"] > res_df["Count_Cells_avg"].quantile(0.1)].reset_index(drop=True)
 
     #     standard_critical_value=0.05
     #     corrected_critical=0.05/n_perts

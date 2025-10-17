@@ -26,7 +26,7 @@ dependencies = [
 singlecell-morph = { git = "https://github.com/shntnu/SingleCell_Morphological_Analysis.git" }
 
 [tool.ruff]
-line-length = 200
+line-length = 300
 target-version = "py312"
 
 [tool.ruff.lint]
@@ -52,6 +52,10 @@ ignore = [
     "N816",  # Variable name should be lowercase (common in notebooks)
     "N806",  # Variable in function should be lowercase (common in notebooks)
     "N802",  # Function name should be lowercase (common in notebooks)
+    "N803",  # Argument name should be lowercase (common in notebooks)
+    "B018",  # Found useless expression. (common in notebooks)
+    "N817",  # 
+    "SIM108",  # Use ternary operator instead of if-else statement (common in notebooks)
 ]
 
 [tool.ruff.lint.per-file-ignores]
