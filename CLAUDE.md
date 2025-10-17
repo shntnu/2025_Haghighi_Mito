@@ -10,9 +10,14 @@ This repository contains analysis pipelines and results for a mitochondrial morp
 
 ```
 2025_Haghighi_Mito/
+├── data/                  # Project data following lab conventions
+│   ├── external/          # Third-party reference datasets (KEGG, WikiPathways)
+│   ├── interim/           # Intermediate processing outputs
+│   └── processed/         # Final analysis outputs
+│       ├── figures/       # Publication figures (PDFs)
+│       └── tables/        # Screen results (XLSX)
 ├── notebooks/             # Analysis notebooks (numbered by phase)
 ├── pipelines/             # CellProfiler pipelines (.cppipe files)
-├── results/               # Screen results and figures
 ├── protocols/             # Experimental protocols
 ├── manuscript.md          # Manuscript content
 ├── CLAUDE.md             # Repository documentation
@@ -52,13 +57,29 @@ All pipelines are `.cppipe` files for CellProfiler image analysis:
   - `neurons_segmentation_CPA.cppipe`: Neuron segmentation
   - `oligodendrocytes.cppipe`: Oligodendrocyte analysis
 
-### Results (`results/`)
+### Data (`data/`)
 
-Contains screen results and figures:
+Organized following Carpenter-Singh lab data flow conventions:
 
-- `*_screen_results.xlsx`: Virtual screen results for each dataset (CDRP, JUMP-ORF/CRISPR/Compound, LINCS, TA-ORF)
-- `KEGG_2021_Human_table.txt`, `WikiPathways_2024_Human_table.txt`: Enrichment analysis reference tables
-- PDF figures for manuscript
+- **`data/external/`**: Third-party reference datasets
+  - `KEGG_2021_Human_table.txt`: KEGG pathway annotations for enrichment analysis
+  - `WikiPathways_2024_Human_table.txt`: WikiPathways annotations for enrichment analysis
+
+- **`data/interim/`**: Intermediate processing outputs
+  - Currently empty (large profile datasets remain at remote locations)
+
+- **`data/processed/`**: Final analysis outputs from notebooks
+  - **`data/processed/tables/`**: Virtual screen results for each dataset
+    - `CDRP_screen_results.xlsx`: CDRP compound screen results
+    - `jump_compound_screen_results.xlsx`: JUMP compound screen results
+    - `jump_crispr_screen_results.xlsx`: JUMP CRISPR screen results
+    - `jump_orf_screen_results.xlsx`: JUMP ORF screen results
+    - `lincs_screen_results.xlsx`: LINCS compound screen results
+    - `taorf_screen_results.xlsx`: TA-ORF screen results
+  - **`data/processed/figures/`**: Publication figures
+    - `Figure3.pdf`, `Figure4b.pdf`, `Figure4c.pdf`: Main figures
+    - `SuppFigure2.pdf`: Supplementary figure
+    - `dendrogram_mito.pdf`: Hierarchical clustering dendrogram
 
 ### Protocols (`protocols/`)
 
@@ -107,7 +128,9 @@ All analysis is performed in Jupyter notebooks (`.ipynb` files). These notebooks
 
 - Connect to remote data sources (S3 buckets at paths like `/home/jupyter-mhaghigh@broadinst-ee45a/bucket/`)
 - Use custom single-cell analysis package: `singlecell` (imported from `SingleCell_Morphological_Analysis/`)
-- Generate figures and statistical results saved to `results/`
+- Read external reference data from `data/external/`
+- Generate figures saved to `data/processed/figures/`
+- Generate screen results saved to `data/processed/tables/`
 
 ### CellProfiler Pipelines
 
