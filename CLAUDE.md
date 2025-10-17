@@ -8,6 +8,8 @@ This repository contains analysis pipelines and results for a mitochondrial morp
 
 ## Repository Structure
 
+This repository follows the [Carpenter-Singh lab workflow conventions](protocols/workflows.md) based on Cookiecutter Data Science principles:
+
 ```
 2025_Haghighi_Mito/
 ├── data/                  # Project data following lab conventions
@@ -18,11 +20,20 @@ This repository contains analysis pipelines and results for a mitochondrial morp
 │       └── tables/        # Screen results (XLSX)
 ├── notebooks/             # Analysis notebooks (numbered by phase)
 ├── pipelines/             # CellProfiler pipelines (.cppipe files)
-├── protocols/             # Experimental protocols
+├── protocols/             # Experimental protocols and workflow documentation
 ├── manuscript.md          # Manuscript content
 ├── CLAUDE.md             # Repository documentation
 └── README.md             # Project overview
 ```
+
+### Workflow Principles
+
+Following the conventions documented in `protocols/workflows.md`:
+
+1. **Data flows in one direction**: `raw/` + `external/` → `interim/` → `processed/`
+2. **Raw data is immutable**: Never edit raw data directly
+3. **Clear separation of concerns**: Pipeline-managed data vs. personal analysis
+4. **Everything is reproducible**: Code + raw data = any output
 
 ### Analysis Notebooks (`notebooks/`)
 
@@ -168,3 +179,11 @@ Remote data paths referenced in notebooks (may not be accessible locally):
 - **Minimum gene set size**: 4-10 depending on analysis
 - **Cell count quantile filter**: 0.1 (bottom 10%)
 - **Target feature**: `slope` or `d_slope` (effect size of radial distribution slope)
+
+## Important Instructions for Claude Code
+
+- Do what has been asked; nothing more, nothing less
+- NEVER create files unless absolutely necessary for achieving your goal
+- ALWAYS prefer editing an existing file to creating a new one
+- NEVER proactively create documentation files (*.md) or README files unless explicitly requested
+- NEVER use emojis in any output, documentation, code comments, or commit messages unless explicitly requested
