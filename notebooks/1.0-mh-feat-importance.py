@@ -465,19 +465,14 @@ for d in disLabels:
 mi_df_all = pd.concat(mi_df_ls, ignore_index=True)
 
 # %%
-# /tmp/ipykernel_66469/1581163767.py:60: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
 #   data4DM_BP['bin_label']=data4DM_BP['label'].replace(['Control', d],[0, 1], inplace=False)
 # Observed ROC AUC for psychosis: 0.6815
-# /tmp/ipykernel_66469/1581163767.py:60: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
 #   data4DM_BP['bin_label']=data4DM_BP['label'].replace(['Control', d],[0, 1], inplace=False)
 # Observed ROC AUC for BP: 0.7180000000000001
-# /tmp/ipykernel_66469/1581163767.py:60: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
 #   data4DM_BP['bin_label']=data4DM_BP['label'].replace(['Control', d],[0, 1], inplace=False)
 # Observed ROC AUC for SZ: 0.55375
-# /tmp/ipykernel_66469/1581163767.py:60: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
 #   data4DM_BP['bin_label']=data4DM_BP['label'].replace(['Control', d],[0, 1], inplace=False)
 # Observed ROC AUC for SZA: 0.6475
-# /tmp/ipykernel_66469/1581163767.py:60: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
 #   data4DM_BP['bin_label']=data4DM_BP['label'].replace(['Control', d],[0, 1], inplace=False)
 # Observed ROC AUC for MDD: 0.5516666666666665
 
@@ -547,7 +542,7 @@ axes.annotate(
     xy=(2, 0.25),
     xytext=(2, 0.228),
     fontsize=4,
-    arrowprops=dict(arrowstyle="-[, widthB=18.0, lengthB=0.8", color="k", lw=1.0),
+    arrowprops={"arrowstyle": "-[, widthB=18.0, lengthB=0.8", "color": "k", "lw": 1.0},
 )
 
 axes.annotate(
@@ -555,7 +550,7 @@ axes.annotate(
     xy=(1, 0.22),
     xytext=(1, 0.219),
     fontsize=4,
-    arrowprops=dict(arrowstyle="-[, widthB=15.2, lengthB=0.8", color="k", lw=1.0),
+    arrowprops={"arrowstyle": "-[, widthB=15.2, lengthB=0.8", "color": "k", "lw": 1.0},
 )
 
 axes.text(0.1, 0.9, "*", ha="center", va="bottom", color="k", fontsize=18)  # Star
@@ -736,7 +731,7 @@ axes.annotate(
     xy=(2, 0.25),
     xytext=(2, 0.228),
     fontsize=4,
-    arrowprops=dict(arrowstyle="-[, widthB=18.0, lengthB=0.8", color="k", lw=1.0),
+    arrowprops={"arrowstyle": "-[, widthB=18.0, lengthB=0.8", "color": "k", "lw": 1.0},
 )
 
 axes.annotate(
@@ -744,7 +739,7 @@ axes.annotate(
     xy=(1, 0.22),
     xytext=(1, 0.219),
     fontsize=4,
-    arrowprops=dict(arrowstyle="-[, widthB=15.2, lengthB=0.8", color="k", lw=1.0),
+    arrowprops={"arrowstyle": "-[, widthB=15.2, lengthB=0.8", "color": "k", "lw": 1.0},
 )
 
 fig.tight_layout()
@@ -1007,10 +1002,7 @@ for pat in ["CEN"]:
                 #                                    (ps_ttest_all_cats['label']==orderC[i])]['p'].values[0],4)
                 #     pvl = pvals[i]#p.get_width()
                 print(pval)
-                if pval < 0.05:
-                    weight_f = "bold"
-                else:
-                    weight_f = None
+                weight_f = "bold" if pval < 0.05 else None
                 axes.annotate(
                     "p-value\n" + str(pval),
                     xy=(i, mi - 0.12),
@@ -1029,7 +1021,7 @@ for pat in ["CEN"]:
             xy=(3, 1.199 - ofset1),
             xytext=(3, 1.20 - ofset1),
             fontsize=4,
-            arrowprops=dict(arrowstyle="-[, widthB=20.0, lengthB=2", color="#916e99", lw=2.0),
+            arrowprops={"arrowstyle": "-[, widthB=20.0, lengthB=2", "color": "#916e99", "lw": 2.0},
         )
 
         axes.annotate(
@@ -1037,7 +1029,7 @@ for pat in ["CEN"]:
             xy=(2, 1.259 - ofset2),
             xytext=(2, 1.26 - ofset2),
             fontsize=4,
-            arrowprops=dict(arrowstyle="-[, widthB=18, lengthB=3", color="#916e99", lw=2.0),
+            arrowprops={"arrowstyle": "-[, widthB=18, lengthB=3", "color": "#916e99", "lw": 2.0},
         )
         axes.text(x=0.5, y=0.18, s="psychosis", color="#916e99", fontsize=11)
         axes.text(
@@ -1139,10 +1131,7 @@ for i in range(len(orderC)):
         if 0:
             print(pvl)
             if pvl < 0.05:
-                if pvl < 0.0001:
-                    pval = pvl
-                else:
-                    pval = np.round(pvl, 4)
+                pval = pvl if pvl < 0.0001 else np.round(pvl, 4)
                 weight_f = "bold"
                 axes.annotate(
                     "p-value\n" + str(pval),

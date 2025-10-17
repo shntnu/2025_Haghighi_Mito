@@ -634,7 +634,10 @@ def HotellingsT_internal(X, Y, test="f"):
 from scipy.signal import find_peaks
 
 
-def find_end_slope(data, height=None):
+# NOTE: Renamed from find_end_slope to avoid duplicate definition at line 673.
+# This earlier version uses width=2 for peak detection and returns (np.nan, np.nan) when no extrema found,
+# while the active version (line 673) uses width=1 and returns (np.nan, 0).
+def find_end_slope_width2(data, height=None):
     peaks, _ = find_peaks(data, height=height, width=2)
     valleys, _ = find_peaks(-data, height=height, width=2)
     extermas = np.concatenate((peaks, valleys))
@@ -918,7 +921,7 @@ print(len(uncorr_feats_condese), " orth features saved!")
 print(len(uncorr_feats_condese), " orth features saved!"), dataset
 
 # %% hidden=true
-tfeat in df_sag_2.columns
+# tfeat in df_sag_2.columns
 
 # %% hidden=true
 target_features_list = ds_info_dict[dataset]["target_features_list"] + ["slope"]
@@ -1117,11 +1120,7 @@ per_site_df["Metadata_Plate"] = per_site_df["Metadata_Plate"].astype(str)
 # per_site_df['Metadata_Batch'] = per_site_df['Metadata_Batch'].astype(str)
 # per_site_df['Metadata_Well'] = per_site_df['Metadata_Well'].astype(str)
 
-if (dataset == "jump_crispr") or (dataset == "jump_compound"):
-    merge_how = "inner"
-
-else:
-    merge_how = "left"
+merge_how = "inner" if dataset == "jump_crispr" or dataset == "jump_compound" else "left"
 
 per_site_df = pd.merge(per_site_df, annot, how=merge_how, on=common_cols_2merge)
 
