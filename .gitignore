@@ -166,9 +166,15 @@ data/external/
 data/interim/
 data/raw/
 
+# Derived database files (reproducible from Excel files)
+data/processed/*.duckdb
+
 # Logs and temporary operational files
 logs/
 *.csv
+
+# Snakemake
+.snakemake/
 
 # Claude Code settings
 .claude/
