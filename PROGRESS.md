@@ -25,7 +25,8 @@
 1. Check restoration status: `bash scripts/check_restore_status.sh`
 2. Once restored, download data: `bash scripts/download_data.sh`
 3. Verify download: `find data/external/mito_project -type f | wc -l` (expect ~200 files)
-4. Run analysis pipeline:
+4. Update notebook paths to point to local data (currently hardcoded to remote server)
+5. Run analysis pipeline:
    - Optional: `1.0-mh-feat-importance.py`
    - Required: `2.0-mh-virtual-screen.py` (generates virtual_screen outputs)
    - Then: `2.1-mh-set-enrichment-analysis.py`, `2.2-mh-check-vs-lists.py`
