@@ -432,5 +432,38 @@ def _(Path, hits, hits_by_dataset, negative_hits, positive_hits):
     return
 
 
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    ## Note: Large Discrepancy with Manuscript Hit Counts
+
+    **The hit counts shown here are substantially higher than those reported in the manuscript,
+    and the full reason for this discrepancy is not yet clear.**
+
+    Several factors may contribute but don't fully explain the difference:
+
+    1. **Multi-dose compounds not collapsed**: For datasets like LINCS with multiple doses per compound,
+       the manuscript states they "selected the dose that yielded the strongest impact" for each compound.
+       However, even accounting for unique compounds only, hit counts remain much higher than reported.
+
+    2. **Cell count filter**: The manuscript mentions filtering out the "bottom 10% by cell count" but
+       the original `2.0-mh-virtual-screen.ipynb` notebook does not apply this filter - it only computes
+       `Count_Cells_avg`. Testing this filter reduces hit counts but not enough to match the manuscript.
+
+    3. **Unknown additional criteria**: There appear to be additional filtering steps or thresholds
+       (possibly on effect size, mechanistic categories, or other criteria) that were applied downstream
+       but are not documented in the primary screening notebook.
+
+    4. **Manual curation**: Final hits were likely manually curated for biological relevance and
+       mechanistic plausibility.
+
+    **This needs further investigation** to understand the complete filtering pipeline between the
+    raw screening results and the final manuscript hit lists.
+    """
+    )
+    return
+
+
 if __name__ == "__main__":
     app.run()
