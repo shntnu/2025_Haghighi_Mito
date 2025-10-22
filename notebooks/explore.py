@@ -290,19 +290,40 @@ def _(filtered_df, pl):
         'TA_ORF': 0.03287
     }
 
-    target_threshold = pl.col('Metadata_dataset').map_dict(
-        target_bh_corrected_critical_dict, default=None
-    )
-    orth_threshold = pl.col('Metadata_dataset').map_dict(
-        orth_bh_corrected_critical_dict, default=None
-    )
-
-    # Apply hit calling criteria
+    # Apply hit calling criteria with dataset-specific thresholds
     hits = filtered_df.filter(
-        # Filter 1: Orthogonal features must remain normal
-        (pl.col('p_orth_std') > orth_threshold) &
-        # Filter 2: Target phenotype must be significant
-        (pl.col('p_slope_std') < target_threshold)
+        # Filter 1: Orthogonal features must remain normal (p_orth_std > threshold)
+        # Filter 2: Target phenotype must be significant (p_slope_std < threshold)
+        (
+            (pl.col('Metadata_dataset') == 'LINCS') &
+            (pl.col('p_orth_std') > orth_bh_corrected_critical_dict['LINCS']) &
+            (pl.col('p_slope_std') < target_bh_corrected_critical_dict['LINCS'])
+        ) |
+        (
+            (pl.col('Metadata_dataset') == 'CDRP') &
+            (pl.col('p_orth_std') > orth_bh_corrected_critical_dict['CDRP']) &
+            (pl.col('p_slope_std') < target_bh_corrected_critical_dict['CDRP'])
+        ) |
+        (
+            (pl.col('Metadata_dataset') == 'JUMP_ORF') &
+            (pl.col('p_orth_std') > orth_bh_corrected_critical_dict['JUMP_ORF']) &
+            (pl.col('p_slope_std') < target_bh_corrected_critical_dict['JUMP_ORF'])
+        ) |
+        (
+            (pl.col('Metadata_dataset') == 'JUMP_CRISPR') &
+            (pl.col('p_orth_std') > orth_bh_corrected_critical_dict['JUMP_CRISPR']) &
+            (pl.col('p_slope_std') < target_bh_corrected_critical_dict['JUMP_CRISPR'])
+        ) |
+        (
+            (pl.col('Metadata_dataset') == 'JUMP_Compound') &
+            (pl.col('p_orth_std') > orth_bh_corrected_critical_dict['JUMP_Compound']) &
+            (pl.col('p_slope_std') < target_bh_corrected_critical_dict['JUMP_Compound'])
+        ) |
+        (
+            (pl.col('Metadata_dataset') == 'TA_ORF') &
+            (pl.col('p_orth_std') > orth_bh_corrected_critical_dict['TA_ORF']) &
+            (pl.col('p_slope_std') < target_bh_corrected_critical_dict['TA_ORF'])
+        )
     ).sort('d_slope')  # Sort by effect size
 
     # Separate into positive and negative hits
@@ -391,37 +412,6 @@ def _(mo, positive_hits):
 
 
 @app.cell
-def _(mo):
-    mo.md(
-        """
-    ## Comparison: Significant slope only (no orthogonal filter)
-
-    *For comparison: these pass p_slope_std threshold but may alter other cell features*
-    """
-    )
-    return
-
-
-@app.cell
-def _(filtered_df, mo, pl):
-    sig_hits = filtered_df.filter(pl.col('p_slope_std') < 0.05)
-    mo.ui.table(sig_hits.head(100), selection=None, format_mapping={
-        'd_slope': '{:.4f}'.format,
-        'p_slope_std': '{:.6f}'.format,
-        'p_orth_std': '{:.6f}'.format,
-        't_orth': '{:.2f}'.format,
-        'Count_Cells_avg': '{:.2f}'.format
-    })
-    return (sig_hits,)
-
-
-@app.cell
-def _(mo, sig_hits):
-    mo.md(f"""Found **{len(sig_hits):,}** records with p_slope_std < 0.05 (ignoring orthogonal filter)""")
-    return
-
-
-@app.cell
 def _(Path, hits, hits_by_dataset, negative_hits, positive_hits):
     # Save results to CSV
     output_dir = Path(__file__).parent.parent / "data" / "processed"
@@ -432,39 +422,6 @@ def _(Path, hits, hits_by_dataset, negative_hits, positive_hits):
     positive_hits.write_csv(output_dir / "positive_hits.csv")
 
     print(f"Saved hits to {output_dir}")
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(
-        r"""
-    ## Note: Large Discrepancy with Manuscript Hit Counts
-
-    **The hit counts shown here are substantially higher than those reported in the manuscript,
-    and the full reason for this discrepancy is not yet clear.**
-
-    Several factors may contribute but don't fully explain the difference:
-
-    1. **Multi-dose compounds not collapsed**: For datasets like LINCS with multiple doses per compound,
-       the manuscript states they "selected the dose that yielded the strongest impact" for each compound.
-       However, even accounting for unique compounds only, hit counts remain much higher than reported.
-
-    2. **Cell count filter**: The manuscript mentions filtering out the "bottom 10% by cell count" but
-       the original `2.0-mh-virtual-screen.ipynb` notebook does not apply this filter - it only computes
-       `Count_Cells_avg`. Testing this filter reduces hit counts but not enough to match the manuscript.
-
-    3. **Unknown additional criteria**: There appear to be additional filtering steps or thresholds
-       (possibly on effect size, mechanistic categories, or other criteria) that were applied downstream
-       but are not documented in the primary screening notebook.
-
-    4. **Manual curation**: Final hits were likely manually curated for biological relevance and
-       mechanistic plausibility.
-
-    **This needs further investigation** to understand the complete filtering pipeline between the
-    raw screening results and the final manuscript hit lists.
-    """
-    )
     return
 
 
