@@ -451,6 +451,11 @@ def _(mo):
     Searching for over-the-counter (OTC) medications and Generally Recognized As Safe (GRAS)
     compounds/supplements in the LINCS dataset to identify readily available compounds with
     mitochondrial localization effects.
+
+    **Note**: This analysis focuses on the **LINCS dataset only**, as it is the drug repurposing
+    dataset with easily accessible compound names. A more comprehensive analysis would also examine
+    other compound datasets (CDRP, JUMP-Compound), but these require additional data munging to map
+    compound identifiers to common names.
     """
     )
     return
@@ -462,14 +467,33 @@ def _(pl, screens):
     LINCS_TARGET_THRESHOLD = 0.00761  # Target phenotype must be significant
     LINCS_ORTH_THRESHOLD = 0.04829    # Orthogonal features must remain normal
 
-    # List of OTC/GRAS compounds to search for
+    # Comprehensive list of OTC/GRAS compounds available in LINCS
     otc_gras_compounds = [
-        'caffeine', 'melatonin', 'aspirin', 'ibuprofen', 'naproxen',
-        'metformin', 'niacin', 'resveratrol', 'curcumin', 'quercetin',
-        'ranitidine', 'omeprazole', 'cimetidine', 'famotidine',
-        'paracetamol', 'dextromethorphan', 'loperamide', 'loratadine',
-        'levocetirizine', 'phenylephrine', 'cyanocobalamin', 'folic-acid',
-        'ginkgolide-b'
+        # NSAIDs (pain/inflammation)
+        'aspirin', 'ibuprofen', 'naproxen', 'paracetamol', 'diclofenac',
+        'indomethacin', 'ketoprofen', 'celecoxib', 'piroxicam', 'indoprofen',
+        'piketoprofen', 'carprofen', 'suprofen',
+        # H2 blockers (acid reflux)
+        'ranitidine', 'cimetidine', 'famotidine', 'lafutidine',
+        # Proton pump inhibitors (acid reflux)
+        'omeprazole', 'pantoprazole', 'rabeprazole',
+        # Statins (cholesterol)
+        'simvastatin', 'atorvastatin', 'pravastatin', 'pitavastatin',
+        'rosuvastatin',
+        # Antifungals (many OTC topical formulations)
+        'ketoconazole', 'clotrimazole', 'econazole', 'fluconazole',
+        'butoconazole', 'luliconazole', 'flutrimazole', 'oxiconazole',
+        'sertaconazole', 'bifonazole', 'fenticonazole',
+        # Antihistamines/decongestants
+        'loratadine', 'levocetirizine', 'phenylephrine',
+        # Cough/cold
+        'dextromethorphan', 'loperamide',
+        # Vitamins/supplements
+        'caffeine', 'melatonin', 'niacin', 'cyanocobalamin', 'folic-acid',
+        'resveratrol', 'curcumin', 'quercetin', 'ginkgolide-b',
+        'acetylcysteine', 'inositol', 'nicotine',
+        # Common prescription (included for comparison)
+        'metformin', 'doxycycline', 'tamoxifen'
     ]
 
     # Filter for LINCS dataset and OTC/GRAS compounds
@@ -503,14 +527,16 @@ def _(pl, screens):
 def _(mo, otc_results, pl):
     passing = otc_results.filter(pl.col('filter_status') == 'PASS')
     near_miss = otc_results.filter(pl.col('filter_status').str.contains('Near miss'))
+    n_unique_compounds = otc_results['Metadata_pert_id'].n_unique()
 
     mo.md(
         f"""
     ### Results Summary
 
+    - **Unique compounds tested**: {n_unique_compounds}
+    - **Total tests** (multiple doses per compound): {len(otc_results)}
     - **Passing filters**: {len(passing)}
     - **Near misses**: {len(near_miss)}
-    - **Total tested**: {len(otc_results)}
     """
     )
     return
