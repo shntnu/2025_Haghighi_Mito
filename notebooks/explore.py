@@ -21,18 +21,8 @@ def _(mo):
 
 @app.cell
 def _(Path, duckdb, pl):
-    # Use absolute path relative to this notebook
-    for candidate in (
-        Path(__file__).parent.parent / "data" / "processed" / "screen_results.duckdb",
-        Path.cwd() / "screen_results.duckdb",
-    ):
-        if candidate.exists():
-            db_path = candidate
-            break
-    else:
-        raise FileNotFoundError("screen_results.duckdb not found in expected locations")
-
-    con = duckdb.connect(str(db_path), read_only=True)
+    # Try local DuckDB file first, fall back to Figshare CSV
+    local_db_path = Path(__file__).parent.parent / "data" / "processed" / "screen_resultsx.duckdb"
 
     # Load only common columns for faster, cleaner analysis
     common_cols = [
@@ -46,7 +36,21 @@ def _(Path, duckdb, pl):
         'Count_Cells_avg'
     ]
 
-    query = f"SELECT {', '.join(common_cols)} FROM screens"
+    if local_db_path.exists():
+        # Load from local DuckDB
+        con = duckdb.connect(str(local_db_path), read_only=True)
+        query = f"SELECT {', '.join(common_cols)} FROM screens"
+        print(f"Loaded from local DuckDB: {local_db_path}")
+    else:
+        # Load from Figshare DuckDB using httpfs extension
+        figshare_url = "https://figshare.com/ndownloader/files/58970131"
+        con = duckdb.connect(':memory:', read_only=False)
+        con.execute('INSTALL httpfs')
+        con.execute('LOAD httpfs')
+        con.execute(f"ATTACH '{figshare_url}' AS remote_db (READ_ONLY)")
+        query = f"SELECT {', '.join(common_cols)} FROM remote_db.screens"
+        print(f"Loaded from Figshare: {figshare_url}")
+
     screens = pl.from_arrow(con.execute(query).fetch_arrow_table())
     return (screens,)
 
@@ -420,15 +424,17 @@ def _(mo, positive_hits):
 
 @app.cell
 def _(Path, hits, hits_by_dataset, negative_hits, positive_hits):
-    # Save results to CSV
+    # Save results to CSV only if directory exists
     output_dir = Path(__file__).parent.parent / "data" / "processed"
 
-    hits_by_dataset.write_csv(output_dir / "hits_by_dataset.csv")
-    hits.write_csv(output_dir / "all_hits.csv")
-    negative_hits.write_csv(output_dir / "negative_hits.csv")
-    positive_hits.write_csv(output_dir / "positive_hits.csv")
-
-    print(f"Saved hits to {output_dir}")
+    if output_dir.exists():
+        hits_by_dataset.write_csv(output_dir / "hits_by_dataset.csv")
+        hits.write_csv(output_dir / "all_hits.csv")
+        negative_hits.write_csv(output_dir / "negative_hits.csv")
+        positive_hits.write_csv(output_dir / "positive_hits.csv")
+        print(f"Saved hits to {output_dir}")
+    else:
+        print(f"Output directory does not exist: {output_dir}")
     return
 
 
