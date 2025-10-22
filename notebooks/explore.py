@@ -241,10 +241,17 @@ def _(mo):
          - TA-ORF: 0.00409
 
     2. **Orthogonal features filter** (`p_orth_std`):
-       - Must remain above the BH-corrected dataset-specific threshold (≈0.03–0.05)
+       - Must remain above the BH-corrected dataset-specific threshold
        - Ensures non-mitochondrial features stay statistically indistinguishable from controls
        - Avoids compounds that dramatically change overall cell morphology
        - Uses Hotelling's T² test on orthogonal feature set
+       - Dataset-specific thresholds (critical values):
+         - LINCS: 0.04829
+         - CDRP: 0.04812
+         - JUMP-ORF: 0.03752
+         - JUMP-CRISPR: 0.04785
+         - JUMP-Compound: 0.04746
+         - TA-ORF: 0.03287
 
     3. **Effect size** (`d_slope`):
        - Cohen's d of t-test (control vs. perturbation)
@@ -360,7 +367,7 @@ def _(hits, mo, pl):
         pl.col('d_slope').filter(pl.col('d_slope') > 0).len().alias('positive_hits')
     ]).sort('total_hits', descending=True)
     mo.ui.table(hits_by_dataset, selection=None)
-    return
+    return (hits_by_dataset,)
 
 
 @app.cell
@@ -406,6 +413,109 @@ def _(mo, positive_hits):
         'p_slope_std': '{:.6f}'.format,
         'p_orth_std': '{:.6f}'.format,
         't_orth': '{:.2f}'.format,
+        'Count_Cells_avg': '{:.2f}'.format
+    })
+    return
+
+
+@app.cell
+def _(Path, hits, hits_by_dataset, negative_hits, positive_hits):
+    # Save results to CSV
+    output_dir = Path(__file__).parent.parent / "data" / "processed"
+
+    hits_by_dataset.write_csv(output_dir / "hits_by_dataset.csv")
+    hits.write_csv(output_dir / "all_hits.csv")
+    negative_hits.write_csv(output_dir / "negative_hits.csv")
+    positive_hits.write_csv(output_dir / "positive_hits.csv")
+
+    print(f"Saved hits to {output_dir}")
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""## OTC/GRAS Compounds Analysis""")
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        """
+    Searching for over-the-counter (OTC) medications and Generally Recognized As Safe (GRAS)
+    compounds/supplements in the LINCS dataset to identify readily available compounds with
+    mitochondrial localization effects.
+    """
+    )
+    return
+
+
+@app.cell
+def _(pl, screens):
+    # LINCS dataset-specific BH-corrected thresholds (FDR=0.05)
+    LINCS_TARGET_THRESHOLD = 0.00761  # Target phenotype must be significant
+    LINCS_ORTH_THRESHOLD = 0.04829    # Orthogonal features must remain normal
+
+    # List of OTC/GRAS compounds to search for
+    otc_gras_compounds = [
+        'caffeine', 'melatonin', 'aspirin', 'ibuprofen', 'naproxen',
+        'metformin', 'niacin', 'resveratrol', 'curcumin', 'quercetin',
+        'ranitidine', 'omeprazole', 'cimetidine', 'famotidine',
+        'paracetamol', 'dextromethorphan', 'loperamide', 'loratadine',
+        'levocetirizine', 'phenylephrine', 'cyanocobalamin', 'folic-acid',
+        'ginkgolide-b'
+    ]
+
+    # Filter for LINCS dataset and OTC/GRAS compounds
+    otc_results = screens.filter(
+        (pl.col('Metadata_dataset') == 'LINCS') &
+        (pl.col('Metadata_pert_id').is_in(otc_gras_compounds))
+    ).with_columns([
+        # Add filter status column
+        pl.when(
+            (pl.col('p_slope_std') < LINCS_TARGET_THRESHOLD) &
+            (pl.col('p_orth_std') > LINCS_ORTH_THRESHOLD)
+        ).then(pl.lit('PASS'))
+        .when(pl.col('p_orth_std') > LINCS_ORTH_THRESHOLD)
+        .then(pl.lit('Near miss (p_slope)'))
+        .when(pl.col('p_slope_std') < LINCS_TARGET_THRESHOLD)
+        .then(pl.lit('Near miss (p_orth)'))
+        .otherwise(pl.lit('Fail both'))
+        .alias('filter_status')
+    ]).select([
+        'Metadata_pert_id',
+        'd_slope',
+        'p_slope_std',
+        'p_orth_std',
+        'Count_Cells_avg',
+        'filter_status'
+    ]).sort(['filter_status', 'd_slope'], descending=[False, True])
+    return (otc_results,)
+
+
+@app.cell
+def _(mo, otc_results, pl):
+    passing = otc_results.filter(pl.col('filter_status') == 'PASS')
+    near_miss = otc_results.filter(pl.col('filter_status').str.contains('Near miss'))
+
+    mo.md(
+        f"""
+    ### Results Summary
+
+    - **Passing filters**: {len(passing)}
+    - **Near misses**: {len(near_miss)}
+    - **Total tested**: {len(otc_results)}
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo, otc_results):
+    mo.ui.table(otc_results, selection=None, format_mapping={
+        'd_slope': '{:.4f}'.format,
+        'p_slope_std': '{:.6f}'.format,
+        'p_orth_std': '{:.6f}'.format,
         'Count_Cells_avg': '{:.2f}'.format
     })
     return
