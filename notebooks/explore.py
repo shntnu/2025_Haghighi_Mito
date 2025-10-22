@@ -388,7 +388,7 @@ def _(mo):
 
 @app.cell
 def _(mo, negative_hits):
-    mo.ui.table(negative_hits.head(50), selection=None, format_mapping={
+    mo.ui.table(negative_hits, selection=None, format_mapping={
         'd_slope': '{:.4f}'.format,
         'p_slope_std': '{:.6f}'.format,
         'p_orth_std': '{:.6f}'.format,
@@ -412,7 +412,7 @@ def _(mo):
 
 @app.cell
 def _(mo, positive_hits):
-    mo.ui.table(positive_hits.head(50), selection=None, format_mapping={
+    mo.ui.table(positive_hits, selection=None, format_mapping={
         'd_slope': '{:.4f}'.format,
         'p_slope_std': '{:.6f}'.format,
         'p_orth_std': '{:.6f}'.format,
