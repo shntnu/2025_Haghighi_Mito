@@ -22,7 +22,16 @@ def _(mo):
 @app.cell
 def _(Path, duckdb, pl):
     # Use absolute path relative to this notebook
-    db_path = Path(__file__).parent.parent / 'data' / 'processed' / 'screen_results.duckdb'
+    for candidate in (
+        Path(__file__).parent.parent / "data" / "processed" / "screen_results.duckdb",
+        Path.cwd() / "screen_results.duckdb",
+    ):
+        if candidate.exists():
+            db_path = candidate
+            break
+    else:
+        raise FileNotFoundError("screen_results.duckdb not found in expected locations")
+
     con = duckdb.connect(str(db_path), read_only=True)
 
     # Load only common columns for faster, cleaner analysis
@@ -211,9 +220,182 @@ def _(filtered_df, mo, pl):
     return
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    ## Hit calling strategy
+
+    Based on the manuscript methods (sections: "Analysis for virtual screens" and Figure 6):
+
+    ### Primary criteria for calling hits:
+
+    1. **Target phenotype significance** (`p_slope_std`):
+       - Must be statistically significant after Benjamini-Hochberg correction
+       - Dataset-specific thresholds (critical values):
+         - LINCS: 0.00761
+         - CDRP: 0.00924
+         - JUMP-ORF: 0.00198
+         - JUMP-CRISPR: 0.007
+         - JUMP-Compound: 0.00365
+         - TA-ORF: 0.00409
+
+    2. **Orthogonal features filter** (`p_orth_std`):
+       - Must have p_orth_std < 0.05 (BH-corrected)
+       - Ensures non-mitochondrial features remain normal
+       - Avoids compounds that dramatically change overall cell morphology
+       - Uses Hotelling's T² test on orthogonal feature set
+
+    3. **Effect size** (`d_slope`):
+       - Cohen's d of t-test (control vs. perturbation)
+       - Positive d_slope: mitochondria more peripheral (depression-like)
+       - Negative d_slope: mitochondria more central (psychosis-like)
+       - Ranked by absolute d_slope value
+
+    ### Optional filters:
+    - Cell count: Avoid perturbations that kill cells
+    - Typically filter out bottom 10% by cell count
+
+    ### Definition of orthogonal features:
+    - Weak correlation with MITO-SLOPE (|r| < 0.3)
+    - Not distinctive across patient groups
+    - Low inter-feature redundancy (|r| < 0.8)
+
+    ### Hit categories:
+    - **Positive hits**: d_slope > 0, potential depression phenotype modulators
+    - **Negative hits**: d_slope < 0, potential psychosis phenotype modulators
+    """
+    )
+    return
+
+
+@app.cell
+def _(filtered_df, pl):
+    # Dataset-specific BH-corrected thresholds for p_slope_std
+    # Note: Keys match exact dataset names in database (case-sensitive)
+    target_bh_corrected_critical_dict = {
+        'LINCS': 0.00761,
+        'CDRP': 0.00924,
+        'JUMP_ORF': 0.00198,
+        'JUMP_CRISPR': 0.007,
+        'JUMP_Compound': 0.00365,
+        'TA_ORF': 0.00409
+    }
+
+    # Apply hit calling criteria
+    hits = filtered_df.filter(
+        # Filter 1: Orthogonal features must remain normal (p_orth_std < 0.05)
+        (pl.col('p_orth_std') < 0.05) &
+        # Filter 2: Target phenotype must be significant (dataset-specific threshold)
+        pl.when(pl.col('Metadata_dataset') == 'LINCS')
+          .then(pl.col('p_slope_std') < target_bh_corrected_critical_dict['LINCS'])
+        .when(pl.col('Metadata_dataset') == 'CDRP')
+          .then(pl.col('p_slope_std') < target_bh_corrected_critical_dict['CDRP'])
+        .when(pl.col('Metadata_dataset') == 'JUMP_ORF')
+          .then(pl.col('p_slope_std') < target_bh_corrected_critical_dict['JUMP_ORF'])
+        .when(pl.col('Metadata_dataset') == 'JUMP_CRISPR')
+          .then(pl.col('p_slope_std') < target_bh_corrected_critical_dict['JUMP_CRISPR'])
+        .when(pl.col('Metadata_dataset') == 'JUMP_Compound')
+          .then(pl.col('p_slope_std') < target_bh_corrected_critical_dict['JUMP_Compound'])
+        .when(pl.col('Metadata_dataset') == 'TA_ORF')
+          .then(pl.col('p_slope_std') < target_bh_corrected_critical_dict['TA_ORF'])
+        .otherwise(False)  # Unknown datasets don't pass
+    ).sort('d_slope')  # Sort by effect size
+
+    # Separate into positive and negative hits
+    negative_hits = hits.filter(pl.col('d_slope') < 0)  # Psychosis-like (mitochondria more central)
+    positive_hits = hits.filter(pl.col('d_slope') > 0)  # Depression-like (mitochondria more peripheral)
+    return hits, negative_hits, positive_hits
+
+
+@app.cell
+def _(hits, mo, pl):
+    mo.md(
+        f"""
+    ## Hits Summary
+
+    Total hits meeting **both** criteria: **{len(hits):,}**
+    - Negative hits (psychosis-like): {len(hits.filter(pl.col('d_slope') < 0)):,}
+    - Positive hits (depression-like): {len(hits.filter(pl.col('d_slope') > 0)):,}
+    """
+    )
+    return
+
+
 @app.cell
 def _(mo):
-    mo.md("""## Significant Hits (p < 0.05)""")
+    mo.md("""#### Hits by Dataset""")
+    return
+
+
+@app.cell
+def _(hits, mo, pl):
+    hits_by_dataset = hits.group_by('Metadata_dataset').agg([
+        pl.len().alias('total_hits'),
+        pl.col('d_slope').filter(pl.col('d_slope') < 0).len().alias('negative_hits'),
+        pl.col('d_slope').filter(pl.col('d_slope') > 0).len().alias('positive_hits')
+    ]).sort('total_hits', descending=True)
+    mo.ui.table(hits_by_dataset, selection=None)
+    return (hits_by_dataset,)
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        """
+    ### Negative Hits (Psychosis-like: d_slope < 0)
+
+    Mitochondria more centralized, similar to psychosis patient phenotype
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo, negative_hits):
+    mo.ui.table(negative_hits.head(50), selection=None, format_mapping={
+        'd_slope': '{:.4f}'.format,
+        'p_slope_std': '{:.6f}'.format,
+        'p_orth_std': '{:.6f}'.format,
+        't_orth': '{:.2f}'.format,
+        'Count_Cells_avg': '{:.2f}'.format
+    })
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        """
+    ### Positive Hits (Depression-like: d_slope > 0)
+
+    Mitochondria more peripheral, similar to depression patient phenotype
+    """
+    )
+    return
+
+
+@app.cell
+def _(mo, positive_hits):
+    mo.ui.table(positive_hits.head(50), selection=None, format_mapping={
+        'd_slope': '{:.4f}'.format,
+        'p_slope_std': '{:.6f}'.format,
+        'p_orth_std': '{:.6f}'.format,
+        't_orth': '{:.2f}'.format,
+        'Count_Cells_avg': '{:.2f}'.format
+    })
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        """
+    ## Comparison: Significant slope only (no orthogonal filter)
+
+    *For comparison: these pass p_slope_std threshold but may alter other cell features*
+    """
+    )
     return
 
 
@@ -223,6 +405,7 @@ def _(filtered_df, mo, pl):
     mo.ui.table(sig_hits.head(100), selection=None, format_mapping={
         'd_slope': '{:.4f}'.format,
         'p_slope_std': '{:.6f}'.format,
+        'p_orth_std': '{:.6f}'.format,
         't_orth': '{:.2f}'.format,
         'Count_Cells_avg': '{:.2f}'.format
     })
@@ -231,7 +414,21 @@ def _(filtered_df, mo, pl):
 
 @app.cell
 def _(mo, sig_hits):
-    mo.md(f"""Found **{len(sig_hits):,}** significant hits (p_slope_std < 0.05)""")
+    mo.md(f"""Found **{len(sig_hits):,}** records with p_slope_std < 0.05 (ignoring orthogonal filter)""")
+    return
+
+
+@app.cell
+def _(Path, hits, hits_by_dataset, negative_hits, positive_hits):
+    # Save results to CSV
+    output_dir = Path(__file__).parent.parent / "data" / "processed"
+
+    hits_by_dataset.write_csv(output_dir / "hits_by_dataset.csv")
+    hits.write_csv(output_dir / "all_hits.csv")
+    negative_hits.write_csv(output_dir / "negative_hits.csv")
+    positive_hits.write_csv(output_dir / "positive_hits.csv")
+
+    print(f"Saved hits to {output_dir}")
     return
 
 
