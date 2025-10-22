@@ -360,7 +360,7 @@ def _(hits, mo, pl):
         pl.col('d_slope').filter(pl.col('d_slope') > 0).len().alias('positive_hits')
     ]).sort('total_hits', descending=True)
     mo.ui.table(hits_by_dataset, selection=None)
-    return (hits_by_dataset,)
+    return
 
 
 @app.cell
@@ -408,20 +408,6 @@ def _(mo, positive_hits):
         't_orth': '{:.2f}'.format,
         'Count_Cells_avg': '{:.2f}'.format
     })
-    return
-
-
-@app.cell
-def _(Path, hits, hits_by_dataset, negative_hits, positive_hits):
-    # Save results to CSV
-    output_dir = Path(__file__).parent.parent / "data" / "processed"
-
-    hits_by_dataset.write_csv(output_dir / "hits_by_dataset.csv")
-    hits.write_csv(output_dir / "all_hits.csv")
-    negative_hits.write_csv(output_dir / "negative_hits.csv")
-    positive_hits.write_csv(output_dir / "positive_hits.csv")
-
-    print(f"Saved hits to {output_dir}")
     return
 
 
