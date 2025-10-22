@@ -241,8 +241,8 @@ def _(mo):
          - TA-ORF: 0.00409
 
     2. **Orthogonal features filter** (`p_orth_std`):
-       - Must have p_orth_std < 0.05 (BH-corrected)
-       - Ensures non-mitochondrial features remain normal
+       - Must remain above the BH-corrected dataset-specific threshold (≈0.03–0.05)
+       - Ensures non-mitochondrial features stay statistically indistinguishable from controls
        - Avoids compounds that dramatically change overall cell morphology
        - Uses Hotelling's T² test on orthogonal feature set
 
@@ -271,8 +271,8 @@ def _(mo):
 
 @app.cell
 def _(filtered_df, pl):
-    # Dataset-specific BH-corrected thresholds for p_slope_std
-    # Note: Keys match exact dataset names in database (case-sensitive)
+    # Dataset-specific BH-corrected thresholds for target and orthogonal tests
+    # Keys must match Metadata_dataset values in screens table
     target_bh_corrected_critical_dict = {
         'LINCS': 0.00761,
         'CDRP': 0.00924,
@@ -281,25 +281,28 @@ def _(filtered_df, pl):
         'JUMP_Compound': 0.00365,
         'TA_ORF': 0.00409
     }
+    orth_bh_corrected_critical_dict = {
+        'LINCS': 0.04829,
+        'CDRP': 0.04812,
+        'JUMP_ORF': 0.03752,
+        'JUMP_CRISPR': 0.04785,
+        'JUMP_Compound': 0.04746,
+        'TA_ORF': 0.03287
+    }
+
+    target_threshold = pl.col('Metadata_dataset').map_dict(
+        target_bh_corrected_critical_dict, default=None
+    )
+    orth_threshold = pl.col('Metadata_dataset').map_dict(
+        orth_bh_corrected_critical_dict, default=None
+    )
 
     # Apply hit calling criteria
     hits = filtered_df.filter(
-        # Filter 1: Orthogonal features must remain normal (p_orth_std < 0.05)
-        (pl.col('p_orth_std') < 0.05) &
-        # Filter 2: Target phenotype must be significant (dataset-specific threshold)
-        pl.when(pl.col('Metadata_dataset') == 'LINCS')
-          .then(pl.col('p_slope_std') < target_bh_corrected_critical_dict['LINCS'])
-        .when(pl.col('Metadata_dataset') == 'CDRP')
-          .then(pl.col('p_slope_std') < target_bh_corrected_critical_dict['CDRP'])
-        .when(pl.col('Metadata_dataset') == 'JUMP_ORF')
-          .then(pl.col('p_slope_std') < target_bh_corrected_critical_dict['JUMP_ORF'])
-        .when(pl.col('Metadata_dataset') == 'JUMP_CRISPR')
-          .then(pl.col('p_slope_std') < target_bh_corrected_critical_dict['JUMP_CRISPR'])
-        .when(pl.col('Metadata_dataset') == 'JUMP_Compound')
-          .then(pl.col('p_slope_std') < target_bh_corrected_critical_dict['JUMP_Compound'])
-        .when(pl.col('Metadata_dataset') == 'TA_ORF')
-          .then(pl.col('p_slope_std') < target_bh_corrected_critical_dict['TA_ORF'])
-        .otherwise(False)  # Unknown datasets don't pass
+        # Filter 1: Orthogonal features must remain normal
+        (pl.col('p_orth_std') > orth_threshold) &
+        # Filter 2: Target phenotype must be significant
+        (pl.col('p_slope_std') < target_threshold)
     ).sort('d_slope')  # Sort by effect size
 
     # Separate into positive and negative hits
