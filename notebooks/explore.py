@@ -22,7 +22,7 @@ def _(mo):
 @app.cell
 def _(Path, duckdb, pl):
     # Try local DuckDB file first, fall back to Figshare CSV
-    local_db_path = Path(__file__).parent.parent / "data" / "processed" / "screen_resultsx.duckdb"
+    local_db_path = Path(__file__).parent.parent / "data" / "processed" / "screen_results.duckdb"
 
     # Load only common columns for faster, cleaner analysis
     common_cols = [
