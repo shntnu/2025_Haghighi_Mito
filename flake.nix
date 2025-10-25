@@ -9,34 +9,22 @@
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = import nixpkgs { inherit system; };
+        pkgs = import nixpkgs {
+          inherit system;
+          config = {
+            allowUnfree = true;
+            nvidia.acceptLicense = true;
+          };
+        };
       in
       {
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
-            python312
-            uv
-            git
-            # System dependencies for binary wheels
-            zlib
-            stdenv.cc.cc.lib
-            # CBC solver for snakemake
-            cbc
-            # Tools for fixture generation
-            s5cmd
-            parallel
+            pixi
           ];
 
-          # shellHook = ''
-          #   echo "uv Python Development Environment"
-          #   unset PYTHONPATH
-          #   uv sync
-          # '';
-
-          LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath [
-            pkgs.zlib
-            pkgs.stdenv.cc.cc.lib
-          ]}";
+          # Use system NVIDIA driver libraries to avoid version mismatch
+          LD_LIBRARY_PATH = "/run/opengl-driver/lib";
         };
       });
 }
