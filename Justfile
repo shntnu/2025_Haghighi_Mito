@@ -5,7 +5,7 @@
 CORES := env_var_or_default("CORES", "4")
 
 # Snakemake configuration
-SNAKEMAKE := "uv run snakemake"
+SNAKEMAKE := "pixi run snakemake"
 
 # Show available commands
 default:

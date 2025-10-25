@@ -1058,7 +1058,7 @@ packages:
 - pypi: ./
   name: 2025-haghighi-mito
   version: 0.1.0
-  sha256: 4a41730e4eb28f52fe7dfe72f397b14bdc1d9078895a38e7bdc7439069b23348
+  sha256: c850d75ceb7ff13e18edea917abe0ba6cb2358cfcadfb51b14b62decf8044931
   requires_python: '>=3.12'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2

@@ -12,6 +12,9 @@ description = "Mitochondrial morphology virtual screen analysis"
 authors = [{name = "Shantanu Singh", email = "shsingh@broadinstitute.org"}]
 requires-python = ">= 3.12"
 
+[project.scripts]
+haghighi-mito = "haghighi_mito.cli:main"
+
 # Pixi configuration
 [tool.pixi.workspace]
 channels = ["conda-forge", "bioconda"]
@@ -41,6 +44,7 @@ sqlglot = ">=27.27.0"
 snakemake = ">=9.0.0"
 loguru = ">=0.7.3"
 python-dotenv = ">=1.1.1"
+typer = ">=0.9.0"
 
 # Analysis packages
 anthropic = ">=0.71.0"
