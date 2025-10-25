@@ -72,6 +72,71 @@
 
 ---
 
+## 2025-10-25: Virtual Screen Analysis Pipeline - Local Execution Setup
+
+### Completed
+
+- [x] Fixed import errors in `notebooks/2.0-mh-virtual-screen.py`
+  - Removed non-existent `bbf_test` from imports
+  - Applied same fix to `2.2-mh-check-vs-lists.py`
+- [x] Updated paths to use local data instead of remote server
+  - Changed `mito_project_root_dir` from `/home/jupyter-mhaghigh@broadinst-ee45a/...` to `data/external/mito_project/`
+  - Updated TA-ORF metadata path to use local file
+- [x] Fixed metadata preprocessing bugs
+  - Added missing `Batch` column for jump_compound dataset (line 188)
+  - Added `ctrl_well` column for jump_compound using DMSO (JCP2022_033924) and untreated (JCP2022_999999) controls
+- [x] Skipped per-site profile creation section (lines 752-1036)
+  - Wrapped in triple quotes since pre-computed profiles already downloaded
+  - Original section required raw SQLite data not available locally
+- [x] Added comprehensive logging with loguru
+  - Preprocessing section: logs each dataset processed and saved
+  - Analysis section: logs data loading, merging, standardization, slope calculation, and statistical testing
+  - Progress tracking every 100 perturbations during statistical tests
+- [x] Identified and fixed dataset selection bugs
+  - Commented out hardcoded `dataset = "jump_compound"` on line 1244 that was overwriting user selection
+  - Added clear section markers and warnings about "last line wins" pattern
+- [x] Added code documentation
+  - Clearly demarcated preprocessing vs analysis sections
+  - Documented which sections process all datasets vs single dataset
+
+### Status: Ready for Analysis Runs
+
+- **Script location**: `notebooks/2.0-mh-virtual-screen.py`
+- **Current dataset**: User-selectable via lines 1080-1085 (currently set to `lincs`)
+- **All metadata files generated**: 5 datasets (jump_orf, jump_crispr, jump_compound, lincs, taorf)
+- **Logging active**: Timestamps and progress tracking throughout pipeline
+
+### Next Actions
+
+1. [ ] Run analysis for each dataset individually:
+   - `lincs` (compounds)
+   - `jump_orf` (genetics)
+   - `jump_crispr` (genetics)
+   - `jump_compound` (compounds)
+   - `taorf` (genetics)
+2. [ ] Check output files in `data/external/mito_project/workspace/results/virtual_screen/`
+3. [ ] Run enrichment analysis: `2.1-mh-set-enrichment-analysis.py`
+4. [ ] Validate results: `2.2-mh-check-vs-lists.py`
+
+### Notes
+
+- **Notebook workflow pattern**: This is a Jupyter notebook converted to `.py` script
+  - Preprocessing section (lines 123-261): Creates all `annot_*.csv` files in one run
+  - Analysis section (lines 1061+): Only processes ONE dataset per run (selected via dataset variable)
+  - To analyze different datasets, edit lines 1080-1085 and re-run
+- **CDRP dataset**: Intentionally disabled (commented out) in preprocessing
+- **Slow operations identified**:
+  - Peak slope calculation (`np.apply_along_axis`) processes every row
+  - Statistical tests loop iterates through all perturbations
+  - Both now have logging for progress tracking
+- **Key fixes applied**:
+  - Import compatibility with installed `singlecell` package
+  - Path compatibility for local filesystem
+  - Control well identification for all datasets
+  - Removed conflicting dataset assignments
+
+---
+
 ## Template for Future Entries
 
 ```text

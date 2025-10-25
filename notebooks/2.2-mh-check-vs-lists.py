@@ -43,7 +43,7 @@ from singlecell.preprocess import (
 )
 from singlecell.preprocess.control_for_cellcount import control_feature_y_for_variable_x
 from singlecell.preprocess.filter_out_edge_single_cells import edgeCellFilter
-from singlecell.process import bbf_test, normalize_funcs, precision_recall, statistical_tests
+from singlecell.process import normalize_funcs, precision_recall, statistical_tests
 
 # singlecell-morph is now installed via uv, no need for sys.path.insert
 from singlecell.read import read_single_cell_sql
@@ -99,11 +99,13 @@ target_features_list_lincs = ["slope"]
 
 ########################## Project root directory and path to results ########################
 # home_path="/home/ubuntu/" # ec2
-home_path = "/home/jupyter-mhaghigh@broadinst-ee45a/"  # dgx
-mito_project_root_dir = (
-    home_path + "bucket/projects/2016_08_01_RadialMitochondriaDistribution_donna/"
-)
-save_results_dir = mito_project_root_dir + "/workspace/results/"
+# home_path = "/home/jupyter-mhaghigh@broadinst-ee45a/"  # dgx (original remote path)
+# Updated to use local data directory
+import os
+repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+mito_project_root_dir = os.path.join(repo_root, "data/external/mito_project") + "/"
+home_path = repo_root  # Set to repo root for compatibility with profile paths (not used with local data)
+save_results_dir = mito_project_root_dir + "workspace/results/"
 
 # %%
 # python3 ~/imaging-backup-scripts/restore_intelligent.py

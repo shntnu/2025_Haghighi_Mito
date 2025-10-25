@@ -187,3 +187,4 @@ Remote data paths referenced in notebooks (may not be accessible locally):
 - ALWAYS prefer editing an existing file to creating a new one
 - NEVER proactively create documentation files (*.md) or README files unless explicitly requested
 - NEVER use emojis in any output, documentation, code comments, or commit messages unless explicitly requested
+- Always use `uv run python` instead of just `python`
