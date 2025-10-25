@@ -40,14 +40,23 @@ check_file() {
 }
 
 # Check a few sample files from each directory
+echo "Checking metadata files..."
 check_file "projects/2016_08_01_RadialMitochondriaDistribution_donna/workspace/metadata/CDRP_meta.csv"
 check_file "projects/2016_08_01_RadialMitochondriaDistribution_donna/workspace/metadata/JUMP/compound.csv.gz"
 check_file "projects/2016_08_01_RadialMitochondriaDistribution_donna/workspace/per_site_aggregated_profiles_newpattern_2/CDRP/CDRP_site_agg_profiles.csv.gz"
 
+echo "Checking results files..."
+check_file "projects/2016_08_01_RadialMitochondriaDistribution_donna/workspace/results/CDRP_results.csv"
+check_file "projects/2016_08_01_RadialMitochondriaDistribution_donna/workspace/results/JUMP_results.csv"
+check_file "projects/2016_08_01_RadialMitochondriaDistribution_donna/workspace/results/analysis_output.csv"
+
 echo "========================================"
 echo ""
 echo "To check all files, run:"
-echo "  uv run python scripts/restore_intelligent.py imaging-platform projects/2016_08_01_RadialMitochondriaDistribution_donna/workspace/metadata --filter_out preprocessed --tier Bulk --logfile logs/status_check_metadata.csv"
+echo "  Metadata:"
+echo "    pixi run python scripts/restore_intelligent.py imaging-platform projects/2016_08_01_RadialMitochondriaDistribution_donna/workspace/metadata --filter_out preprocessed --tier Bulk --logfile logs/status_check_metadata.csv"
+echo "  Results:"
+echo "    pixi run python scripts/restore_intelligent.py imaging-platform projects/2016_08_01_RadialMitochondriaDistribution_donna/workspace/results --filter_out preprocessed --tier Bulk --logfile logs/status_check_results.csv"
 echo ""
 echo "Once all files show RESTORED, run:"
 echo "  bash scripts/download_data.sh"
