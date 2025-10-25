@@ -779,6 +779,136 @@ diff curated_2024-08-11/ curated_2025-10-25/
 
 ---
 
+## 2025-10-25: Excel File Reproducibility Verification & Version Comparison
+
+### Completed
+
+- [x] Verified reproducibility of `generated_from_s3_baseline/` Excel files
+  - Re-ran notebook 2.2 with ANALYSIS_MODE = "baseline"
+  - Created backup and compared old vs new generated files
+  - All 6 Excel files (18 sheets total) reproduced identically
+  - Confirms pipeline is fully deterministic and reproducible
+- [x] Verified perfect match between `generated_from_s3_baseline/` and `curated_2024-08-11/`
+  - Compared all unfiltered sheets across 6 datasets
+  - **Result**: PERFECT MATCH after accounting for duplicate `.1` columns
+  - All 173,806 total rows match exactly (CDRP: 30,618, jump_compound: 115,729, jump_crispr: 7,975, jump_orf: 14,787, lincs: 9,394, taorf: 323)
+  - Proves computational pipeline correctly reproduces Aug 2024 baseline
+- [x] Compared `generated_from_s3_baseline/` with `curated_2025-10-25/`
+  - Identified minor differences in unfiltered sheets
+  - Differences are presentation/formatting artifacts, not scientific data changes
+
+### Findings: Three-Way Version Comparison
+
+**Directory structure:**
+```
+data/processed/tables/
+├── generated_from_s3_baseline/  # From S3 CSVs via notebook 2.2 (ANALYSIS_MODE="baseline")
+├── curated_2024-08-11/          # Aug 11, 2024 Google Sheets export (historical baseline)
+├── curated_2025-10-25/          # Oct 25, 2025 Google Sheets export (current version)
+└── generated_from_local/        # Empty - for future regenerated results
+```
+
+**Comparison results (unfiltered sheets only):**
+
+| Comparison | Match Status | Details |
+|------------|--------------|---------|
+| `generated_from_s3_baseline` vs `curated_2024-08-11` | ✓ PERFECT | Identical data (after removing duplicate `.1` columns) |
+| `generated_from_s3_baseline` vs `curated_2025-10-25` | ⚠ MINOR DIFFS | Formatting artifacts from Google Sheets editing |
+| Re-run reproducibility | ✓ PERFECT | MD5 differs (timestamps), data identical |
+
+**Differences found in `curated_2025-10-25`:**
+
+1. **Duplicate columns** (all datasets): `.1` suffix columns (e.g., `Metadata_pert_id_dose.1`, `Metadata_JCP2022.1`)
+   - Artifact from Google Sheets export/import cycles
+   - Not present in generated files (cleaner output)
+
+2. **LINCS - Character encoding** (36 rows affected):
+   - Generated: `serotoninânorepinephrine` (proper UTF-8 character)
+   - Curated 2025: `serotoninâ_x0080__x0093_norepinephrine` (XML entity encoding)
+   - Affects `Metadata_moa` column only
+   - Same semantic meaning, different encoding
+
+3. **jump_orf - Extra summary row** (1 row):
+   - Curated 2025 has additional row: `Metadata_JCP2022 = 'AVERAGE'`, `Symbol = nan`
+   - Appears to be manually added summary/aggregate row
+   - Generated: 14,787 rows, Curated 2025: 14,788 rows
+
+### Status: Reproducibility Confirmed, Provenance Understood
+
+**Key conclusions:**
+
+1. **Notebook 2.2 pipeline is fully reproducible**
+   - S3 baseline CSVs → Excel files can be regenerated identically
+   - Pipeline correctly implements the Aug 2024 computational analysis
+
+2. **Aug 2024 baseline is computationally clean**
+   - `curated_2024-08-11` perfectly matches generated output
+   - Represents the pure computational pipeline result
+   - No manual edits applied at that time
+
+3. **Oct 2025 version has manual curation**
+   - Minor formatting changes (duplicate columns, encoding)
+   - One manually added summary row (jump_orf)
+   - Differences are presentation-layer, not scientific data
+
+4. **For unfiltered data analysis**
+   - All three versions are functionally equivalent
+   - Differences won't affect statistical analysis or biological interpretation
+   - Safe to use any version for computational work
+
+### Verification Method
+
+**Reproducibility test:**
+```bash
+# Backup existing files
+cp -r data/processed/tables/generated_from_s3_baseline/ \
+      data/processed/tables/generated_from_s3_baseline.backup_$(date +%Y%m%d_%H%M%S)
+
+# Regenerate files
+pixi run python notebooks/2.2-mh-check-vs-lists.py  # ANALYSIS_MODE = "baseline"
+
+# Compare data content (not MD5, which includes timestamps)
+# Result: All 6 datasets × 3 sheets = 18 sheets identical
+```
+
+**Perfect match verification:**
+- Removed duplicate `.1` columns from curated versions
+- Reordered columns to match (same columns, different order)
+- Sorted by key identifier column for row-by-row comparison
+- Compared column-by-column with proper handling of:
+  - Floating point (1e-15 tolerance)
+  - Integers (exact match)
+  - Strings/objects (with NaN handling)
+- Result: 100% match for all 6 unfiltered sheets vs curated_2024-08-11
+
+### Notes
+
+**Why this verification matters:**
+- Confirms the computational pipeline in notebooks 2.0 and 2.2 is correct
+- Establishes trust in regenerated results from optimized code
+- Documents that Aug 2024 baseline represents clean computational output
+- Shows Oct 2025 curated version has minor manual edits applied
+
+**File provenance timeline:**
+```
+July 2024: Virtual screen analysis run → S3 baseline CSVs
+    ↓
+Notebook 2.2 → Raw Excel files (generated_from_s3_baseline/)
+    ↓
+Aug 11, 2024: Upload to Google Sheets → Manual review → Export → curated_2024-08-11/
+    ↓
+Oct 25, 2025: Additional manual edits in Google Sheets → Export → curated_2025-10-25/
+```
+
+**Implications for vectorization bug investigation:**
+- Since `generated_from_s3_baseline/` perfectly reproduces `curated_2024-08-11/`
+- And S3 baseline CSVs came from original (non-vectorized) notebook 2.0
+- The vectorized slope calculation in current code produces different results (99.99% divergence)
+- This confirms vectorization changed the scientific output (not just a formatting issue)
+- Must investigate and fix vectorization before trusting new results
+
+---
+
 ## Template for Future Entries
 
 ```text
