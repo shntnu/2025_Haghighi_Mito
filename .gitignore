@@ -186,3 +186,5 @@ logs/
 .claude/
 
 .direnv/
+
+.DS_Store
