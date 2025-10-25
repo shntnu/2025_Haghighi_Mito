@@ -48,10 +48,28 @@ from singlecell.process import normalize_funcs, precision_recall, statistical_te
 # singlecell-morph is now installed via uv, no need for sys.path.insert
 from singlecell.read import read_single_cell_sql
 from singlecell.save.save_pandas_dfs import (
-    saveAsNewSheetToExistingFile,
     saveDF_to_CSV_GZ_no_timestamp,
 )
 from singlecell.visualize import visualize_n_SingleCell
+
+
+# Define a working version of saveAsNewSheetToExistingFile for newer pandas
+def saveAsNewSheetToExistingFile(filename, newDFs, newSheetNames, keep_index_column=True):
+    """Save DataFrames as sheets in Excel file (creates new or overwrites existing)."""
+    # Ensure newDFs and newSheetNames are lists
+    if not isinstance(newDFs, list):
+        newDFs = [newDFs]
+    if not isinstance(newSheetNames, list):
+        newSheetNames = [newSheetNames]
+
+    # Check that the number of DataFrames matches the number of sheet names
+    if len(newDFs) != len(newSheetNames):
+        raise ValueError("The number of DataFrames must match the number of sheet names.")
+
+    # Simply overwrite the file with all sheets (compatible with newer pandas)
+    with pd.ExcelWriter(filename, engine='openpyxl', mode='w') as writer:
+        for df, sheet_name in zip(newDFs, newSheetNames, strict=False):
+            df.to_excel(writer, sheet_name=sheet_name, index=keep_index_column)
 
 # %% [markdown]
 #
@@ -313,12 +331,18 @@ for dataset, dataset_meta_hue in zip(  # noqa: B007
     #                                               ['Metadata_moa','Symbol']):
     #     filtering_stats['dataset']=dataset
 
+    # Check if CSV file exists before processing
+    csv_file = write_res_path + "/" + dataset + "_results_pattern_aug_070624.csv"
+    if not os.path.exists(csv_file):
+        print(f"Skipping {dataset}: CSV file not found at {csv_file}")
+        continue
+
     meta_cols = ds_info_dict[dataset]["meta_cols"]
     pert_col = ds_info_dict[dataset]["pert_col"]
 
     #     res_df=pd.read_csv(root_res_dir+'per_site_aggregated_profiles/'+dataset+'/'+fName)
     #     res_df=pd.read_csv(write_res_path+"/"+dataset+"_results_pattern_aug_2.csv")
-    res_df = pd.read_csv(write_res_path + "/" + dataset + "_results_pattern_aug_070624.csv")
+    res_df = pd.read_csv(csv_file)
 
     print("null size", res_df[res_df["t_orth"].isnull()].reset_index(drop=True).shape)
     uncorr_feats_condese = pd.read_csv(
@@ -426,16 +450,17 @@ for dataset, dataset_meta_hue in zip(  # noqa: B007
     res_df_2save_filt = res_df1.sort_values(by=sort_by_col)[list_of_cols_2save]
     res_df_2save_filt = res_df_2save_filt.loc[:, ~res_df_2save_filt.columns.duplicated(keep="last")]
 
-    if 0:
+    if 1:
+        # Write to data/processed/tables/ following Carpenter-Singh lab conventions
+        # Save with _NEW suffix to avoid overwriting existing files
+        output_path = os.path.join(repo_root, "data/processed/tables", f"{dataset}_screen_results_NEW.xlsx")
         saveAsNewSheetToExistingFile(
-            root_res_dir
-            + "/results/virtual_screen_results_202407/"
-            + dataset
-            + "_screen_results.xlsx",
+            output_path,
             [res_df_2save, res_df_target_orth_filt, res_df_2save_filt],
             [dataset, dataset + "_orthfilt", dataset + "_bothfilt"],
             keep_index_column=False,
         )
+        print(f"  Saved to: {output_path}")
 
     list_of_res_df1[dataset] = res_df_target_orth_filt
     list_of_res_df2[dataset] = res_df_2save_filt

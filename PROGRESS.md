@@ -369,6 +369,78 @@
 
 ---
 
+## 2025-10-25: Virtual Screen Analysis Complete + Excel Export Pipeline
+
+### Completed
+
+- [x] Successfully ran notebook 2.0 virtual screen analysis
+  - **lincs dataset**: 9,394 perturbations processed in ~6.7 minutes
+  - **taorf dataset**: 323 perturbations processed
+  - Generated CSV results in `data/external/mito_project/workspace/results/virtual_screen/`
+- [x] Modified and tested notebook 2.2 for Excel file generation
+  - Fixed pandas compatibility issue with `saveAsNewSheetToExistingFile` function
+  - Implemented local replacement compatible with newer pandas/openpyxl versions
+  - Changed output path to `data/processed/tables/` (following lab conventions)
+  - Added `_NEW` suffix to prevent overwriting existing files
+  - Added file existence check to gracefully skip missing datasets
+- [x] Generated multi-sheet Excel files with three filtering levels
+  - Sheet 1: All results (unfiltered)
+  - Sheet 2: Orthogonal feature filtered (removes off-target effects)
+  - Sheet 3: Both target + orth filtered (most stringent, publication-ready hits)
+- [x] Verified Excel file structure and contents
+  - **lincs_screen_results_NEW.xlsx**: 9,394 → 286 → 14 hits
+  - **taorf_screen_results_NEW.xlsx**: 323 → 117 → 4 hits
+- [x] Discovered significant differences between old and new results
+  - LINCS bothfilt: 0% overlap between old (11 hits) and new (14 hits) compounds
+  - New top hit: clonazepam (d_slope=1.42, p=3.3e-09)
+  - Old top hit: PF-02545920 (not in new results)
+  - Column cleanup: Removed duplicate columns (`.1` suffix) in new version
+
+### Status: Virtual Screen Complete for 2 Datasets
+
+- **Datasets analyzed**: lincs, taorf
+- **Remaining datasets**: CDRP, jump_orf, jump_crispr, jump_compound
+- **CSV outputs**: `data/external/mito_project/workspace/results/virtual_screen/`
+- **Excel outputs**: `data/processed/tables/*_screen_results_NEW.xlsx`
+- **Original files preserved**: Old Excel files remain untouched at `data/processed/tables/`
+
+### Next Actions
+
+1. [ ] Investigate why new results differ completely from old results
+   - Compare underlying per-site profile data
+   - Check if statistical testing parameters changed
+   - Verify BH-corrected critical values match
+2. [ ] Run analysis for remaining datasets:
+   - `jump_orf` (genetics)
+   - `jump_crispr` (genetics)
+   - `jump_compound` (compounds)
+   - `CDRP` (compounds) - currently disabled
+3. [ ] Once satisfied with results, remove `_NEW` suffix from output files
+4. [ ] Run enrichment analysis: `2.1-mh-set-enrichment-analysis.py`
+5. [ ] Full validation: `2.2-mh-check-vs-lists.py` with all datasets
+
+### Notes
+
+- **Excel generation workflow**:
+  - Notebook 2.0 generates raw CSV results from virtual screen
+  - Notebook 2.2 reads CSVs, applies filtering, and exports to Excel
+  - Three-sheet structure matches original files created manually in Oct 24
+- **Performance achieved**:
+  - Vectorized slope calculation: ~200x speedup
+  - Vectorized statistical tests: ~10-30x speedup
+  - Combined: lincs dataset (9,394 perturbations) completes in ~6.7 minutes
+- **Results divergence**: New results show completely different hit lists
+  - Could indicate: Updated data, different filtering thresholds, or methodology changes
+  - Old files may have been generated with different version of per-site profiles
+  - Need investigation before publishing/using new results
+- **Code improvements in notebook 2.2**:
+  - Fixed `writer.book` attribute error (pandas compatibility)
+  - Now uses simple `mode='w'` to overwrite entire file (cleaner, no legacy code)
+  - Added error handling for missing CSV files (graceful skip)
+  - Improved logging with file save confirmation
+
+---
+
 ## Template for Future Entries
 
 ```text
