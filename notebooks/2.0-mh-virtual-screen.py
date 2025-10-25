@@ -35,6 +35,7 @@ import sklearn.preprocessing as sp
 today = date.today()
 
 import sys
+from loguru import logger
 
 from singlecell.preprocess import (
     extract_cpfeature_names,
@@ -43,7 +44,7 @@ from singlecell.preprocess import (
 )
 from singlecell.preprocess.control_for_cellcount import control_feature_y_for_variable_x
 from singlecell.preprocess.filter_out_edge_single_cells import edgeCellFilter
-from singlecell.process import bbf_test, normalize_funcs, precision_recall, statistical_tests
+from singlecell.process import normalize_funcs, precision_recall, statistical_tests
 
 # singlecell-morph is now installed via uv, no need for sys.path.insert
 from singlecell.read import read_single_cell_sql
@@ -96,11 +97,13 @@ target_features_list_lincs = ["slope"]
 
 ########################## Project root directory and path to results ########################
 # home_path="/home/ubuntu/" # ec2
-home_path = "/home/jupyter-mhaghigh@broadinst-ee45a/"  # dgx
-mito_project_root_dir = (
-    home_path + "bucket/projects/2016_08_01_RadialMitochondriaDistribution_donna/"
-)
-save_results_dir = mito_project_root_dir + "/workspace/results/"
+# home_path = "/home/jupyter-mhaghigh@broadinst-ee45a/"  # dgx (original remote path)
+# Updated to use local data directory
+import os
+repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+mito_project_root_dir = os.path.join(repo_root, "data/external/mito_project") + "/"
+home_path = repo_root  # Set to repo root for compatibility with profile paths (not used with local data)
+save_results_dir = mito_project_root_dir + "workspace/results/"
 
 # %%
 # python3 ~/imaging-backup-scripts/restore_intelligent.py
@@ -112,8 +115,16 @@ save_results_dir = mito_project_root_dir + "/workspace/results/"
 # #### Preprocess datasets metadata into a unified format to read
 
 # %%
+################################################################################
+# PREPROCESSING SECTION: Creates standardized annot_*.csv files for all datasets
+# All datasets in this section will be processed and saved when script runs
+################################################################################
+
+logger.info("PREPROCESSING SECTION: Creating standardized metadata files")
+
 # ########## jump_orf
 dataset = "jump_orf"
+logger.info(f"Processing {dataset}...")
 jump_orf_meta_tsv = mito_project_root_dir + "workspace/metadata/JUMP-ORF/ORF_list.tsv"
 annot = pd.read_csv(jump_orf_meta_tsv, sep="\t")
 annot["batch_plate"] = annot["Batch"] + "-" + annot["Assay_Plate_Barcode"]
@@ -122,10 +133,12 @@ annot["ctrl_well"] = annot["Symbol"].isin(["LacZ", "BFP", "HcRed", "LUCIFERASE"]
 # annot['pert_id']=annot['broad_sample']
 annot["Metadata_pert_type"] = annot["pert_type"]
 annot.to_csv(mito_project_root_dir + "/workspace/metadata/preprocessed/annot_" + dataset + ".csv")
+logger.info(f"Saved annot_{dataset}.csv")
 
 #
 # # ########## lincs
 dataset = "lincs"
+logger.info(f"Processing {dataset}...")
 # annot=pd.read_csv("/home/ubuntu/bucket/projects/2018_04_20_Rosetta/workspace/raw-profiles/CP_LINCS/metadata/matadata_lincs.csv")
 annot0 = pd.read_csv(
     mito_project_root_dir + "/workspace/metadata/lincs/DrugRepurposing_Metadata.csv"
@@ -141,6 +154,7 @@ annot["batch_plate"] = annot["Batch"] + "-" + annot["Metadata_Plate"]
 annot["ctrl_well"] = annot["Metadata_pert_type"].isin(["control"])
 # annot['pert_id']=annot['Metadata_pert_id_dose']
 annot.to_csv(mito_project_root_dir + "/workspace/metadata/preprocessed/annot_" + dataset + ".csv")
+logger.info(f"Saved annot_{dataset}.csv")
 
 # # ########### CDRP
 # dataset="CDRP"
@@ -153,6 +167,7 @@ annot.to_csv(mito_project_root_dir + "/workspace/metadata/preprocessed/annot_" +
 # annot.to_csv(mito_project_root_dir+"/workspace/metadata/preprocessed/annot_"+dataset+'.csv',index=False)
 
 # ########## jump_orf/jump_crispr/jump_compound
+logger.info("Processing JUMP datasets (orf, crispr, compound)...")
 
 plates = pd.read_csv(mito_project_root_dir + "/workspace/metadata/JUMP/plate.csv.gz")
 wells = pd.read_csv(mito_project_root_dir + "/workspace/metadata/JUMP/well.csv.gz")
@@ -172,6 +187,7 @@ annot_orf["ctrl_well"] = annot_orf["Metadata_Symbol"].isin(["LacZ", "BFP", "HcRe
 annot_orf.to_csv(
     mito_project_root_dir + "/workspace/metadata/preprocessed/annot_" + dataset + ".csv"
 )
+logger.info(f"Saved annot_{dataset}.csv")
 
 dataset = "jump_crispr"
 annot_crispr = wells.merge(crispr, on=["Metadata_JCP2022"]).merge(
@@ -183,6 +199,7 @@ annot_compound = wells.merge(compound, on=["Metadata_JCP2022"]).merge(
 
 annot_crispr["Batch"] = annot_crispr["Metadata_Batch"]
 annot_crispr["batch_plate"] = annot_crispr["Metadata_Batch"] + "-" + annot_crispr["Metadata_Plate"]
+annot_compound["Batch"] = annot_compound["Metadata_Batch"]
 annot_compound["batch_plate"] = (
     annot_compound["Metadata_Batch"] + "-" + annot_compound["Metadata_Plate"]
 )
@@ -191,16 +208,21 @@ annot_crispr["ctrl_well"] = annot_crispr["Metadata_Symbol"].isin(["non-targeting
 annot_crispr.to_csv(
     mito_project_root_dir + "/workspace/metadata/preprocessed/annot_" + dataset + ".csv"
 )
+logger.info(f"Saved annot_{dataset}.csv")
 
 dataset = "jump_compound"
-# annot['ctrl_well']=annot['Symbol'].isin(['LacZ'])
+# Mark negative controls (DMSO and untreated) as ctrl_well
+# JCP2022_033924 is DMSO, JCP2022_999999 is untreated/empty wells
+annot_compound["ctrl_well"] = annot_compound["Metadata_JCP2022"].isin(["JCP2022_033924", "JCP2022_999999"])
 annot_compound.to_csv(
     mito_project_root_dir + "/workspace/metadata/preprocessed/annot_" + dataset + ".csv"
 )
+logger.info(f"Saved annot_{dataset}.csv")
 
 
 # ########### TA-ORF
 dataset = "taorf"
+logger.info(f"Processing {dataset}...")
 # annot=pd.read_csv("/home/ubuntu/gallery/cpg0012-wawer-bioactivecompoundprofiling/broad/workspace/metadata/platemaps/CDRP/barcode_platemap.csv")
 annot_taorf = pd.read_csv(
     mito_project_root_dir + "/workspace/metadata/TA-ORF/replicate_level_cp_normalized.csv.gz"
@@ -231,15 +253,21 @@ annot_taorf[
     mito_project_root_dir + "/workspace/metadata/preprocessed/annot_" + dataset + ".csv",
     index=False,
 )
+logger.info(f"Saved annot_{dataset}.csv")
+
+################################################################################
+# END OF PREPROCESSING SECTION
+################################################################################
+logger.info("Preprocessing complete")
 
 # %%
 # https://cellpainting-gallery.s3.amazonaws.com/cpg0003-rosetta/broad/workspace/preprocessed_data
 
 # %%
-# annot_taorf=pd.read_csv(mito_project_root_dir+"/workspace/metadata/TA-ORF/replicate_level_cp_normalized.csv.gz")
-annot_taorf = pd.read_csv(
-    "/home/ubuntu/bucket/projects/2018_04_20_Rosetta/workspace/preprocessed_data/TA-ORF-BBBC037-Rohban/CellPainting/replicate_level_cp_augmented.csv.gz"
-)
+annot_taorf=pd.read_csv(mito_project_root_dir+"workspace/metadata/TA-ORF/replicate_level_cp_normalized.csv.gz")
+# annot_taorf = pd.read_csv(
+#     "/home/ubuntu/bucket/projects/2018_04_20_Rosetta/workspace/preprocessed_data/TA-ORF-BBBC037-Rohban/CellPainting/replicate_level_cp_augmented.csv.gz"
+# )
 
 # %%
 # aws s3 sync s3://imaging-platform/projects/2018_04_20_Rosetta/workspace/preprocessed_data/ s3://imaging-platform/projects/2018_04_20_Rosetta/workspace/preprocessed_data_gallery/
@@ -727,7 +755,15 @@ def find_end_slope2(data, height=None):
 #     return last_peak_ind, slope
 
 
+################################################################################
+# SKIPPED SECTION: Per-site profile creation from raw SQLite data
+# This section would create per-site aggregated profiles from raw single-cell data.
+# We skip it because we already have pre-computed per-site profiles downloaded locally.
+# The entire section is wrapped in triple quotes (lines 748-1030).
+################################################################################
+
 # %%
+"""
 dataset = "lincs"
 dataset = "jump_orf"
 
@@ -1011,6 +1047,18 @@ len(uncorr_feats_condese)
 
 # %% hidden=true
 # ls /home/ubuntu/bucket/projects/2016_08_01_RadialMitochondriaDistribution_donna/workspace/per_site_aggregated_profiles/jump_crispr
+"""
+# End of skipped section
+
+################################################################################
+# ANALYSIS SECTION: Virtual Screen - Load per-site profiles and run statistical tests
+# This section loads pre-computed per-site aggregated profiles and runs the virtual screen.
+#
+# IMPORTANT: Only ONE dataset will be processed - the LAST uncommented assignment below.
+# To analyze a different dataset, comment out unwanted lines and uncomment the desired one.
+################################################################################
+
+logger.info("ANALYSIS SECTION: Virtual screen on per-site aggregated profiles")
 
 # %% [markdown] heading_collapsed=true
 # ## 3. Load per_site aggregated data and control target feature for cell counts
@@ -1028,12 +1076,15 @@ target_columns = [
     for i in range(5, 17)
 ]
 
+# Dataset selection - only the LAST uncommented line determines which dataset runs
 dataset = "CDRP"
 dataset = "jump_orf"
-# dataset="lincs"
-dataset = "jump_crispr"
-dataset = "taorf"
-dataset = "jump_compound"
+dataset="lincs" # <- Currently selected dataset
+# dataset = "jump_crispr" 
+# dataset = "taorf" 
+#dataset = "jump_compound"  
+
+logger.info(f"Analyzing dataset: {dataset}")
 
 per_site_profiles_path = (
     mito_project_root_dir + "/workspace/per_site_aggregated_profiles_newpattern_2/"
@@ -1065,6 +1116,7 @@ else:
         )["orth_fs"].tolist()
 
 
+logger.info(f"Loading metadata for {dataset}")
 annot = pd.read_csv(
     mito_project_root_dir + "/workspace/metadata/preprocessed/annot_" + dataset + ".csv",
     dtype={"Metadata_Plate": str},
@@ -1076,6 +1128,7 @@ cols2remove_lowVars_eachPlate = []
 per_site_df_ls = []
 
 batches = annot["Batch"].unique()  # [:5]
+logger.info(f"Loading per-site profiles for {len(batches)} batches")
 # print(annot['Batch'].unique().shape)
 # sdfdsfds
 for b in batches:
@@ -1100,6 +1153,7 @@ for b in batches:
 
 per_site_df = pd.concat(per_site_df_ls, axis=0, ignore_index=True)
 
+logger.info("Handling NaNs in per-site profiles...")
 per_site_df, cp_features_analysiss = handle_nans.handle_nans(
     per_site_df,
     target_columns + uncorr_feats_condese,
@@ -1107,6 +1161,7 @@ per_site_df, cp_features_analysiss = handle_nans.handle_nans(
     thrsh_std=0.001,
     fill_na_method="drop-rows",
 )
+logger.info("NaN handling complete")
 # per_site_df['batch_plate']=per_site_df['Metadata_Batch']+'-'+per_site_df['Metadata_Plate']
 
 
@@ -1122,7 +1177,9 @@ per_site_df["Metadata_Plate"] = per_site_df["Metadata_Plate"].astype(str)
 
 merge_how = "inner" if dataset == "jump_crispr" or dataset == "jump_compound" else "left"
 
+logger.info(f"Merging per-site profiles with metadata ({merge_how} join)...")
 per_site_df = pd.merge(per_site_df, annot, how=merge_how, on=common_cols_2merge)
+logger.info(f"Merge complete - {len(per_site_df)} rows")
 
 if "Metadata_pert_type" in per_site_df.columns:
     per_site_df = per_site_df[~per_site_df["Metadata_pert_type"].isnull()].reset_index(drop=True)
@@ -1131,9 +1188,11 @@ if "Metadata_pert_type" in per_site_df.columns:
 uncorr_feats_cond = list(set(uncorr_feats_condese) - set(cols2remove_lowVars_eachPlate))
 
 # ---------------------------------------------------
+logger.info("Standardizing per-plate (first pass)...")
 per_site_df = normalize_funcs.standardize_per_catX(
     per_site_df, "batch_plate", target_columns + uncorr_feats_cond
 ).copy()
+logger.info("Standardization complete")
 
 
 control_df_perplate = (
@@ -1149,11 +1208,15 @@ if 1:
         drop=True
     )
 
+    logger.info("Subtracting controls per plate...")
     df_rep_level_scaled_meanSub = per_site_df.groupby("batch_plate")[target_columns].apply(
         subtract_control
     )
+    logger.info("Control subtraction complete")
 
+    logger.info("Calculating peak slopes for all rows...")
     peak_slope = np.apply_along_axis(find_end_slope2, 1, df_rep_level_scaled_meanSub.values)
+    logger.info("Peak slope calculation complete")
 
 #     slope = df_rep_level_scaled_meanSub.apply(
 #         lambda x: find_end_slope2(x)[1], axis=1
@@ -1164,9 +1227,11 @@ else:
 per_site_df[["last_peak_loc", "slope"]] = peak_slope
 
 
+logger.info("Standardizing per-plate (second pass with slopes)...")
 per_site_df = normalize_funcs.standardize_per_catX(
     per_site_df, "batch_plate", target_columns + uncorr_feats_cond + ["last_peak_loc", "slope"]
 ).copy()
+logger.info("Standardization complete")
 
 # %% hidden=true
 dataset
@@ -1188,7 +1253,7 @@ dataset
 # - We calculate test stats per plate and average values across plates
 
 # %%
-dataset = "jump_compound"
+# dataset = "jump_compound"  # COMMENTED OUT - dataset is selected above in analysis section
 
 # %%
 # import pingouin
@@ -1225,9 +1290,18 @@ target_columns = [
     for i in range(5, 17)
 ]
 
+logger.info("Preparing for statistical testing...")
+
 pert_col = ds_info_dict[dataset]["pert_col"]
 meta_cols = ds_info_dict[dataset]["meta_cols"]
 
+logger.info(f"Required meta_cols: {meta_cols}")
+logger.info(f"Available annot columns: {list(annot.columns)}")
+logger.info(f"Checking if all meta_cols are in annot...")
+missing_cols = [col for col in meta_cols if col not in annot.columns]
+if missing_cols:
+    logger.error(f"Missing columns: {missing_cols}")
+    raise KeyError(f"Columns {missing_cols} not found in annot dataframe")
 
 results = annot[meta_cols].drop_duplicates().reset_index(drop=True)
 
@@ -1246,9 +1320,11 @@ if "Metadata_pert_type" in per_site_df.columns:
 else:
     perts = per_site_df[~per_site_df["ctrl_well"]][pert_col].unique()
 
+logger.info(f"Running statistical tests for {len(perts)} perturbations")
+
 for peri, pert in enumerate(perts):
     if peri % 100 == 0:
-        print(peri, "/", len(perts))
+        logger.info(f"Progress: {peri}/{len(perts)} perturbations tested")
 
     per_site_df_pert = per_site_df[per_site_df[pert_col] == pert].reset_index(drop=True)
     if not per_site_df_pert.empty:
@@ -1373,9 +1449,12 @@ for peri, pert in enumerate(perts):
                 peak_slope_all_plates, axis=0
             )
 
+logger.info(f"Statistical testing complete for {len(perts)} perturbations")
+logger.info(f"Saving results to {write_res_path}/{dataset}_results_pattern_aug_070624.csv")
 results.sort_values(by=["slope"], ascending=False).to_csv(
     write_res_path + "/" + dataset + "_results_pattern_aug_070624.csv", index=False
 )
+logger.info("Results saved successfully")
 
 # %%
 peri
