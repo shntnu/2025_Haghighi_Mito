@@ -687,6 +687,98 @@ Each Excel file has 3 sheets:
 
 ---
 
+## 2025-10-25: Curated Excel Files Uploaded - Version Control Complete
+
+### Completed
+
+- [x] Uploaded all 6 curated Excel files from Google Drive to both version directories
+- [x] Verified all files successfully committed and tracked in git
+- [x] Confirmed directory structure working as designed
+
+### Final State
+
+**Curated files now in git (tracked):**
+
+**`curated_2024-08-11/`** - Original Google Drive version (Aug 11, 2024):
+- CDRP_screen_results.xlsx (3.1 MB)
+- jump_compound_screen_results.xlsx (18 MB)
+- jump_crispr_screen_results.xlsx (711 KB)
+- jump_orf_screen_results.xlsx (1.7 MB)
+- lincs_screen_results.xlsx (1.5 MB)
+- taorf_screen_results.xlsx (45 KB)
+
+**`curated_2025-10-25/`** - Current curated version (Oct 25, 2025):
+- CDRP_screen_results.xlsx (3.1 MB)
+- jump_compound_screen_results.xlsx (18 MB)
+- jump_crispr_screen_results.xlsx (760 KB) ← Larger than 2024 version
+- jump_orf_screen_results.xlsx (1.8 MB) ← Larger than 2024 version
+- lincs_screen_results.xlsx (1.2 MB) ← Smaller than 2024 version
+- taorf_screen_results.xlsx (56 KB) ← Larger than 2024 version
+
+**Generated files (gitignored, reproducible):**
+- `generated_from_s3_baseline/` - 6 Excel files from S3 baseline CSVs
+- `generated_from_local/` - Empty, ready for regenerated results
+
+### File Size Differences Between Versions
+
+Several files show size differences between Aug 2024 and Oct 2025:
+- jump_crispr: 711 KB → 760 KB (+7%)
+- jump_orf: 1.7 MB → 1.8 MB (+6%)
+- lincs: 1.5 MB → 1.2 MB (-20%)
+- taorf: 45 KB → 56 KB (+24%)
+
+These differences likely reflect manual curation changes in Google Sheets (trimming, annotation, filtering).
+
+### Git Status
+
+```
+Commit: ae32f6c - "feat: upload curated XLSX files"
+Files added: 12 Excel files (6 per curated directory)
+Total size: ~50 MB tracked in git
+```
+
+### Version Control Workflow - Ready to Use
+
+**1. Use curated versions for publications:**
+```
+data/processed/tables/curated_2025-10-25/*.xlsx
+```
+
+**2. Compare curation changes:**
+```
+diff curated_2024-08-11/ curated_2025-10-25/
+```
+
+**3. Verify reproducibility from S3 baseline:**
+```
+# Run notebook 2.2 with ANALYSIS_MODE = "baseline"
+# Compare generated_from_s3_baseline/ vs curated_2024-08-11/
+```
+
+**4. Test local code changes:**
+```
+# Run notebook 2.0 with USE_REGEN_SUFFIX = True
+# Run notebook 2.2 with ANALYSIS_MODE = "regenerated"
+# Compare generated_from_local/ vs curated versions
+```
+
+### Summary
+
+**Infrastructure complete:**
+- ✅ Directory structure established
+- ✅ Curated versions from Google Drive uploaded and tracked
+- ✅ Generated versions properly gitignored
+- ✅ Notebooks updated to route output correctly
+- ✅ Documentation complete in PROGRESS.md
+
+**Next investigation (separate task):**
+- Debug why vectorized slope calculation produces different results (99.99% divergence)
+- Compare `find_end_slope2()` vs `find_end_slope2_vectorized()`
+- Fix or document behavioral difference
+- Re-run analysis pipeline once verified
+
+---
+
 ## Template for Future Entries
 
 ```text
