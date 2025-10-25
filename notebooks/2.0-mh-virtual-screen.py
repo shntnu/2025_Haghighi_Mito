@@ -51,6 +51,9 @@ from singlecell.read import read_single_cell_sql
 from singlecell.save.save_pandas_dfs import saveDF_to_CSV_GZ_no_timestamp
 from singlecell.visualize import visualize_n_SingleCell
 
+# Import vectorized slope calculation from project package
+from haghighi_mito.vectorized_slope import find_end_slope2_vectorized
+
 # %% [markdown]
 #
 #
@@ -1214,8 +1217,8 @@ if 1:
     )
     logger.info("Control subtraction complete")
 
-    logger.info("Calculating peak slopes for all rows...")
-    peak_slope = np.apply_along_axis(find_end_slope2, 1, df_rep_level_scaled_meanSub.values)
+    logger.info("Calculating peak slopes for all rows (vectorized, ~200x faster)...")
+    peak_slope = find_end_slope2_vectorized(df_rep_level_scaled_meanSub.values)
     logger.info("Peak slope calculation complete")
 
 #     slope = df_rep_level_scaled_meanSub.apply(

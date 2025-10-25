@@ -137,6 +137,70 @@
 
 ---
 
+## 2025-10-25: Performance Optimization - Vectorized Slope Calculation
+
+### Completed
+
+- [x] Created `haghighi_mito/vectorized_slope.py` module
+  - Implemented `find_end_slope2_vectorized()` - fully vectorized version of slope calculation
+  - Kept original `find_end_slope2()` for reference and compatibility
+  - Follows lab workflow conventions (processing code in package, not notebooks)
+- [x] Created comprehensive test suite in `haghighi_mito/tests/test_vectorized_slope.py`
+  - 9 test cases covering equivalence, edge cases, and realistic profiles
+  - Performance benchmark test showing ~200x speedup
+  - All tests pass with identical results between original and vectorized versions
+- [x] Updated `notebooks/2.0-mh-virtual-screen.py` to use vectorized function
+  - Added import: `from haghighi_mito.vectorized_slope import find_end_slope2_vectorized`
+  - Replaced slow `np.apply_along_axis()` call at line 1221 with vectorized version
+- [x] Fixed package installation
+  - Added build system configuration to `pyproject.toml`
+  - Added `[tool.setuptools.packages.find]` to specify package location
+  - Installed package in editable mode with `uv pip install -e .`
+  - Added pytest as dev dependency
+
+### Status: Performance Issue Resolved
+
+- **Performance improvement**: ~200x speedup (0.174s → 0.0008s per 1000 rows)
+- **Correctness verified**: Vectorized version produces identical results to original
+  - Peak indices match exactly
+  - Slopes match to within 1e-10 relative tolerance
+- **Test coverage**: 9 tests all passing
+- **Notebook verified**: User confirmed script runs successfully
+
+### Next Actions
+
+1. [ ] Run analysis for each dataset individually:
+   - `lincs` (compounds)
+   - `jump_orf` (genetics)
+   - `jump_crispr` (genetics)
+   - `jump_compound` (compounds)
+   - `taorf` (genetics)
+2. [ ] Check output files in `data/external/mito_project/workspace/results/virtual_screen/`
+3. [ ] Run enrichment analysis: `2.1-mh-set-enrichment-analysis.py`
+4. [ ] Validate results: `2.2-mh-check-vs-lists.py`
+
+### Notes
+
+- **Vectorization approach**: Replaced row-by-row `apply_along_axis` with batch operations
+  - Savitzky-Golay smoothing applied to entire matrix at once
+  - Peak finding (argmax/argmin) vectorized across all rows
+  - Slope calculation using advanced NumPy indexing
+- **Why this matters**: The slope calculation section was a major bottleneck
+  - Previous approach: Python loop over every row via `apply_along_axis`
+  - New approach: Single NumPy operations on entire matrix
+  - Critical for large datasets (thousands of perturbations × sites)
+- **Code organization**: Following `protocols/workflows.md` conventions
+  - Processing code lives in `haghighi_mito/` package (not notebooks)
+  - Notebooks import from package for reusable, testable code
+  - Tests in `haghighi_mito/tests/` validate correctness
+- **Package structure now includes**:
+  - `haghighi_mito/config.py` - Project configuration
+  - `haghighi_mito/data.py` - Data handling utilities
+  - `haghighi_mito/vectorized_slope.py` - Optimized slope calculation (NEW)
+  - `haghighi_mito/tests/test_vectorized_slope.py` - Test suite (NEW)
+
+---
+
 ## Template for Future Entries
 
 ```text
