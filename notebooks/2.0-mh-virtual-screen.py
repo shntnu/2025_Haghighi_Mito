@@ -53,6 +53,8 @@ from singlecell.visualize import visualize_n_SingleCell
 
 # Import vectorized slope calculation from project package
 from haghighi_mito.vectorized_slope import find_end_slope2_vectorized
+# Import vectorized statistical tests for GPU-migration-friendly optimization
+from haghighi_mito.vectorized_stats import batch_plate_statistics
 
 # %% [markdown]
 #
@@ -1287,6 +1289,7 @@ def z_to_p(z):
     return 2 * (1 - norm.cdf(abs(z)))
 
 
+# %%
 # sort_by_feature="Cells_RadialDistribution_MeanFrac_mito_tubeness_16of16"
 target_columns = [
     "Cells_RadialDistribution_" + f_substr + "_mito_tubeness_" + str(i) + "of16"
@@ -1323,98 +1326,43 @@ if "Metadata_pert_type" in per_site_df.columns:
 else:
     perts = per_site_df[~per_site_df["ctrl_well"]][pert_col].unique()
 
+# Pre-compute control dataframes for each plate (vectorization optimization)
+logger.info("Pre-computing control dataframes by plate...")
+control_dfs_by_plate = {}
+for plate in per_site_df["batch_plate"].unique():
+    control_dfs_by_plate[plate] = per_site_df[
+        (per_site_df["ctrl_well"]) & (per_site_df["batch_plate"] == plate)
+    ].reset_index(drop=True)
+logger.info(f"Pre-computed controls for {len(control_dfs_by_plate)} plates")
+
+# %%
 logger.info(f"Running statistical tests for {len(perts)} perturbations")
 
+# %%
+# Run statistical tests using vectorized batch processing
 for peri, pert in enumerate(perts):
     if peri % 100 == 0:
         logger.info(f"Progress: {peri}/{len(perts)} perturbations tested")
 
     per_site_df_pert = per_site_df[per_site_df[pert_col] == pert].reset_index(drop=True)
     if not per_site_df_pert.empty:
-        plates_pert = (
-            per_site_df_pert.groupby(["batch_plate"])
-            .filter(lambda x: len(x) > 1)["batch_plate"]
-            .unique()
+        # Use vectorized batch statistics computation (GPU-migration-friendly)
+        batch_results = batch_plate_statistics(
+            per_site_df_pert,
+            control_dfs_by_plate,
+            target_columns,
+            uncorr_feats_cond
         )
-        #         plates_pert=per_site_df_pert['batch_plate'].unique()
 
-        if len(plates_pert) > 0:
-            pert_cell_count_perSite_all_plates = []
-            pert_pvals_all_plates = np.full((len(plates_pert), 6), np.nan)
-            pert_tvals_all_plates = np.full((len(plates_pert), 4), np.nan)
-            peak_slope_all_plates = np.full((len(plates_pert), 2), np.nan)
-            for pi, plate in enumerate(plates_pert):
-                per_site_df_pert_plate = per_site_df_pert[
-                    per_site_df_pert["batch_plate"] == plate
-                ].reset_index(drop=True)
-                #             if per_site_df_pert_plate.shape[0]>1:
-                pert_cell_count_perSite_all_plates.append(
-                    per_site_df_pert_plate["Count_Cells"].mean()
-                )
+        if batch_results is not None:
+            # Extract results from vectorized computation
+            pert_cell_count_perSite_all_plates = batch_results['cell_counts']
+            pert_pvals_all_plates = batch_results['pvals']
+            pert_tvals_all_plates = batch_results['tvals']
+            peak_slope_all_plates = batch_results['peak_slope']
 
-                #         control_df=per_site_df[(per_site_df['pert_type']=='control') & \
-                #         control_df=per_site_df[(per_site_df['Symbol'].isin(['LacZ','BFP','HcRed','LUCIFERASE'])) & \
-                control_df = per_site_df[
-                    (per_site_df["ctrl_well"]) & (per_site_df["batch_plate"] == plate)
-                ].reset_index(drop=True)
+            med_t = np.nanpercentile(pert_tvals_all_plates, 50, axis=0, method="nearest")
 
-                test_res = ttest_ind(
-                    per_site_df_pert_plate["slope"], control_df["slope"], equal_var=False
-                )
-                cohend = cohens_d(per_site_df_pert_plate["slope"], control_df["slope"])
-
-                pert_tvals_all_plates[pi, 3] = cohend
-
-                degfree = (
-                    per_site_df_pert_plate["slope"].shape[0] + control_df["slope"].shape[0] - 2
-                )
-                z_score = t_to_z(test_res.statistic, degfree)
-                std_p_val = z_to_p(z_score)
-                pert_pvals_all_plates[pi, 3] = std_p_val
-
-                #         sfsdfsdfs
-                #             print(test_res)
-                pert_pvals_all_plates[pi, 2] = test_res.pvalue
-                pert_tvals_all_plates[pi, 2] = test_res.statistic
-
-                #         try:
-                statistic, p_value, p_value_std_pattern = TwoSampleT2Test(
-                    control_df[target_columns], per_site_df_pert_plate[target_columns]
-                )
-
-                pert_pvals_all_plates[pi, 0] = p_value
-                pert_tvals_all_plates[pi, 0] = statistic
-                pert_pvals_all_plates[pi, 4] = p_value_std_pattern
-
-                statistic1, p_value1 = HotellingsT_internal(
-                    control_df[target_columns], per_site_df_pert_plate[target_columns]
-                )
-
-                #         try:
-                statistic, p_value, p_value_std_orth = TwoSampleT2Test(
-                    control_df[uncorr_feats_cond], per_site_df_pert_plate[uncorr_feats_cond]
-                )
-                pert_pvals_all_plates[pi, 1] = p_value
-                pert_tvals_all_plates[pi, 1] = statistic
-                pert_pvals_all_plates[pi, 5] = p_value_std_orth
-
-                #         except Exception as e:
-                #             print("error 2")
-                #             continue
-
-                peak_slope_all_plates[pi, :] = per_site_df_pert_plate[
-                    ["last_peak_loc", "slope"]
-                ].median()
-            #         diff_pattern=per_site_df_pert_plate[target_columns].mean()-\
-            #                      control_df[target_columns].mean()
-            #         peak_slope_all_plates[pi,:]=find_end_slope(diff_pattern.values)
-
-            med_t = np.nanpercentile(pert_tvals_all_plates, 50, axis=0, interpolation="nearest")
-
-            #     median_t_indx=[np.argwhere(pert_tvals_all_plates[:,i]==med_t[i])[0][0] if ~np.isnan(med_t[i]) else np.nan\
-            #                for i in range(3)] # commneted this because I think we should stick to one metric and select the
-            #                     plate based on that and then take pattern and orth t or p stats for specific plate as well
-            #     if the selection is based on pattern metric then median_selection_ind=0
             median_selection_ind = 3
             if ~np.isnan(med_t[median_selection_ind]):
                 median_t_indx_val = np.argwhere(
@@ -1429,7 +1377,6 @@ for peri, pert in enumerate(perts):
             results.loc[results[pert_col] == pert, "Count_Cells_avg"] = np.mean(
                 pert_cell_count_perSite_all_plates
             )
-            #     [pert_cell_count_perSite_all_plates[median_t_indx[i],i] for i in range(len(feature_list2))]
             results.loc[
                 results[pert_col] == pert,
                 [
