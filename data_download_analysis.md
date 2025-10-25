@@ -2,7 +2,9 @@
 
 ## Summary
 
-**Total data needed from S3: ~5.0 GB** (not 57 GB!)
+**Total data needed from S3: ~5.1 GB** (not 57 GB!)
+
+*Updated Oct 2025: Now includes baseline virtual_screen results (~90 MB) for comparison*
 
 This analysis covers data requirements for all notebooks in the pipeline:
 
@@ -87,21 +89,33 @@ Files needed:
 
 ---
 
-### 4. **results/virtual_screen/** - **~90 MB** ❌ WRITTEN BY NOTEBOOK
+### 4. **results/virtual_screen/** - **~90 MB** ✅ DOWNLOAD (Updated Oct 2025)
 
-**26 CSV files - these are OUTPUT files**
+**Status Update:** Initially marked ❌ (outputs only), but investigation revealed these are needed as baseline/reference.
 
-The notebook **writes** to this directory at line 1376-1377:
+**26 CSV files - BASELINE results from July 2024**
 
-```python
-results.sort_values(by=["slope"], ascending=False).to_csv(
-    write_res_path + "/" + dataset + "_results_pattern_aug_070624.csv", index=False
-)
-```
+The notebook **writes** to this directory at line 1410-1416, BUT we also **download** the S3 versions for:
 
-These files like `CDRP_results_pattern_aug_070624.csv` are **outputs**, not inputs.
+1. **Comparison**: Verify reproducibility of analysis pipeline
+2. **Baseline**: Reference results for validation against regenerated outputs
+3. **Debugging**: Identify when/why analysis results diverged
 
-**Action:** Do NOT download - will be created by notebook
+**Key Files (most recent `_aug_070624` versions):**
+- `CDRP_results_pattern_aug_070624.csv` (9.4 MB)
+- `jump_compound_results_pattern_aug_070624.csv` (47 MB)
+- `jump_crispr_results_pattern_aug_070624.csv` (2.1 MB)
+- `jump_orf_results_pattern_aug_070624.csv` (4.2 MB)
+- `lincs_results_pattern_aug_070624.csv` (3.7 MB)
+- `taorf_results_pattern_aug_070624.csv` (93 KB)
+
+**Naming Convention:**
+- **S3 baseline**: Original names (e.g., `lincs_results_pattern_aug_070624.csv`)
+- **Locally regenerated**: Add `_REGEN` suffix (e.g., `lincs_results_pattern_aug_070624_REGEN.csv`)
+
+This allows both versions to coexist for side-by-side comparison.
+
+**Action:** Download entire directory for baseline comparison
 
 ---
 
@@ -125,19 +139,32 @@ Other subdirectories in results/:
 
 ## Recommended Download Commands
 
-### Option 1: Download everything needed (~5 GB)
+### Option 1: Download everything needed (~5.1 GB) - Use the script!
+
+```bash
+# Automated download with the provided script (RECOMMENDED)
+bash scripts/download_data.sh
+```
+
+This downloads:
+1. metadata/ (1.74 GB)
+2. per_site_aggregated_profiles_newpattern_2/ (2.69 GB)
+3. results/target_pattern_orth_features_lists/ (9.8 KB)
+4. results/virtual_screen/ (~90 MB - baseline from July 2024)
+
+### Option 2: Manual download (if needed)
 
 ```bash
 # Create local directory structure
 mkdir -p data/external/mito_project/workspace
 
-# Download metadata (2.1 GB) - exclude preprocessed since notebook generates it
+# Download metadata (1.74 GB) - exclude preprocessed since notebook generates it
 aws s3 sync \
   s3://imaging-platform/projects/2016_08_01_RadialMitochondriaDistribution_donna/workspace/metadata/ \
   data/external/mito_project/workspace/metadata/ \
   --exclude "preprocessed/*"
 
-# Download per-site profiles (2.7 GB)
+# Download per-site profiles (2.69 GB)
 aws s3 sync \
   s3://imaging-platform/projects/2016_08_01_RadialMitochondriaDistribution_donna/workspace/per_site_aggregated_profiles_newpattern_2/ \
   data/external/mito_project/workspace/per_site_aggregated_profiles_newpattern_2/
@@ -147,9 +174,13 @@ aws s3 sync \
   s3://imaging-platform/projects/2016_08_01_RadialMitochondriaDistribution_donna/workspace/results/target_pattern_orth_features_lists/ \
   data/external/mito_project/workspace/results/target_pattern_orth_features_lists/
 
+# Download baseline virtual screen results (~90 MB)
+aws s3 sync \
+  s3://imaging-platform/projects/2016_08_01_RadialMitochondriaDistribution_donna/workspace/results/virtual_screen/ \
+  data/external/mito_project/workspace/results/virtual_screen/
+
 # Create output directories
 mkdir -p data/external/mito_project/workspace/metadata/preprocessed
-mkdir -p data/external/mito_project/workspace/results/virtual_screen
 ```
 
 ### Option 2: Dry run to verify sizes
@@ -199,17 +230,18 @@ mito_project_root_dir = "data/external/mito_project/"
 
 ### Inputs (READ from S3 → download needed)
 
-1. ✅ `metadata/` - 2.1 GB
-2. ✅ `per_site_aggregated_profiles_newpattern_2/` - 2.7 GB
-3. ✅ `results/target_pattern_orth_features_lists/` - 10 KB
+1. ✅ `metadata/` - 1.74 GB
+2. ✅ `per_site_aggregated_profiles_newpattern_2/` - 2.69 GB
+3. ✅ `results/target_pattern_orth_features_lists/` - 9.8 KB
+4. ✅ `results/virtual_screen/` - ~90 MB (baseline for comparison)
 
 ### Outputs (WRITTEN by notebook → create locally)
 
 1. `metadata/preprocessed/annot_*.csv`
-2. `results/virtual_screen/*_results_pattern_aug_070624.csv`
+2. `results/virtual_screen/*_results_pattern_aug_070624_REGEN.csv` (regenerated, coexists with baseline)
 3. `results/target_pattern_orth_features_lists/*.csv` (some cells write to this too)
 
-**Total download: ~5.0 GB**
+**Total download: ~4.52 GB**
 
 ---
 
@@ -325,6 +357,7 @@ These files are already committed in `data/external/` and do NOT need downloadin
 - metadata/ (1.74 GB)
 - per_site_aggregated_profiles_newpattern_2/ (2.69 GB)
 - results/target_pattern_orth_features_lists/ (9.8 KB)
+- results/virtual_screen/ (~90 MB) - baseline from July 2024
 
 ### From Local Repo (already committed):
 - data/external/KEGG_2021_Human_table.txt (18 KB)
@@ -332,8 +365,8 @@ These files are already committed in `data/external/` and do NOT need downloadin
 
 ### Generated by Notebooks (do NOT download):
 - metadata/preprocessed/annot_*.csv
-- results/virtual_screen/*_results_pattern_aug_070624.csv
+- results/virtual_screen/*_results_pattern_aug_070624_REGEN.csv (locally regenerated)
 
-**Total from S3: ~4.43 GB**
+**Total from S3: ~4.52 GB**
 **Total from repo: ~38 KB**
-**Grand total: ~4.43 GB**
+**Grand total: ~4.52 GB**

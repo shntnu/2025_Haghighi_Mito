@@ -1065,6 +1065,12 @@ len(uncorr_feats_condese)
 
 logger.info("ANALYSIS SECTION: Virtual screen on per-site aggregated profiles")
 
+# Configuration: Output file naming
+# Set USE_REGEN_SUFFIX=True to avoid overwriting S3 baseline files downloaded to local
+# - True: saves as *_REGEN.csv (preserves baseline files from S3)
+# - False: saves as *.csv (overwrites baseline files)
+USE_REGEN_SUFFIX = True  # Default: True to preserve S3 baseline for comparison
+
 # %% [markdown] heading_collapsed=true
 # ## 3. Load per_site aggregated data and control target feature for cell counts
 #   - Read the saved aggregated per site level data
@@ -1400,11 +1406,15 @@ for peri, pert in enumerate(perts):
             )
 
 logger.info(f"Statistical testing complete for {len(perts)} perturbations")
-logger.info(f"Saving results to {write_res_path}/{dataset}_results_pattern_aug_070624.csv")
-results.sort_values(by=["slope"], ascending=False).to_csv(
-    write_res_path + "/" + dataset + "_results_pattern_aug_070624.csv", index=False
-)
-logger.info("Results saved successfully")
+
+# Determine output filename based on USE_REGEN_SUFFIX configuration
+suffix = "_REGEN" if USE_REGEN_SUFFIX else ""
+output_filename = f"{dataset}_results_pattern_aug_070624{suffix}.csv"
+output_path = write_res_path + "/" + output_filename
+
+logger.info(f"Saving results to {output_path}")
+results.sort_values(by=["slope"], ascending=False).to_csv(output_path, index=False)
+logger.info(f"Results saved successfully: {output_filename}")
 
 # %%
 peri

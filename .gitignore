@@ -170,6 +170,11 @@ data/raw/
 # Derived database files (reproducible from Excel files)
 data/processed/*.duckdb
 
+# Regenerated analysis outputs (reproducible from code + data)
+# Keep curated versions (manual work); ignore generated versions
+data/processed/tables/generated_from_s3_baseline/
+data/processed/tables/generated_from_local/
+
 # Logs and temporary operational files
 logs/
 *.csv
