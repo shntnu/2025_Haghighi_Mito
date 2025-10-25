@@ -441,6 +441,252 @@
 
 ---
 
+## 2025-10-25: CSV Divergence Investigation & Baseline/Regenerated Workflow
+
+### Completed
+
+- [x] Downloaded S3 virtual_screen CSVs for comparison with locally-generated files
+- [x] Compared S3 baseline CSVs (July 2024) with locally-regenerated CSVs (Oct 2025)
+  - Found massive differences: 99.99% of rows differ in slope calculations
+  - LINCS: 9,394/9,395 rows differ in `slope`, `last_peak_ind`, `d_slope`
+  - TAORF: 323/327 rows differ in slope-related values
+  - Cell counts identical → same input data, different analysis algorithm
+- [x] Validated notebook 2.2 unchanged by running on S3 CSVs
+  - S3 CSVs → Excel matches existing files perfectly
+  - TAORF: 100% match (3 hits: AXIN2, MAP3K7, PIK3CD)
+  - LINCS: 10/11 hits match with identical d_slope values
+  - Proved problem is in notebook 2.0, not Excel generation
+- [x] Updated infrastructure to support baseline and regenerated files coexistence
+  - Implemented `_REGEN` suffix naming convention
+  - Modified download script to fetch baseline results from S3
+  - Updated notebook 2.0 with `USE_REGEN_SUFFIX` config flag
+  - Updated notebook 2.2 with `ANALYSIS_MODE` selection (baseline/regenerated)
+  - Updated all documentation to reflect new workflow
+
+### Status: Root Cause Identified - Vectorization Changed Results
+
+**Key Finding:** The vectorized slope calculation produces completely different results than the S3 baseline.
+
+**Evidence:**
+- Cell counts match exactly → same input data
+- Slope values differ by up to 2859x → algorithm behaves differently
+- Located in: `haghighi_mito/vectorized_slope.py` (`find_end_slope2_vectorized()`)
+- Tests passed because they compared vectorized vs vectorized, not vs original
+
+**Implications:**
+- Current vectorized implementation is NOT equivalent to original
+- Need to investigate difference between `find_end_slope2()` and `find_end_slope2_vectorized()`
+- May be numerical precision issue, indexing bug, or algorithm interpretation difference
+
+### Infrastructure Updates
+
+**Download Script (`scripts/download_data.sh`):**
+- Added 4th download section for `results/virtual_screen/` (~90 MB)
+- Updated size estimate: 4.43 GB → 4.52 GB
+- Downloads baseline results for comparison
+
+**Notebook 2.0 (`notebooks/2.0-mh-virtual-screen.py`):**
+- Added `USE_REGEN_SUFFIX` configuration flag (line 1072)
+- Default: `True` (preserves S3 baseline files)
+- Output: `{dataset}_results_pattern_aug_070624_REGEN.csv`
+
+**Notebook 2.2 (`notebooks/2.2-mh-check-vs-lists.py`):**
+- Added `ANALYSIS_MODE` configuration (line 130)
+- Options: `"baseline"` (S3) or `"regenerated"` (local)
+- Reads corresponding CSV files and outputs matching Excel files
+
+**Documentation:**
+- `data_download_analysis.md`: Updated section 4 to explain baseline download
+- `PROGRESS.md`: This entry documenting investigation
+- `.gitignore`: Added patterns for `*_REGEN.*` files
+
+**File Organization:**
+```
+results/virtual_screen/
+├── lincs_results_pattern_aug_070624.csv        # S3 baseline (July 2024)
+├── lincs_results_pattern_aug_070624_REGEN.csv  # Local regenerated (Oct 2025)
+└── ... (same pattern for all datasets)
+
+data/processed/tables/
+├── lincs_screen_results.xlsx        # From baseline CSVs
+├── lincs_screen_results_REGEN.xlsx  # From regenerated CSVs
+└── ... (same pattern for all datasets)
+```
+
+### Next Actions
+
+1. [ ] Investigate vectorized slope calculation divergence
+   - Compare `find_end_slope2()` vs `find_end_slope2_vectorized()` step-by-step
+   - Run side-by-side on single perturbation to identify exact divergence point
+   - Check for: indexing differences, edge case handling, numerical precision
+2. [ ] Options after investigation:
+   - Fix vectorization to match original behavior exactly
+   - Document behavioral difference and accept if scientifically valid
+   - Revert to original implementation if vectorization is flawed
+3. [ ] Once slope calculation verified:
+   - Re-run all datasets with corrected implementation
+   - Verify results match S3 baseline (or document expected differences)
+   - Update Excel files if needed
+
+### Notes
+
+**Why this investigation was valuable:**
+- Discovered that "optimized" code changed scientific results
+- Established baseline/regenerated workflow for future comparisons
+- Proves importance of validation against known-good outputs
+
+**Workflow now supports:**
+- Side-by-side comparison of baseline vs regenerated results
+- Easy switching between analysis modes via configuration flags
+- Both CSV and Excel files tracked for each version
+
+**Performance vs Correctness:**
+- Vectorization provided ~200x speedup for slope calculation
+- But speed means nothing if results are incorrect
+- Must verify correctness before trusting optimizations
+
+---
+
+## 2025-10-25: Excel File Organization & Version Control
+
+### Completed
+
+- [x] Discovered multiple virtual_screen directories on S3 with different filtering levels
+- [x] Found `virtual_screen_results_202407/` containing final Excel files from Aug 2024
+- [x] Traced original Excel files to Google Sheets (manually curated, not direct S3 exports)
+- [x] Created organized directory structure for tracking multiple versions
+- [x] Updated notebook 2.2 to output to appropriate subdirectories
+- [x] Updated .gitignore to track curated versions, ignore generated versions
+
+### Discovery: Google Sheets as Source of Truth
+
+**Git history revealed:**
+```
+commit 0e8522b84d3b6764c69fd75abd43b53632fcf5c0
+Author: Anne Carpenter
+Date:   Mon Sep 29 14:27:45 2025
+
+Adding results files, trimmed from google sheets
+
+Source files stored internally at:
+https://docs.google.com/spreadsheets/d/1xKyHW4gd8VZZYIuiwsjffQXai2LADqoK/edit
+https://docs.google.com/spreadsheets/d/1oEUktMSBzvr7zFzS6j31ExmbpIKbY0i4/edit
+```
+
+**This means:**
+- Excel files in repo have manual curation/trimming
+- Perfect reproducibility from CSVs → Excel not expected
+- Two versions exist: Aug 11, 2024 (original) + Oct 25, 2025 (current)
+
+### S3 Directory Structure Analysis
+
+**Virtual screen directories found:**
+```
+virtual_screen/                              121.3 MiB  ← Raw results, multiple versions
+virtual_screen_not_filtered/                  79.5 MiB  ← Unfiltered raw
+virtual_screen_filtered_p_orth/               10.3 MiB  ← Orth filtered only
+virtual_screen_filtered_p_orth_p_slope/       56.5 KiB  ← Both filters (most stringent)
+virtual_screen_results_202407/                24.5 MiB  ⭐ FINAL Excel outputs (Aug 2024)
+```
+
+**Other large directories:**
+```
+jump_fq/                                      51.53 GiB  ← JUMP feature quality analysis
+TopLincsCompoundsAnalysis/                    330.6 MiB  ← LINCS analysis
+reverse_phenotype_strength/                   155.0 MiB  ← Reverse screening
+```
+
+**Files in Glacier** (need restoration to download):
+- `virtual_screen_results_202407/*.xlsx` - Aug 11, 2024 Excel files
+
+### New Directory Structure
+
+```
+data/processed/tables/
+├── README.md (lightweight - just pointers)
+├── curated_2025-10-25/          # ⭐ Current from Google Drive (git tracked)
+├── curated_2024-08-11/          # Original Aug 11, 2024 (git tracked)
+├── generated_from_s3_baseline/  # From S3 CSVs (gitignored, reproducible)
+└── generated_from_local/        # From local _REGEN CSVs (gitignored, reproducible)
+```
+
+**Git tracking strategy:**
+- Track: Curated versions (manual work, irreplaceable)
+- Ignore: Generated versions (reproducible from code + data)
+
+**Notebook 2.2 output routing:**
+- `ANALYSIS_MODE = "baseline"` → `generated_from_s3_baseline/`
+- `ANALYSIS_MODE = "regenerated"` → `generated_from_local/`
+
+### Version Comparison Workflows
+
+**1. Check reproducibility:**
+```
+generated_from_s3_baseline/ vs curated_2024-08-11/
+→ Should be nearly identical (only formatting differences)
+→ Verifies notebook can reproduce original results
+```
+
+**2. Track curation changes:**
+```
+curated_2024-08-11/ vs curated_2025-10-25/
+→ Shows what manual edits were made in Google Sheets
+→ Documents evolution of hit lists
+```
+
+**3. Debug vectorization:**
+```
+generated_from_s3_baseline/ vs generated_from_local/
+→ Shows impact of vectorization optimization
+→ Currently: massive differences (99.99% of rows differ)
+```
+
+### File Provenance Timeline
+
+```
+July 2024: S3 baseline CSVs generated
+    ↓
+Notebook 2.2 runs → Excel files
+    ↓
+Aug 11, 2024: Upload to Google Sheets
+    ↓
+Manual curation/trimming
+    ↓
+Sep 29, 2025: Export and commit to git (first version)
+    ↓
+Oct 25, 2025: Current curated version
+```
+
+### Datasets
+
+Each directory contains 6 Excel files:
+- `CDRP_screen_results.xlsx`
+- `jump_compound_screen_results.xlsx`
+- `jump_crispr_screen_results.xlsx`
+- `jump_orf_screen_results.xlsx`
+- `lincs_screen_results.xlsx`
+- `taorf_screen_results.xlsx`
+
+Each Excel file has 3 sheets:
+1. `{dataset}` - All results (unfiltered)
+2. `{dataset}_orthfilt` - Orthogonal feature filtered
+3. `{dataset}_bothfilt` - Both filters (publication-ready hits)
+
+### Notes
+
+**Why this organization matters:**
+- Separates manual curation from automated generation
+- Enables version comparison workflows
+- Git tracks what matters (human work), ignores what's reproducible
+- Clear provenance from raw CSVs → curated Excel
+
+**Outstanding question:**
+- Should we restore and download S3 `virtual_screen_results_202407/` files?
+- Would allow verification that `curated_2024-08-11/` matches S3 baseline
+- Currently in Glacier, requires restoration
+
+---
+
 ## Template for Future Entries
 
 ```text

@@ -125,6 +125,35 @@ mito_project_root_dir = os.path.join(repo_root, "data/external/mito_project") + 
 home_path = repo_root  # Set to repo root for compatibility with profile paths (not used with local data)
 save_results_dir = mito_project_root_dir + "workspace/results/"
 
+# Configuration: Choose which virtual screen results to analyze
+# Options: "baseline" (S3 from July 2024) or "regenerated" (local REGEN files)
+ANALYSIS_MODE = "baseline"  # Change to "regenerated" to analyze locally-regenerated results
+
+# Determine file suffix and output directory based on mode
+if ANALYSIS_MODE == "regenerated":
+    RESULTS_SUFFIX = "_REGEN"
+    OUTPUT_DIR = os.path.join(repo_root, "data/processed/tables/generated_from_local")
+    print("=" * 70)
+    print("ANALYZING REGENERATED LOCAL RESULTS")
+    print(f"Input CSVs: *_REGEN.csv from virtual_screen/")
+    print(f"Output directory: {OUTPUT_DIR}")
+    print("=" * 70)
+    print()
+elif ANALYSIS_MODE == "baseline":
+    RESULTS_SUFFIX = ""
+    OUTPUT_DIR = os.path.join(repo_root, "data/processed/tables/generated_from_s3_baseline")
+    print("=" * 70)
+    print("ANALYZING S3 BASELINE RESULTS (July 2024)")
+    print(f"Input CSVs: *.csv from virtual_screen/")
+    print(f"Output directory: {OUTPUT_DIR}")
+    print("=" * 70)
+    print()
+else:
+    raise ValueError(f"Invalid ANALYSIS_MODE: {ANALYSIS_MODE}. Use 'baseline' or 'regenerated'")
+
+# Ensure output directory exists
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
 # %%
 # python3 ~/imaging-backup-scripts/restore_intelligent.py
 
@@ -332,7 +361,7 @@ for dataset, dataset_meta_hue in zip(  # noqa: B007
     #     filtering_stats['dataset']=dataset
 
     # Check if CSV file exists before processing
-    csv_file = write_res_path + "/" + dataset + "_results_pattern_aug_070624.csv"
+    csv_file = write_res_path + "/" + dataset + f"_results_pattern_aug_070624{RESULTS_SUFFIX}.csv"
     if not os.path.exists(csv_file):
         print(f"Skipping {dataset}: CSV file not found at {csv_file}")
         continue
@@ -451,9 +480,9 @@ for dataset, dataset_meta_hue in zip(  # noqa: B007
     res_df_2save_filt = res_df_2save_filt.loc[:, ~res_df_2save_filt.columns.duplicated(keep="last")]
 
     if 1:
-        # Write to data/processed/tables/ following Carpenter-Singh lab conventions
-        # Save with _NEW suffix to avoid overwriting existing files
-        output_path = os.path.join(repo_root, "data/processed/tables", f"{dataset}_screen_results_NEW.xlsx")
+        # Write to appropriate subdirectory based on analysis mode
+        # OUTPUT_DIR set at top: generated_from_s3_baseline/ or generated_from_local/
+        output_path = os.path.join(OUTPUT_DIR, f"{dataset}_screen_results.xlsx")
         saveAsNewSheetToExistingFile(
             output_path,
             [res_df_2save, res_df_target_orth_filt, res_df_2save_filt],
