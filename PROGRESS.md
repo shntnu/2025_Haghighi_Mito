@@ -283,6 +283,92 @@
 
 ---
 
+## 2025-10-25: Package Manager Migration - uv to pixi
+
+### Completed
+
+- [x] Migrated entire project from uv to pixi package manager
+  - Converted `pyproject.toml` from uv to pixi configuration
+  - Updated `[tool.pixi.workspace]` with conda-forge and bioconda channels
+  - Moved all dependencies to appropriate pixi sections
+- [x] Verified package availability in conda-forge
+  - **Key finding**: All suspected "PyPI-only" packages are actually available in conda-forge!
+  - anthropic (0.71.0), blitzgsea (1.3.40), hdmedians (0.14.2), loguru (0.7.3)
+  - python-dotenv (1.1.1), scienceplots (2.1.1), sqlglot (27.28.1)
+  - Only git dependency (`singlecell-morph`) remains in `[tool.pixi.pypi-dependencies]`
+- [x] Configured pixi features and environments
+  - **jupyter** feature: ipykernel, jupyter, jupytext, jupyterlab
+  - **marimo** feature: marimo notebook
+  - **dev** feature: pytest, ruff
+  - **default** environment: jupyter + marimo
+  - **minimal** environment: base dependencies only
+  - **dev** environment: all features
+- [x] Fixed local package installation
+  - Added `2025-haghighi-mito = { path = ".", editable = true }` to pypi-dependencies
+  - Resolved `ModuleNotFoundError: No module named 'haghighi_mito'`
+- [x] Defined pixi tasks for common operations
+  - `pixi run jupyter` - Launch Jupyter Lab
+  - `pixi run test` - Run pytest
+  - `pixi run lint` - Run ruff linting
+  - `pixi run fmt` - Run ruff formatting
+- [x] Updated documentation and configuration
+  - Changed CLAUDE.md instruction from `uv run python` to `pixi run python`
+  - Added `.pixi/` to `.gitignore`
+  - Updated `flake.nix` (already had pixi instead of uv)
+- [x] Verified migration success
+  - Generated `pixi.lock` (266 KB) with all dependencies pinned
+  - Python 3.12.12 installed
+  - All packages resolved successfully
+  - Script execution confirmed: `pixi run python notebooks/2.0-mh-virtual-screen.py` works
+
+### Status: Migration Complete - pixi Fully Operational
+
+- **Environment location**: `.pixi/envs/default/`
+- **Lock file**: `pixi.lock` with complete dependency graph
+- **Old uv files**: Can be safely removed (.venv/, uv.lock)
+- **Benefits gained**:
+  - Better binary compatibility via conda packages
+  - Unified environment management (no separate conda + pip)
+  - Can add system dependencies if needed (CellProfiler, CUDA, etc.)
+  - Multiple named environments for different use cases
+  - Task automation built-in
+
+### Next Actions
+
+1. [x] Clean up old uv artifacts: `rm -rf .venv/ uv.lock`
+2. [ ] Run analysis for each dataset:
+   - `pixi run python notebooks/2.0-mh-virtual-screen.py` for lincs, jump_orf, jump_crispr, jump_compound, taorf
+3. [ ] Check output files in `data/external/mito_project/workspace/results/virtual_screen/`
+4. [ ] Run enrichment analysis: `pixi run python notebooks/2.1-mh-set-enrichment-analysis.py`
+5. [ ] Validate results: `pixi run python notebooks/2.2-mh-check-vs-lists.py`
+
+### Notes
+
+- **Why pixi vs uv**:
+  - pixi = conda-ecosystem package manager (conda-forge + PyPI via uv backend)
+  - uv = pure Python/PyPI package manager (like pip, poetry)
+  - pixi better for scientific computing with compiled dependencies
+  - pixi can install non-Python system packages (compilers, CUDA, libraries)
+- **Package source breakdown**:
+  - Conda packages (from conda-forge): 46 packages including numpy, pandas, scipy, matplotlib, seaborn, scikit-learn, jupyter, snakemake, anthropic, blitzgsea, loguru, etc.
+  - PyPI packages: 2 (local editable package + git dependency)
+  - This maximizes binary compatibility and reproducibility
+- **Key discovery**: Initial assumption that many packages were "PyPI-only" was incorrect
+  - Used `pixi search <package>` to verify availability
+  - Found current versions of all major dependencies in conda-forge
+  - Only specialized/local packages need PyPI
+- **Local package handling**:
+  - Must use exact project name from `[project]` section in dependency spec
+  - Correct: `2025-haghighi-mito = { path = ".", editable = true }`
+  - Incorrect: `haghighi-mito = { path = ".", editable = true }` (causes build failure)
+- **Command translation**:
+  - `uv run python` → `pixi run python`
+  - `uv run jupyter lab` → `pixi run jupyter` (via task)
+  - `uv add package` → `pixi add package` (conda) or `pixi add --pypi package` (PyPI)
+  - `uv sync` → `pixi install`
+
+---
+
 ## Template for Future Entries
 
 ```text
