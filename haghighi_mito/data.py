@@ -65,6 +65,16 @@ def create_screen_database(
         + ["Metadata_broad_sample", "Metadata_gene_name", "Metadata_pert_name", "Metadata_moa"],
     }
 
+    # Mapping from dataset names to Excel sheet names (unfiltered sheets)
+    sheet_names = {
+        "CDRP": "CDRP",
+        "JUMP_Compound": "jump_compound",
+        "JUMP_CRISPR": "jump_crispr",
+        "JUMP_ORF": "jump_orf",
+        "LINCS": "lincs",
+        "TA_ORF": "taorf",
+    }
+
     # Screen result files
     files = {
         "CDRP": PROCESSED_TABLES_DIR / "CDRP_screen_results.xlsx",
@@ -101,8 +111,9 @@ def create_screen_database(
     # Load and combine all datasets
     dfs = []
     for dataset_name, file_path in files.items():
-        logger.info(f"Loading {dataset_name} from {file_path.name}")
-        df = pd.read_excel(file_path)
+        sheet_name = sheet_names[dataset_name]
+        logger.info(f"Loading {dataset_name} from {file_path.name}, sheet '{sheet_name}'")
+        df = pd.read_excel(file_path, sheet_name=sheet_name)
 
         # Select only relevant columns that exist in the dataframe
         cols_to_keep = [col for col in dataset_cols[dataset_name] if col in df.columns]

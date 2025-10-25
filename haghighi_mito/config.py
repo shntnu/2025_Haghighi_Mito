@@ -17,5 +17,5 @@ PROCESSED_DATA_DIR = DATA_DIR / "processed"
 EXTERNAL_DATA_DIR = DATA_DIR / "external"
 
 # Processed data subdirectories
-PROCESSED_TABLES_DIR = PROCESSED_DATA_DIR / "tables"
+PROCESSED_TABLES_DIR = PROCESSED_DATA_DIR / "tables" / "curated_2025-10-25"
 PROCESSED_FIGURES_DIR = PROCESSED_DATA_DIR / "figures"
