@@ -420,6 +420,34 @@ slope: r=0.849, within_10%=63/327 (19.3%)
 
 ---
 
+## 2025-10-26: Performance Optimization Experiments - Mixed Results
+
+### Vectorized Slope Calculation - Success
+- Implemented vectorized slope calculation in `calculate_simple_metrics()` (lines 182-202)
+- Replaced `for idx, row in per_site_df.iterrows()` with NumPy matrix operations
+- Uses existing `find_end_slope2_vectorized()` from `vectorized_slope.py`
+- Performance: 167ms for 16,301 observations (~200x faster than iterrows)
+
+### Parallel Statistical Tests - Limited Success
+- Attempted joblib parallelization for statistical test calculations
+- Created `_process_single_perturbation()` worker function
+- Used `Parallel(n_jobs=-1)` to distribute 324 perturbations across 192 cores
+- Result: Only 1.3x speedup (4.5s sequential → 3.5s parallel)
+
+### Root Cause: Task Overhead Dominates
+- Each perturbation is a tiny task (~14ms of actual computation)
+- 324 independent tasks means high serialization/deserialization overhead
+- Joblib loky backend uses memory mapping for shared data, but per-task overhead still significant
+- Task overhead > computation time for small datasets
+
+### Decision
+- Kept vectorized slopes (clear win, no complexity cost)
+- Reverted parallelization code to sequential loop (minimal benefit, added complexity)
+- Future optimization would require batching (process chunks of perturbations per worker)
+- Not worth complexity for current dataset sizes
+
+---
+
 ## Template for Future Entries
 
 ```text
