@@ -1,5 +1,53 @@
 # Progress Log
 
+---
+
+## Template for Future Entries
+
+```text
+## YYYY-MM-DD: Brief Description
+
+### What was done
+- Key accomplishment 1
+- Key accomplishment 2
+
+### Key findings or decisions
+- Finding that requires future reference
+
+### Unresolved issues (if any)
+- Issue description and next steps
+
+### Notes (optional)
+- Additional context (max 5 lines)
+```
+
+---
+
+## Maintenance Guidelines
+
+**When to add entries:**
+- User explicitly asks to document progress
+- Major milestone completed (pipeline working, bug resolved)
+- Critical decision point requiring future reference
+
+**Entry format (max 20 lines):**
+- Brief title: what was accomplished
+- Key findings or decisions (not step-by-step debugging)
+- Blocking issues or next actions only if unresolved
+
+**Monthly rollup:**
+- Summarize entries older than 30 days to 1-3 lines per week
+- Keep detailed recent history for active debugging
+- Git history preserves all details if forensics needed
+
+**DO NOT include:**
+- Command outputs or error messages
+- Step-by-step debugging notes
+- Exploratory analysis details
+- Duplicate information in code comments
+
+---
+
 ## 2025-10-17 to 2025-10-24: Initial Data Download
 Downloaded S3 data (178 files, 4.6 GB) after Glacier restoration. Set up local analysis infrastructure with metadata, per-site profiles, and orthogonal features.
 
@@ -445,49 +493,3 @@ slope: r=0.849, within_10%=63/327 (19.3%)
 - Reverted parallelization code to sequential loop (minimal benefit, added complexity)
 - Future optimization would require batching (process chunks of perturbations per worker)
 - Not worth complexity for current dataset sizes
-
----
-
-## Template for Future Entries
-
-```text
-## YYYY-MM-DD: Brief Description
-
-### What was done
-- Key accomplishment 1
-- Key accomplishment 2
-
-### Key findings or decisions
-- Finding that requires future reference
-
-### Unresolved issues (if any)
-- Issue description and next steps
-
-### Notes (optional)
-- Additional context (max 5 lines)
-```
-
----
-
-## Maintenance Guidelines
-
-**When to add entries:**
-- User explicitly asks to document progress
-- Major milestone completed (pipeline working, bug resolved)
-- Critical decision point requiring future reference
-
-**Entry format (max 20 lines):**
-- Brief title: what was accomplished
-- Key findings or decisions (not step-by-step debugging)
-- Blocking issues or next actions only if unresolved
-
-**Monthly rollup:**
-- Summarize entries older than 30 days to 1-3 lines per week
-- Keep detailed recent history for active debugging
-- Git history preserves all details if forensics needed
-
-**DO NOT include:**
-- Command outputs or error messages
-- Step-by-step debugging notes
-- Exploratory analysis details
-- Duplicate information in code comments
