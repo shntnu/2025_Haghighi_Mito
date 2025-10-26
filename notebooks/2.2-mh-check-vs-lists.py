@@ -132,7 +132,7 @@ ANALYSIS_MODE = "baseline"  # Change to "regenerated" to analyze locally-regener
 # Determine file suffix and output directory based on mode
 if ANALYSIS_MODE == "regenerated":
     RESULTS_SUFFIX = "_REGEN"
-    OUTPUT_DIR = os.path.join(repo_root, "data/processed/tables/generated_from_local")
+    OUTPUT_DIR = os.path.join(repo_root, "data/processed/tables/generated_from_notebook")
     print("=" * 70)
     print("ANALYZING REGENERATED LOCAL RESULTS")
     print(f"Input CSVs: *_REGEN.csv from virtual_screen/")
@@ -481,7 +481,7 @@ for dataset, dataset_meta_hue in zip(  # noqa: B007
 
     if 1:
         # Write to appropriate subdirectory based on analysis mode
-        # OUTPUT_DIR set at top: generated_from_s3_baseline/ or generated_from_local/
+        # OUTPUT_DIR set at top: generated_from_s3_baseline/ or generated_from_notebook/
         output_path = os.path.join(OUTPUT_DIR, f"{dataset}_screen_results.xlsx")
         saveAsNewSheetToExistingFile(
             output_path,

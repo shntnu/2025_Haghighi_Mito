@@ -143,7 +143,7 @@ def plot_baseline_comparison(dataset: str):
     logger.info(f"Creating baseline comparison plots for {dataset}")
 
     # Load comparison CSV
-    comparison_path = PROCESSED_DATA_DIR / "virtual_screen_simple" / f"{dataset}_baseline_comparison.csv"
+    comparison_path = PROCESSED_DATA_DIR / "virtual_screen_module" / f"{dataset}_baseline_comparison.csv"
 
     if not comparison_path.exists():
         logger.error(f"Comparison file not found: {comparison_path}")

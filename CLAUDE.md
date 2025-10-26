@@ -81,21 +81,21 @@ Organized following Carpenter-Singh lab data flow conventions:
 
 - **`data/external/mito_project/workspace/`**: Downloaded data from S3 (gitignored)
   - `results/virtual_screen_baseline/`: Pre-computed virtual screen CSVs (July 2024, validated)
-  - `results/virtual_screen_regenerated/`: Locally-generated CSVs from notebook 2.0 (experimental)
+  - `results/virtual_screen_notebook/`: Locally-generated CSVs from notebook 2.0 (experimental)
   - `per_site_aggregated_profiles_newpattern_2/`: Per-site profile data by dataset
   - `metadata/`: Dataset metadata files
   - Reference datasets: `KEGG_2021_Human_table.txt`, `WikiPathways_2024_Human_table.txt`
 
 - **`data/interim/`**: Intermediate pipeline outputs (gitignored)
   - `parquet_baseline/`: Parquet files from baseline CSVs
-  - `parquet_regenerated/`: Parquet files from regenerated CSVs
+  - `parquet_notebook/`: Parquet files from notebook CSVs
 
 - **`data/processed/`**: Final analysis outputs
   - **`data/processed/tables/`**: Virtual screen results - versioned directories
     - `curated_2024-08-11/`: Original curated Excel files (git-tracked)
     - `curated_2025-10-25/`: Current curated Excel files (git-tracked)
     - `generated_from_s3_baseline/`: Pipeline outputs from baseline CSVs (gitignored, reproducible)
-    - `generated_from_local/`: Pipeline outputs from regenerated CSVs (gitignored, experimental)
+    - `generated_from_notebook/`: Pipeline outputs from notebook CSVs (gitignored, experimental)
   - **`data/processed/figures/`**: Publication figures (PDFs)
   - **`screen_results_baseline.duckdb`**: Query interface for baseline results (178,826 rows)
 
