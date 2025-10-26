@@ -22,10 +22,7 @@ from haghighi_mito.virtual_screen import (
 
 def compare_with_baseline(results, dataset: str):
     """Compare calculated metrics with baseline CSV."""
-    baseline_path = (
-        EXTERNAL_DATA_DIR / "mito_project/workspace/results/virtual_screen_baseline"
-        / f"{dataset}_results_pattern_aug_070624.csv"
-    )
+    baseline_path = EXTERNAL_DATA_DIR / "mito_project/workspace/results/virtual_screen_baseline" / f"{dataset}_results_pattern_aug_070624.csv"
 
     logger.info(f"Loading baseline from {baseline_path}")
     baseline = pd.read_csv(baseline_path)
@@ -40,44 +37,29 @@ def compare_with_baseline(results, dataset: str):
     if "t_target_pattern" in results.columns:
         baseline_cols.extend(["t_target_pattern", "t_orth", "t_slope", "d_slope"])
 
-    comparison = pd.merge(
-        results,
-        baseline[baseline_cols],
-        on=pert_col,
-        suffixes=("_new", "_baseline")
-    )
+    comparison = pd.merge(results, baseline[baseline_cols], on=pert_col, suffixes=("_new", "_baseline"))
 
     logger.info(f"Matched {len(comparison)} perturbations between new and baseline")
 
     # Calculate differences
-    comparison["Count_Cells_diff"] = (
-        comparison["Count_Cells_avg_new"] - comparison["Count_Cells_avg_baseline"]
-    )
-    comparison["Count_Cells_pct_diff"] = (
-        100 * comparison["Count_Cells_diff"] / comparison["Count_Cells_avg_baseline"]
-    )
+    comparison["Count_Cells_diff"] = comparison["Count_Cells_avg_new"] - comparison["Count_Cells_avg_baseline"]
+    comparison["Count_Cells_pct_diff"] = 100 * comparison["Count_Cells_diff"] / comparison["Count_Cells_avg_baseline"]
 
-    comparison["last_peak_ind_diff"] = (
-        comparison["last_peak_ind_new"] - comparison["last_peak_ind_baseline"]
-    )
+    comparison["last_peak_ind_diff"] = comparison["last_peak_ind_new"] - comparison["last_peak_ind_baseline"]
 
     comparison["slope_diff"] = comparison["slope_new"] - comparison["slope_baseline"]
-    comparison["slope_pct_diff"] = (
-        100 * comparison["slope_diff"] / comparison["slope_baseline"].abs()
-    )
+    comparison["slope_pct_diff"] = 100 * comparison["slope_diff"] / comparison["slope_baseline"].abs()
 
     # Calculate t-value differences if present
     if "t_target_pattern_new" in comparison.columns:
         for col in ["t_target_pattern", "t_orth", "t_slope", "d_slope"]:
             comparison[f"{col}_diff"] = comparison[f"{col}_new"] - comparison[f"{col}_baseline"]
-            comparison[f"{col}_pct_diff"] = (
-                100 * comparison[f"{col}_diff"] / comparison[f"{col}_baseline"].abs()
-            )
+            comparison[f"{col}_pct_diff"] = 100 * comparison[f"{col}_diff"] / comparison[f"{col}_baseline"].abs()
 
     # Summary statistics
-    logger.info("\n" + "="*70)
+    logger.info("\n" + "=" * 70)
     logger.info("COMPARISON WITH BASELINE")
-    logger.info("="*70)
+    logger.info("=" * 70)
 
     logger.info(f"\nCount_Cells_avg:")
     logger.info(f"  Mean absolute diff: {comparison['Count_Cells_diff'].abs().mean():.4f}")
@@ -123,7 +105,7 @@ def compare_with_baseline(results, dataset: str):
         logger.info(f"  Within 10%: {(comparison['d_slope_pct_diff'].abs() < 10).sum()}/{len(comparison)}")
         logger.info(f"  Within 1%: {(comparison['d_slope_pct_diff'].abs() < 1).sum()}/{len(comparison)}")
 
-    logger.info("="*70)
+    logger.info("=" * 70)
 
     return comparison
 
@@ -168,17 +150,11 @@ def plot_baseline_comparison(dataset: str):
             col_baseline = f"{metric}_baseline"
 
             if col_new in comparison.columns and col_baseline in comparison.columns:
-                valid_mask = (
-                    np.isfinite(comparison[col_new]) &
-                    np.isfinite(comparison[col_baseline])
-                )
+                valid_mask = np.isfinite(comparison[col_new]) & np.isfinite(comparison[col_baseline])
                 n_valid = valid_mask.sum()
 
                 if n_valid > 2:
-                    corr, _ = pearsonr(
-                        comparison.loc[valid_mask, col_baseline],
-                        comparison.loc[valid_mask, col_new]
-                    )
+                    corr, _ = pearsonr(comparison.loc[valid_mask, col_baseline], comparison.loc[valid_mask, col_new])
 
                     # Count matches within 10%
                     pct_diff_col = f"{metric}_pct_diff"
@@ -200,50 +176,42 @@ def plot_baseline_comparison(dataset: str):
         col_baseline = f"{metric_name}_baseline"
 
         if col_new not in comparison.columns or col_baseline not in comparison.columns:
-            ax.text(0.5, 0.5, f'{metric_name} not available',
-                   ha='center', va='center', transform=ax.transAxes)
+            ax.text(0.5, 0.5, f"{metric_name} not available", ha="center", va="center", transform=ax.transAxes)
             return
 
         valid_mask = np.isfinite(comparison[col_new]) & np.isfinite(comparison[col_baseline])
         if valid_mask.sum() < 2:
-            ax.text(0.5, 0.5, 'Insufficient data',
-                   ha='center', va='center', transform=ax.transAxes)
+            ax.text(0.5, 0.5, "Insufficient data", ha="center", va="center", transform=ax.transAxes)
             return
 
         # Calculate correlation
-        corr, _ = pearsonr(comparison.loc[valid_mask, col_baseline],
-                          comparison.loc[valid_mask, col_new])
+        corr, _ = pearsonr(comparison.loc[valid_mask, col_baseline], comparison.loc[valid_mask, col_new])
 
         # Scatter plot
-        ax.scatter(comparison.loc[valid_mask, col_baseline],
-                  comparison.loc[valid_mask, col_new],
-                  alpha=0.5, s=20)
+        ax.scatter(comparison.loc[valid_mask, col_baseline], comparison.loc[valid_mask, col_new], alpha=0.5, s=20)
 
         # Identity line (y=x)
-        min_val = min(comparison.loc[valid_mask, col_baseline].min(),
-                     comparison.loc[valid_mask, col_new].min())
-        max_val = max(comparison.loc[valid_mask, col_baseline].max(),
-                     comparison.loc[valid_mask, col_new].max())
-        ax.plot([min_val, max_val], [min_val, max_val], 'r--', alpha=0.5, label='y=x')
+        min_val = min(comparison.loc[valid_mask, col_baseline].min(), comparison.loc[valid_mask, col_new].min())
+        max_val = max(comparison.loc[valid_mask, col_baseline].max(), comparison.loc[valid_mask, col_new].max())
+        ax.plot([min_val, max_val], [min_val, max_val], "r--", alpha=0.5, label="y=x")
 
-        ax.set_xlabel(f'Baseline {metric_name}', fontsize=11)
-        ax.set_ylabel(f'Regenerated {metric_name}', fontsize=11)
-        ax.set_title(f'{metric_name} (r={corr:.3f})', fontsize=12, fontweight='bold')
+        ax.set_xlabel(f"Baseline {metric_name}", fontsize=11)
+        ax.set_ylabel(f"Regenerated {metric_name}", fontsize=11)
+        ax.set_title(f"{metric_name} (r={corr:.3f})", fontsize=12, fontweight="bold")
         ax.legend()
         ax.grid(True, alpha=0.3)
 
     # Create all 4 plots
-    plot_metric(axes[0, 0], 't_target_pattern')
-    plot_metric(axes[0, 1], 'slope')
-    plot_metric(axes[1, 0], 't_orth')
-    plot_metric(axes[1, 1], 't_slope')
+    plot_metric(axes[0, 0], "t_target_pattern")
+    plot_metric(axes[0, 1], "slope")
+    plot_metric(axes[1, 0], "t_orth")
+    plot_metric(axes[1, 1], "t_slope")
 
-    fig.suptitle(f'{dataset.upper()}: Baseline vs Regenerated Metrics (n={n_perts})',
-                 fontsize=14, fontweight='bold')
+    fig.suptitle(f"{dataset.upper()}: Baseline vs Regenerated Metrics (n={n_perts})", fontsize=14, fontweight="bold")
     plt.tight_layout()
 
     plot_path = output_dir / f"{dataset}_baseline_vs_regenerated.png"
-    plt.savefig(plot_path, dpi=150, bbox_inches='tight')
+    plt.savefig(plot_path, dpi=150, bbox_inches="tight")
     logger.info(f"Saved plots to {plot_path}")
     plt.close()
 

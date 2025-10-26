@@ -47,12 +47,8 @@ class TestVectorizedSlope:
         results_vec = find_end_slope2_vectorized(data_matrix)
 
         # Compare results
-        np.testing.assert_array_equal(
-            results_orig[:, 0], results_vec[:, 0], err_msg="Peak indices don't match"
-        )
-        np.testing.assert_allclose(
-            results_orig[:, 1], results_vec[:, 1], rtol=1e-10, err_msg="Slopes don't match"
-        )
+        np.testing.assert_array_equal(results_orig[:, 0], results_vec[:, 0], err_msg="Peak indices don't match")
+        np.testing.assert_allclose(results_orig[:, 1], results_vec[:, 1], rtol=1e-10, err_msg="Slopes don't match")
 
     def test_edge_case_flat_profile(self):
         """Test handling of flat profiles with no peaks."""
@@ -103,9 +99,7 @@ class TestVectorizedSlope:
         profiles.append(np.exp(-x * 2) + np.random.randn(n_bins) * 0.05)
 
         # Complex profile with multiple peaks
-        profiles.append(
-            0.5 + 0.3 * np.sin(x * 4 * np.pi) + 0.2 * np.cos(x * 2 * np.pi) + np.random.randn(n_bins) * 0.05
-        )
+        profiles.append(0.5 + 0.3 * np.sin(x * 4 * np.pi) + 0.2 * np.cos(x * 2 * np.pi) + np.random.randn(n_bins) * 0.05)
 
         data_matrix = np.array(profiles)
 

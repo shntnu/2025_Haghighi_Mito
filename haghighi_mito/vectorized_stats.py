@@ -44,9 +44,7 @@ def cohens_d_vectorized(x_vals, y_vals):
         ny = len(y)
         dof = nx + ny - 2
 
-        pooled_std = np.sqrt(
-            ((nx - 1) * np.std(x, ddof=1) ** 2 + (ny - 1) * np.std(y, ddof=1) ** 2) / dof
-        )
+        pooled_std = np.sqrt(((nx - 1) * np.std(x, ddof=1) ** 2 + (ny - 1) * np.std(y, ddof=1) ** 2) / dof)
 
         if pooled_std > 0:
             cohens_d_values[i] = (np.mean(x) - np.mean(y)) / pooled_std
@@ -180,20 +178,14 @@ def TwoSampleT2Test_vectorized(X_list, Y_list):
         S_pooled = ((nx - 1) * Sx + (ny - 1) * Sy) / (nx + ny - 2)
         S_pooled = S_pooled + np.eye(S_pooled.shape[0]) * 1e-6
 
-        t_squared = (
-            (nx * ny)
-            / (nx + ny)
-            * np.matmul(np.matmul(delta.transpose(), np.linalg.inv(S_pooled)), delta)
-        )
+        t_squared = (nx * ny) / (nx + ny) * np.matmul(np.matmul(delta.transpose(), np.linalg.inv(S_pooled)), delta)
 
         statistic = t_squared * (nx + ny - p - 1) / (p * (nx + ny - 2))
         F_dist = f(p, nx + ny - p - 1)
         p_value = 1 - F_dist.cdf(statistic)
 
         # Convert F-statistic to z-score
-        z_score = (statistic - (p / (nx + ny - p - 1))) / np.sqrt(
-            (2 * p * (nx + ny - p - 1)) / ((nx + ny - 2) * (nx + ny - p - 1))
-        )
+        z_score = (statistic - (p / (nx + ny - p - 1))) / np.sqrt((2 * p * (nx + ny - p - 1)) / ((nx + ny - 2) * (nx + ny - p - 1)))
         std_p_val = 2 * (1 - norm.cdf(abs(z_score)))
 
         statistics[i] = statistic
@@ -203,8 +195,7 @@ def TwoSampleT2Test_vectorized(X_list, Y_list):
     return statistics, p_values, p_values_std
 
 
-def batch_plate_statistics(per_site_df_pert, control_dfs_by_plate,
-                           target_columns, uncorr_feats_cond):
+def batch_plate_statistics(per_site_df_pert, control_dfs_by_plate, target_columns, uncorr_feats_cond):
     """
     Compute all statistical tests for all plates of a perturbation in batch.
 
@@ -240,11 +231,7 @@ def batch_plate_statistics(per_site_df_pert, control_dfs_by_plate,
     GPU-ready: Most operations use NumPy. Replace with CuPy for GPU acceleration.
     """
     # Filter to plates with > 1 sample
-    plates_pert = (
-        per_site_df_pert.groupby(["batch_plate"])
-        .filter(lambda x: len(x) > 1)["batch_plate"]
-        .unique()
-    )
+    plates_pert = per_site_df_pert.groupby(["batch_plate"]).filter(lambda x: len(x) > 1)["batch_plate"].unique()
 
     if len(plates_pert) == 0:
         return None
@@ -265,9 +252,7 @@ def batch_plate_statistics(per_site_df_pert, control_dfs_by_plate,
     orth_ctrl_list = []
 
     for pi, plate in enumerate(plates_pert):
-        pert_plate_df = per_site_df_pert[
-            per_site_df_pert["batch_plate"] == plate
-        ]
+        pert_plate_df = per_site_df_pert[per_site_df_pert["batch_plate"] == plate]
         control_df = control_dfs_by_plate[plate]
 
         # Cell counts
@@ -294,32 +279,21 @@ def batch_plate_statistics(per_site_df_pert, control_dfs_by_plate,
     pvals_all[:, 2] = p_vals
 
     # Vectorized t-to-z and z-to-p for slope
-    dfs = np.array([len(slope_pert_list[i]) + len(slope_ctrl_list[i]) - 2
-                    for i in range(n_plates)])
+    dfs = np.array([len(slope_pert_list[i]) + len(slope_ctrl_list[i]) - 2 for i in range(n_plates)])
     z_scores = t_to_z_vectorized(t_stats, dfs)
     std_p_vals = z_to_p_vectorized(z_scores)
     pvals_all[:, 3] = std_p_vals
 
     # Vectorized T2 tests for target pattern
-    stats_target, pvals_target, pvals_target_std = TwoSampleT2Test_vectorized(
-        target_ctrl_list, target_pert_list
-    )
+    stats_target, pvals_target, pvals_target_std = TwoSampleT2Test_vectorized(target_ctrl_list, target_pert_list)
     tvals_all[:, 0] = stats_target
     pvals_all[:, 0] = pvals_target
     pvals_all[:, 4] = pvals_target_std
 
     # Vectorized T2 tests for orthogonal features
-    stats_orth, pvals_orth, pvals_orth_std = TwoSampleT2Test_vectorized(
-        orth_ctrl_list, orth_pert_list
-    )
+    stats_orth, pvals_orth, pvals_orth_std = TwoSampleT2Test_vectorized(orth_ctrl_list, orth_pert_list)
     tvals_all[:, 1] = stats_orth
     pvals_all[:, 1] = pvals_orth
     pvals_all[:, 5] = pvals_orth_std
 
-    return {
-        'cell_counts': cell_counts,
-        'pvals': pvals_all,
-        'tvals': tvals_all,
-        'peak_slope': peak_slope_all,
-        'plates': plates_pert
-    }
+    return {"cell_counts": cell_counts, "pvals": pvals_all, "tvals": tvals_all, "peak_slope": peak_slope_all, "plates": plates_pert}

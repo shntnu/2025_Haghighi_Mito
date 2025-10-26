@@ -67,12 +67,9 @@ def create_screen_database(
             "Metadata_mmoles_per_liter2",
             "Metadata_moa",
         ],
-        "JUMP_Compound": common_cols
-        + ["Metadata_JCP2022", "Metadata_InChIKey", "Metadata_InChI"],
-        "JUMP_CRISPR": common_cols
-        + ["Metadata_JCP2022", "Metadata_Symbol", "Metadata_NCBI_Gene_ID"],
-        "JUMP_ORF": common_cols
-        + ["Metadata_JCP2022", "Metadata_Symbol", "Metadata_broad_sample"],
+        "JUMP_Compound": common_cols + ["Metadata_JCP2022", "Metadata_InChIKey", "Metadata_InChI"],
+        "JUMP_CRISPR": common_cols + ["Metadata_JCP2022", "Metadata_Symbol", "Metadata_NCBI_Gene_ID"],
+        "JUMP_ORF": common_cols + ["Metadata_JCP2022", "Metadata_Symbol", "Metadata_broad_sample"],
         "LINCS": common_cols
         + [
             "Metadata_pert_id_dose",
@@ -82,8 +79,7 @@ def create_screen_database(
             "Metadata_target",
             "Metadata_InChIKey14",
         ],
-        "TA_ORF": common_cols
-        + ["Metadata_broad_sample", "Metadata_gene_name", "Metadata_pert_name", "Metadata_moa"],
+        "TA_ORF": common_cols + ["Metadata_broad_sample", "Metadata_gene_name", "Metadata_pert_name", "Metadata_moa"],
     }
 
     # Mapping from dataset names to Excel sheet names (unfiltered sheets)
@@ -285,7 +281,7 @@ def process_single_virtual_screen_csv(
     if cell_count_quantile is not None:
         threshold = res_df["Count_Cells_avg"].quantile(cell_count_quantile)
         res_df_filtered = res_df[res_df["Count_Cells_avg"] > threshold].reset_index(drop=True)
-        logger.info(f"  Cell count filter: {len(res_df_filtered):,} rows (removed bottom {cell_count_quantile*100:.0f}%)")
+        logger.info(f"  Cell count filter: {len(res_df_filtered):,} rows (removed bottom {cell_count_quantile * 100:.0f}%)")
     else:
         res_df_filtered = res_df.copy()
 
