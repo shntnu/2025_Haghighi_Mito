@@ -1,37 +1,76 @@
 # Mitochondrial Morphology Screen Pipeline
 # Lightweight task runner for Snakemake pipeline
+#
+# See Snakefile docstring for comprehensive pipeline documentation.
+# Three methods available:
+#   Method 0: Baseline (validated, July 2024)
+#   Method 1: Notebook (complete but messy, 1433 lines)
+#   Method 2: Clean module (incomplete, 448 lines)
 
 # Show available commands
 default:
     @just --list
 
-# Run baseline pipeline (process S3 results → Excel + DuckDB)
-run-baseline:
-    pixi run snakemake all_baseline --cores 4 --printshellcmds
+# ============================================================================
+# METHOD 0: BASELINE PIPELINE (Recommended for Production)
+# ============================================================================
 
-# Run regenerated pipeline (process locally-regenerated results → Excel + DuckDB)
-run-regenerated:
-    pixi run snakemake all_regenerated --cores 4 --printshellcmds
-
-# Download pre-computed baseline results from S3 (6 CSVs, for processing pipeline)
+# Download pre-computed baseline results from S3 (65 MB, validated July 2024)
 download-baseline:
     pixi run snakemake download_all_baseline --cores 4 --printshellcmds
 
-# Download raw data for regenerating results (per-site profiles + metadata, for notebook 2.0)
+# Run baseline pipeline (process S3 CSVs → Excel + DuckDB, ~5 min)
+run-baseline:
+    pixi run snakemake all_baseline --cores 4 --printshellcmds
+
+# ============================================================================
+# SHARED: Download Raw Data for Regeneration (Methods 1 & 2)
+# ============================================================================
+
+# Download raw data for regenerating results (2.7 GB: per-site profiles + metadata)
 download-raw:
     pixi run snakemake download_screening_data --cores 4 --printshellcmds
 
-# Run notebook for a specific dataset (e.g., just run-notebook-for taorf)
-run-notebook-for DATASET:
+# ============================================================================
+# METHOD 1: REGENERATED - Notebook (Complete Pipeline)
+# ============================================================================
+
+# [Method 1] Run full notebook pipeline for all datasets (CSV → Excel → DuckDB, ~10 min/dataset)
+run-notebook:
+    pixi run snakemake all_notebook --cores 4 --printshellcmds
+
+# [Method 1] Run notebook for a specific dataset (generates CSV only, use run-notebook for full pipeline)
+run-notebook-csv-for DATASET:
     pixi run snakemake data/external/mito_project/workspace/results/virtual_screen_regenerated/{{DATASET}}_results_pattern_aug_070624.csv --cores 1 --printshellcmds
 
-# Run virtual screen analysis for a specific dataset (e.g., just run-virtual-screen-for taorf)
-run-virtual-screen-for DATASET:
-    pixi run haghighi-mito virtual-screen --dataset {{DATASET}} --compare-baseline
+# ============================================================================
+# METHOD 2: REGENERATED - Clean Module (Incomplete - Stops at CSV)
+# ============================================================================
 
-# Create baseline comparison plots for a specific dataset (e.g., just plot-baseline-comparison-for taorf)
-plot-baseline-comparison-for DATASET:
-    pixi run haghighi-mito plot-baseline-comparison --dataset {{DATASET}}
+# TODO: Add when Method 2 Excel/DuckDB processing is complete
+# [Method 2] Run full module pipeline for all datasets (CSV → Excel → DuckDB)
+# run-module:
+#     pixi run snakemake all_module --cores 4 --printshellcmds
+
+# [Method 2] Run clean module for a specific dataset (CSV + comparison only, ⚠️ no Excel/DuckDB)
+run-module-for DATASET:
+    pixi run snakemake data/processed/virtual_screen_simple/{{DATASET}}_results_pattern_aug_070624.csv --cores 1 --printshellcmds
+
+# [Method 2] Generate baseline comparison plots for a specific dataset
+plot-comparison-for DATASET:
+    pixi run snakemake data/processed/figures/t_target_pattern_analysis/{{DATASET}}_baseline_vs_regenerated.png --cores 1 --printshellcmds
+
+# [Method 2] Run clean module for all datasets (CSV + comparison only, ⚠️ no Excel/DuckDB)
+run-all-modules:
+    pixi run snakemake run_all_virtual_screen_analysis --cores 4 --printshellcmds
+
+# [Method 2] Generate all baseline comparison plots
+plot-all-comparisons:
+    pixi run snakemake plot_all_baseline_comparisons --cores 4 --printshellcmds
+
+# ============================================================================
+# UTILITIES
+# ============================================================================
 
 # Generate DAG visualizations (simplified rules + full jobs for both pipelines)
 viz:
@@ -45,17 +84,25 @@ dry:
 status:
     pixi run snakemake --summary
 
-# Clean baseline outputs
+# Clean baseline outputs (Method 0)
 clean-baseline:
     rm -f data/processed/screen_results_baseline.duckdb
     rm -rf data/interim/parquet_baseline/
     rm -rf data/processed/tables/generated_from_s3_baseline/
 
-# Clean regenerated outputs
-clean-regenerated:
+# Clean notebook outputs (Method 1)
+clean-notebook:
     rm -f data/processed/screen_results_regenerated.duckdb
     rm -rf data/interim/parquet_regenerated/
     rm -rf data/processed/tables/generated_from_local/
 
+# Clean module outputs (Method 2)
+clean-module:
+    rm -f data/processed/screen_results_module.duckdb
+    rm -rf data/processed/virtual_screen_simple/
+    rm -rf data/processed/figures/t_target_pattern_analysis/
+    rm -rf data/interim/parquet_module/
+    rm -rf data/processed/tables/generated_from_module/
+
 # Clean everything
-clean-all: clean-baseline clean-regenerated
+clean-all: clean-baseline clean-notebook clean-module
