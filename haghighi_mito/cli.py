@@ -47,6 +47,7 @@ def create_database_cmd(
     overwrite: Annotated[bool, typer.Option(help="Recreate database even if it exists")] = False,
     use_parquet: Annotated[bool, typer.Option(help="Read from Parquet files instead of Excel")] = False,
     parquet_dir: Annotated[Path | None, typer.Option(help="Directory containing Parquet files (required if --use-parquet)")] = None,
+    datasets: Annotated[str | None, typer.Option(help="Comma-separated list of datasets to include (e.g., 'lincs,taorf'). If not specified, includes all datasets.")] = None,
 ):
     """Create DuckDB database from Excel or Parquet screen results.
 
@@ -56,12 +57,18 @@ def create_database_cmd(
     # Lazy imports for faster startup
     from haghighi_mito.data import create_screen_database
 
+    # Parse datasets if provided
+    dataset_list = None
+    if datasets:
+        dataset_list = [d.strip() for d in datasets.split(",")]
+
     create_screen_database(
         output_path=output_path,
         tables_dir=tables_dir,
         overwrite=overwrite,
         use_parquet=use_parquet,
         parquet_dir=parquet_dir,
+        datasets=dataset_list,
     )
 
 

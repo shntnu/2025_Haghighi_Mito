@@ -16,6 +16,7 @@ def create_screen_database(
     overwrite: bool = False,
     use_parquet: bool = False,
     parquet_dir: Path | None = None,
+    datasets: list[str] | None = None,
 ) -> Path:
     """Combine all screen result Excel/Parquet files into a single DuckDB database.
 
@@ -26,6 +27,7 @@ def create_screen_database(
         tables_dir: Directory containing Excel files. If None, uses PROCESSED_TABLES_DIR from config
         overwrite: If True, recreate database even if it exists
         use_parquet: If True, read from Parquet files instead of Excel
+        datasets: List of dataset names to include. If None, includes all 6 datasets
         parquet_dir: Directory containing Parquet files (required if use_parquet=True)
 
     Returns:
@@ -92,9 +94,24 @@ def create_screen_database(
         "TA_ORF": "taorf",
     }
 
+    # Default to all datasets if not specified
+    if datasets is None:
+        datasets = ["CDRP", "JUMP_Compound", "JUMP_CRISPR", "JUMP_ORF", "LINCS", "TA_ORF"]
+
+    # Normalize dataset names (handle both "lincs" and "LINCS", "taorf" and "TA_ORF", etc.)
+    dataset_name_map = {
+        "cdrp": "CDRP",
+        "jump_compound": "JUMP_Compound",
+        "jump_crispr": "JUMP_CRISPR",
+        "jump_orf": "JUMP_ORF",
+        "lincs": "LINCS",
+        "taorf": "TA_ORF",
+    }
+    normalized_datasets = [dataset_name_map.get(d.lower(), d) for d in datasets]
+
     # Screen result files
     if use_parquet:
-        files = {
+        all_files = {
             "CDRP": parquet_dir / "CDRP_unfiltered.parquet",
             "JUMP_Compound": parquet_dir / "jump_compound_unfiltered.parquet",
             "JUMP_CRISPR": parquet_dir / "jump_crispr_unfiltered.parquet",
@@ -103,7 +120,7 @@ def create_screen_database(
             "TA_ORF": parquet_dir / "taorf_unfiltered.parquet",
         }
     else:
-        files = {
+        all_files = {
             "CDRP": tables_dir / "CDRP_screen_results.xlsx",
             "JUMP_Compound": tables_dir / "jump_compound_screen_results.xlsx",
             "JUMP_CRISPR": tables_dir / "jump_crispr_screen_results.xlsx",
@@ -111,6 +128,9 @@ def create_screen_database(
             "LINCS": tables_dir / "lincs_screen_results.xlsx",
             "TA_ORF": tables_dir / "taorf_screen_results.xlsx",
         }
+
+    # Filter to only requested datasets
+    files = {k: v for k, v in all_files.items() if k in normalized_datasets}
 
     # Mapping for unified perturbation columns
     def add_perturbation_columns(df: pd.DataFrame, dataset_name: str) -> pd.DataFrame:

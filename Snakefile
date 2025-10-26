@@ -216,13 +216,15 @@ rule create_baseline_database:
     output:
         "data/processed/screen_results_baseline.duckdb"
     params:
-        output_path="data/processed/screen_results_baseline.duckdb"
+        output_path="data/processed/screen_results_baseline.duckdb",
+        datasets=",".join(DATASETS)
     shell:
         """
         pixi run haghighi-mito create-database \
             --output-path {params.output_path} \
             --use-parquet \
             --parquet-dir {INTERIM_BASELINE} \
+            --datasets {params.datasets} \
             --overwrite
         """
 
@@ -359,13 +361,15 @@ rule create_notebook_database:
     output:
         "data/processed/screen_results_notebook.duckdb"
     params:
-        output_path="data/processed/screen_results_notebook.duckdb"
+        output_path="data/processed/screen_results_notebook.duckdb",
+        datasets=",".join(DATASETS)
     shell:
         """
         pixi run haghighi-mito create-database \
             --output-path {params.output_path} \
             --use-parquet \
             --parquet-dir {INTERIM_NOTEBOOK} \
+            --datasets {params.datasets} \
             --overwrite
         """
 
