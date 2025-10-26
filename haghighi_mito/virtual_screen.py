@@ -41,6 +41,7 @@ Usage:
 
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from loguru import logger
@@ -465,6 +466,247 @@ def compare_with_baseline(results, dataset: str):
     return comparison
 
 
+def load_perturbation_radial_data(per_site_df, dataset: str, pert_id: str):
+    """Load per-site radial data for a specific perturbation.
+
+    Args:
+        per_site_df: Full per-site dataframe
+        dataset: Dataset name
+        pert_id: Perturbation identifier
+
+    Returns:
+        dict with:
+            - radial_patterns: (n_sites, 12) array of radial bins 5-16
+            - control_subtracted: (n_sites, 12) control-subtracted patterns
+            - slopes: (n_sites,) array of calculated slopes
+            - last_peak_inds: (n_sites,) array of peak indices
+            - median_slope: median slope value
+            - median_peak_ind: median peak index
+    """
+    pert_col = DATASET_INFO[dataset]["pert_col"]
+    target_columns = [
+        f"Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16"
+        for i in range(5, 17)
+    ]
+
+    # Get data for this perturbation
+    pert_data = per_site_df[per_site_df[pert_col] == pert_id].copy()
+
+    if len(pert_data) == 0:
+        logger.warning(f"No data found for perturbation: {pert_id}")
+        return None
+
+    # Extract radial patterns
+    radial_patterns = pert_data[target_columns].values
+
+    # Calculate per-plate control means
+    control_df_perplate = (
+        per_site_df.loc[per_site_df["ctrl_well"]]
+        .groupby("batch_plate")[target_columns]
+        .mean()
+    )
+
+    # Subtract controls
+    control_subtracted = []
+    for idx, row in pert_data.iterrows():
+        batch_plate = row["batch_plate"]
+        radial_pattern = row[target_columns].values
+
+        if batch_plate in control_df_perplate.index:
+            control_values = control_df_perplate.loc[batch_plate].values
+            corrected = radial_pattern - control_values
+        else:
+            corrected = radial_pattern
+
+        control_subtracted.append(corrected)
+
+    control_subtracted = np.array(control_subtracted)
+
+    # Extract slopes and peak indices if available
+    slopes = pert_data["slope"].values if "slope" in pert_data.columns else None
+    last_peak_inds = pert_data["last_peak_ind"].values if "last_peak_ind" in pert_data.columns else None
+
+    return {
+        "radial_patterns": radial_patterns,
+        "control_subtracted": control_subtracted,
+        "slopes": slopes,
+        "last_peak_inds": last_peak_inds,
+        "median_slope": np.median(slopes) if slopes is not None else None,
+        "median_peak_ind": np.median(last_peak_inds) if last_peak_inds is not None else None,
+        "n_sites": len(pert_data),
+    }
+
+
+def visualize_peak_detection(dataset: str, pert_id: str, pert_data: dict, baseline_row: dict = None, output_path: Path = None):
+    """Visualize peak detection and slope calculation for a perturbation.
+
+    Args:
+        dataset: Dataset name
+        pert_id: Perturbation identifier
+        pert_data: Dict from load_perturbation_radial_data
+        baseline_row: Dict with baseline metrics (slope, last_peak_ind)
+        output_path: Path to save figure (if None, displays instead)
+    """
+    if pert_data is None:
+        logger.warning(f"No data to visualize for {pert_id}")
+        return
+
+    # Create figure
+    n_sites = min(4, pert_data["n_sites"])  # Show up to 4 examples
+    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+    fig.suptitle(f"Peak Detection Analysis: {pert_id}", fontsize=14, fontweight="bold")
+
+    axes = axes.flatten()
+
+    # Plot first few sites
+    for i in range(n_sites):
+        ax = axes[i]
+
+        # Get control-subtracted pattern
+        pattern = pert_data["control_subtracted"][i]
+        x = np.arange(len(pattern))
+
+        # Smooth the pattern (as in find_end_slope2_simple)
+        smoothed = savgol_filter(pattern, window_length=5, polyorder=3)
+
+        # Plot raw and smoothed
+        ax.plot(x, pattern, 'o-', alpha=0.5, label="Control-subtracted", linewidth=1)
+        ax.plot(x, smoothed, 's-', alpha=0.8, label="Smoothed", linewidth=2)
+
+        # Mark detected peak
+        if pert_data["last_peak_inds"] is not None:
+            peak_ind = int(pert_data["last_peak_inds"][i])
+            if 0 <= peak_ind < len(smoothed):
+                ax.axvline(peak_ind, color='red', linestyle='--', alpha=0.7, label=f"Peak @ {peak_ind}")
+                ax.plot(peak_ind, smoothed[peak_ind], 'r*', markersize=15)
+
+                # Draw slope line
+                slope = pert_data["slopes"][i]
+                last_two_avg = (smoothed[-1] + smoothed[-2]) / 2
+                x_slope = np.array([peak_ind, len(smoothed) - 1.5])
+                y_slope = np.array([smoothed[peak_ind], last_two_avg])
+                ax.plot(x_slope, y_slope, 'g--', linewidth=2, alpha=0.7, label=f"Slope={slope:.4f}")
+
+        ax.set_xlabel("Radial Bin (5-16)")
+        ax.set_ylabel("MeanFrac")
+        ax.set_title(f"Site {i+1}")
+        ax.legend(fontsize=8)
+        ax.grid(True, alpha=0.3)
+
+    # Add summary text
+    summary_text = f"Median slope (new): {pert_data['median_slope']:.6f}\n"
+    summary_text += f"Median peak ind (new): {pert_data['median_peak_ind']:.1f}\n"
+    summary_text += f"N sites: {pert_data['n_sites']}\n"
+
+    if baseline_row is not None:
+        summary_text += f"\nBaseline slope: {baseline_row.get('slope_baseline', np.nan):.6f}\n"
+        summary_text += f"Baseline peak ind: {baseline_row.get('last_peak_ind_baseline', np.nan):.1f}\n"
+        slope_diff = pert_data['median_slope'] - baseline_row.get('slope_baseline', 0)
+        slope_pct = 100 * abs(slope_diff) / abs(baseline_row.get('slope_baseline', 1))
+        summary_text += f"\nSlope % diff: {slope_pct:.1f}%"
+
+    fig.text(0.02, 0.02, summary_text, fontsize=10, family='monospace',
+             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+
+    plt.tight_layout()
+
+    if output_path:
+        plt.savefig(output_path, dpi=150, bbox_inches='tight')
+        logger.info(f"Saved plot to {output_path}")
+        plt.close()
+    else:
+        plt.show()
+
+
+def analyze_edge_cases(dataset: str, n_best: int = 5, n_worst: int = 5, sort_by: str = "t_target_pattern"):
+    """Analyze best and worst matching perturbations.
+
+    Args:
+        dataset: Dataset name
+        n_best: Number of best matches to analyze
+        n_worst: Number of worst matches to analyze
+        sort_by: Metric to sort by - "t_target_pattern" (default), "slope", "t_orth", "t_slope"
+    """
+    logger.info(f"Analyzing edge cases for {dataset}")
+
+    # Load comparison CSV
+    comparison_path = PROCESSED_DATA_DIR / "virtual_screen_simple" / f"{dataset}_baseline_comparison.csv"
+
+    if not comparison_path.exists():
+        logger.error(f"Comparison file not found: {comparison_path}")
+        logger.error("Run 'just run-virtual-screen-for {dataset}' first")
+        return
+
+    comparison = pd.read_csv(comparison_path)
+    logger.info(f"Loaded {len(comparison)} perturbations from comparison file")
+
+    # Load per-site data
+    per_site_df, _ = load_dataset_data(dataset)
+
+    # Ensure slopes are calculated
+    if "slope" not in per_site_df.columns:
+        logger.info("Calculating slopes...")
+        _, per_site_df = calculate_simple_metrics(per_site_df, dataset)
+
+    # Create output directory
+    output_dir = PROCESSED_DATA_DIR / "figures" / "edge_cases" / dataset
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    pert_col = DATASET_INFO[dataset]["pert_col"]
+
+    # Determine which metric to use for sorting
+    sort_col = f"{sort_by}_pct_diff"
+    sort_col_abs = f"{sort_col}_abs"
+
+    # Check if the metric exists in the comparison dataframe
+    if sort_col not in comparison.columns:
+        logger.error(f"Metric '{sort_by}' not found in comparison data. Available metrics: {[c.replace('_pct_diff', '') for c in comparison.columns if '_pct_diff' in c and '_abs' not in c]}")
+        return
+
+    # Get best and worst matches (by absolute percentage difference)
+    comparison[sort_col_abs] = comparison[sort_col].abs()
+    best_matches = comparison.nsmallest(n_best, sort_col_abs)
+    worst_matches = comparison.nlargest(n_worst, sort_col_abs)
+
+    logger.info(f"\n{'='*70}")
+    logger.info(f"BEST MATCHES (smallest absolute {sort_by} % difference)")
+    logger.info(f"{'='*70}")
+
+    for idx, row in best_matches.iterrows():
+        pert_id = row[pert_col]
+        logger.info(f"\n{pert_id}:")
+        logger.info(f"  {sort_by} % diff: {row[sort_col]:.2f}% (abs: {row[sort_col_abs]:.2f}%)")
+        logger.info(f"  New {sort_by}: {row[f'{sort_by}_new']:.6f}, Baseline: {row[f'{sort_by}_baseline']:.6f}")
+        logger.info(f"  Slope % diff: {row['slope_pct_diff']:.2f}%")
+        logger.info(f"  New slope: {row['slope_new']:.6f}, Baseline: {row['slope_baseline']:.6f}")
+
+        # Load and visualize
+        pert_data = load_perturbation_radial_data(per_site_df, dataset, pert_id)
+        output_path = output_dir / f"best_{idx+1}_{pert_id}.png"
+        visualize_peak_detection(dataset, pert_id, pert_data, row, output_path)
+
+    logger.info(f"\n{'='*70}")
+    logger.info(f"WORST MATCHES (largest absolute {sort_by} % difference)")
+    logger.info(f"{'='*70}")
+
+    for idx, row in worst_matches.iterrows():
+        pert_id = row[pert_col]
+        logger.info(f"\n{pert_id}:")
+        logger.info(f"  {sort_by} % diff: {row[sort_col]:.2f}% (abs: {row[sort_col_abs]:.2f}%)")
+        logger.info(f"  New {sort_by}: {row[f'{sort_by}_new']:.6f}, Baseline: {row[f'{sort_by}_baseline']:.6f}")
+        logger.info(f"  Slope % diff: {row['slope_pct_diff']:.2f}%")
+        logger.info(f"  New slope: {row['slope_new']:.6f}, Baseline: {row['slope_baseline']:.6f}")
+
+        # Load and visualize
+        pert_data = load_perturbation_radial_data(per_site_df, dataset, pert_id)
+        output_path = output_dir / f"worst_{idx+1}_{pert_id}.png"
+        visualize_peak_detection(dataset, pert_id, pert_data, row, output_path)
+
+    logger.info(f"\n{'='*70}")
+    logger.info(f"Saved {n_best + n_worst} diagnostic plots to {output_dir}")
+    logger.info(f"{'='*70}")
+
+
 def run_virtual_screen(dataset: str, compare_baseline: bool = True, calculate_stats: bool = True):
     """Run virtual screen analysis for specified dataset.
 
@@ -492,8 +734,11 @@ def run_virtual_screen(dataset: str, compare_baseline: bool = True, calculate_st
         pert_col = DATASET_INFO[dataset]["pert_col"]
         results = pd.merge(results, stats_results, on=pert_col, how="left")
 
-    # Save results
-    output_path = PROCESSED_DATA_DIR / f"{dataset}_virtual_screen_simple.csv"
+    # Save results to symmetric location with baseline/regenerated structure
+    output_dir = PROCESSED_DATA_DIR / "virtual_screen_simple"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    output_path = output_dir / f"{dataset}_results_pattern_aug_070624.csv"
     results.to_csv(output_path, index=False)
     logger.info(f"\nSaved results to {output_path}")
 
@@ -502,7 +747,7 @@ def run_virtual_screen(dataset: str, compare_baseline: bool = True, calculate_st
         comparison = compare_with_baseline(results, dataset)
 
         # Save comparison
-        comparison_path = PROCESSED_DATA_DIR / f"{dataset}_baseline_comparison.csv"
+        comparison_path = output_dir / f"{dataset}_baseline_comparison.csv"
         comparison.to_csv(comparison_path, index=False)
         logger.info(f"\nSaved comparison to {comparison_path}")
 

@@ -104,6 +104,30 @@ def virtual_screen_cmd(
     run_virtual_screen(dataset=dataset, compare_baseline=compare_baseline, calculate_stats=calculate_stats)
 
 
+@app.command(name="analyze-edge-cases")
+def analyze_edge_cases_cmd(
+    dataset: Annotated[str, typer.Option(help="Dataset to analyze (taorf, CDRP, lincs, jump_orf, jump_crispr, jump_compound)")],
+    n_best: Annotated[int, typer.Option(help="Number of best matches to visualize")] = 5,
+    n_worst: Annotated[int, typer.Option(help="Number of worst matches to visualize")] = 5,
+    sort_by: Annotated[str, typer.Option(help="Metric to sort by (t_target_pattern, slope, t_orth, t_slope)")] = "t_target_pattern",
+):
+    """Analyze edge cases from baseline comparison.
+
+    Visualizes radial patterns and peak detection for perturbations with the
+    smallest (best matches) and largest (worst matches) differences from baseline.
+
+    Default sorting is by t_target_pattern (Hotelling's T² on full radial distribution),
+    which bypasses peak detection entirely and compares raw pattern similarity.
+
+    Requires running 'virtual-screen --compare-baseline' first to generate comparison file.
+    Saves diagnostic plots to data/processed/figures/edge_cases/{dataset}/
+    """
+    # Lazy imports for faster startup
+    from haghighi_mito.virtual_screen import analyze_edge_cases
+
+    analyze_edge_cases(dataset=dataset, n_best=n_best, n_worst=n_worst, sort_by=sort_by)
+
+
 def main():
     """Entry point for CLI."""
     app()

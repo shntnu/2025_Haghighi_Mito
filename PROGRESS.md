@@ -252,6 +252,30 @@ Comparison with baseline (taorf, 327 perturbations):
 
 ---
 
+## 2025-10-26: Edge Case Analysis Tool for Baseline Comparison
+
+### Implementation Complete
+- Added edge case visualization to `haghighi_mito/virtual_screen.py`:
+  - `load_perturbation_radial_data()`: Extracts per-site radial patterns for specific perturbations
+  - `visualize_peak_detection()`: Plots control-subtracted patterns, smoothing, peak detection, slope calculation
+  - `analyze_edge_cases()`: Finds best/worst matches and generates diagnostic plots
+- Added CLI command `haghighi-mito analyze-edge-cases` with configurable sorting metric
+- Justfile command: `just analyze-edge-cases-for taorf`
+
+### Key Finding: Even Best Matches Show Significant Divergence
+Sorted by absolute percentage difference (taorf, 327 perturbations):
+- **Best slope matches:** 38-68% difference from baseline → No subset matches well
+- **t_target_pattern sorting** (default): Bypasses peak detection, compares raw radial curve similarity
+- Confirms fundamental algorithmic difference, not numerical precision issue
+
+### Decision: Use t_target_pattern for Edge Case Analysis
+Default sorting metric changed from `slope` to `t_target_pattern` because:
+- Tests full 12-bin radial distribution without peak detection
+- More direct measure of pattern similarity (37% within 10% vs <10% for slope)
+- Helps isolate whether similar patterns produce different slopes due to peak detection alone
+
+---
+
 ## Template for Future Entries
 
 ```text
