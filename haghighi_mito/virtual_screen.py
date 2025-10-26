@@ -414,7 +414,7 @@ def run_virtual_screen(dataset: str, compare_baseline: bool = True, calculate_st
         results = pd.merge(results, stats_results, on=pert_col, how="left")
 
     # Save results to symmetric location with baseline/regenerated structure
-    output_dir = PROCESSED_DATA_DIR / "virtual_screen_simple"
+    output_dir = PROCESSED_DATA_DIR / "virtual_screen_module"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     output_path = output_dir / f"{dataset}_results_pattern_aug_070624.csv"
