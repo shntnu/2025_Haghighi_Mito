@@ -3,6 +3,37 @@
 Starting point for rewriting the virtual screen pipeline with simple, verifiable logic.
 Eventually will include orthogonal features, statistical testing, and all metrics.
 
+Baseline Output Metrics
+-----------------------
+The July 2024 baseline CSVs contain these metrics per perturbation:
+
+Statistical Tests (6 p-values, 4 t-values):
+- p_target_pattern / t_target_pattern: Hotelling's T² test on entire radial distribution
+  pattern (bins 5-16). Tests whether control-subtracted radial curves differ between
+  treatment and control. Does NOT require peak detection or slope calculation.
+
+- p_orth / t_orth: Hotelling's T² test on orthogonal features (non-radial measurements).
+  Ensures perturbation doesn't affect unrelated cellular features.
+
+- p_slope / t_slope: Welch's t-test on slope values (calculated from peak detection).
+  Tests whether radial distribution slopes differ between treatment and control.
+
+- d_slope: Cohen's d effect size for slope. Simple calculation:
+  (mean_treatment - mean_control) / pooled_std
+
+- p_slope_std, p_pattern_std, p_orth_std: Standardized p-values from z-score conversions.
+
+Direct Metrics:
+- Count_Cells_avg: Mean cell count per perturbation
+- last_peak_ind: Index of last peak/valley in smoothed radial pattern (0-11 for bins 5-16)
+- slope: Slope from last peak to end of radial distribution
+
+Most Direct Baseline Comparison
+--------------------------------
+p_target_pattern bypasses peak detection entirely - it compares the full radial
+distribution curves using multivariate statistics. This is the most fundamental test
+and should match baseline if control subtraction is performed identically.
+
 Usage:
     pixi run haghighi-mito virtual-screen --dataset taorf
     pixi run haghighi-mito virtual-screen --dataset jump_orf --compare-baseline
@@ -20,6 +51,7 @@ from haghighi_mito.config import (
     EXTERNAL_DATA_DIR,
     PROCESSED_DATA_DIR,
 )
+from haghighi_mito.vectorized_stats import batch_plate_statistics
 
 
 def find_end_slope2_simple(data):
@@ -169,6 +201,7 @@ def calculate_simple_metrics(per_site_df, dataset: str):
         slopes.append(slope)
 
     per_site_df["last_peak_ind"] = last_peak_inds
+    per_site_df["last_peak_loc"] = last_peak_inds  # Alias for batch_plate_statistics compatibility
     per_site_df["slope"] = slopes
 
     # Reset index to ensure clean indexing
@@ -202,7 +235,126 @@ def calculate_simple_metrics(per_site_df, dataset: str):
 
     logger.info(f"Aggregated results for {len(results)} perturbations")
 
-    return results
+    return results, per_site_df
+
+
+def load_orthogonal_features(dataset: str):
+    """Load list of orthogonal features for a dataset.
+
+    Mirrors logic from notebook 2.0 lines 1005-1033:
+    - LINCS uses hardcoded list
+    - All other datasets use fibroblast_derived.csv
+    """
+    orth_features_dir = (
+        EXTERNAL_DATA_DIR / "mito_project/workspace/results/target_pattern_orth_features_lists"
+    )
+
+    if dataset == "lincs":
+        # Hardcoded for LINCS (from notebook 2.0)
+        orth_features = [
+            "Nuclei_AreaShape_FormFactor",
+            "Nuclei_AreaShape_Eccentricity",
+            "Cytoplasm_AreaShape_MeanRadius",
+            "Cytoplasm_AreaShape_MedianRadius",
+            "Nuclei_Texture_AngularSecondMoment_DNA_8_45",
+        ]
+        logger.info(f"Using hardcoded orthogonal features for LINCS: {len(orth_features)} features")
+    else:
+        # Use fibroblast_derived.csv for all other datasets
+        orth_features_path = orth_features_dir / "fibroblast_derived.csv"
+        logger.info(f"Loading orthogonal features from {orth_features_path}")
+        orth_features_df = pd.read_csv(orth_features_path)
+        orth_features = orth_features_df["orth_fs"].tolist()
+        logger.info(f"Loaded {len(orth_features)} orthogonal features")
+
+    return orth_features
+
+
+def calculate_statistical_tests(per_site_df, dataset: str):
+    """Calculate statistical tests (t-values) for each perturbation.
+
+    Uses the vectorized batch_plate_statistics function to compute:
+    - t_target_pattern: Hotelling's T² for radial distribution
+    - t_orth: Hotelling's T² for orthogonal features
+    - t_slope: Welch's t-test for slope
+    - d_slope: Cohen's d effect size for slope
+
+    Returns
+    -------
+    pd.DataFrame
+        Results with t-values for each perturbation
+    """
+    logger.info("Calculating statistical tests...")
+
+    pert_col = DATASET_INFO[dataset]["pert_col"]
+
+    # Define target columns (radial bins 5-16)
+    target_columns = [
+        f"Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16"
+        for i in range(5, 17)
+    ]
+
+    # Load orthogonal features
+    orth_features = load_orthogonal_features(dataset)
+
+    # Prepare control data by plate
+    logger.info("Preparing control data by plate...")
+    control_df = per_site_df[per_site_df["ctrl_well"]].copy()
+    control_dfs_by_plate = {
+        plate: group for plate, group in control_df.groupby("batch_plate")
+    }
+    logger.info(f"Prepared controls for {len(control_dfs_by_plate)} plates")
+
+    # Get unique perturbations (non-controls only)
+    # Note: ctrl_well is dtype object, so use == False instead of ~ to avoid -1 indexing issue
+    pert_df = per_site_df[per_site_df["ctrl_well"] == False].copy()  # noqa: E712
+    unique_perts = pert_df[pert_col].dropna().unique()
+    logger.info(f"Processing {len(unique_perts)} unique perturbations")
+
+    # Process each perturbation
+    results_list = []
+
+    for i, pert in enumerate(unique_perts):
+        if (i + 1) % 50 == 0:
+            logger.info(f"  Processed {i+1}/{len(unique_perts)} perturbations")
+
+        # Get data for this perturbation
+        per_site_df_pert = pert_df[pert_df[pert_col] == pert].copy()
+
+        # Calculate statistics using vectorized function
+        batch_results = batch_plate_statistics(
+            per_site_df_pert,
+            control_dfs_by_plate,
+            target_columns,
+            orth_features
+        )
+
+        if batch_results is None:
+            continue
+
+        # Extract results
+        tvals = batch_results['tvals']  # shape (n_plates, 4)
+
+        # Find plate with median t_target_pattern (index 0)
+        median_plate_idx = np.argsort(np.abs(tvals[:, 0]))[len(tvals) // 2]
+
+        # Get t-values from median plate
+        t_target_pattern = tvals[median_plate_idx, 0]
+        t_orth = tvals[median_plate_idx, 1]
+        t_slope = tvals[median_plate_idx, 2]
+        d_slope = tvals[median_plate_idx, 3]
+
+        results_list.append({
+            pert_col: pert,
+            "t_target_pattern": t_target_pattern,
+            "t_orth": t_orth,
+            "t_slope": t_slope,
+            "d_slope": d_slope,
+        })
+
+    logger.info(f"Calculated statistical tests for {len(results_list)} perturbations")
+
+    return pd.DataFrame(results_list)
 
 
 def compare_with_baseline(results, dataset: str):
@@ -217,9 +369,17 @@ def compare_with_baseline(results, dataset: str):
 
     # Merge on perturbation ID
     pert_col = DATASET_INFO[dataset]["pert_col"]
+
+    # Determine which columns to compare based on what's in results
+    baseline_cols = [pert_col, "Count_Cells_avg", "last_peak_ind", "slope"]
+
+    # Add t-values if they're in results
+    if "t_target_pattern" in results.columns:
+        baseline_cols.extend(["t_target_pattern", "t_orth", "t_slope", "d_slope"])
+
     comparison = pd.merge(
         results,
-        baseline[[pert_col, "Count_Cells_avg", "last_peak_ind", "slope"]],
+        baseline[baseline_cols],
         on=pert_col,
         suffixes=("_new", "_baseline")
     )
@@ -242,6 +402,14 @@ def compare_with_baseline(results, dataset: str):
     comparison["slope_pct_diff"] = (
         100 * comparison["slope_diff"] / comparison["slope_baseline"].abs()
     )
+
+    # Calculate t-value differences if present
+    if "t_target_pattern_new" in comparison.columns:
+        for col in ["t_target_pattern", "t_orth", "t_slope", "d_slope"]:
+            comparison[f"{col}_diff"] = comparison[f"{col}_new"] - comparison[f"{col}_baseline"]
+            comparison[f"{col}_pct_diff"] = (
+                100 * comparison[f"{col}_diff"] / comparison[f"{col}_baseline"].abs()
+            )
 
     # Summary statistics
     logger.info("\n" + "="*70)
@@ -266,17 +434,44 @@ def compare_with_baseline(results, dataset: str):
     logger.info(f"  Within 10%: {(comparison['slope_pct_diff'].abs() < 10).sum()}/{len(comparison)}")
     logger.info(f"  Within 1%: {(comparison['slope_pct_diff'].abs() < 1).sum()}/{len(comparison)}")
 
+    # T-value statistics if present
+    if "t_target_pattern_new" in comparison.columns:
+        logger.info(f"\nt_target_pattern:")
+        logger.info(f"  Mean absolute diff: {comparison['t_target_pattern_diff'].abs().mean():.6f}")
+        logger.info(f"  Mean % diff: {comparison['t_target_pattern_pct_diff'].abs().mean():.2f}%")
+        logger.info(f"  Within 10%: {(comparison['t_target_pattern_pct_diff'].abs() < 10).sum()}/{len(comparison)}")
+        logger.info(f"  Within 1%: {(comparison['t_target_pattern_pct_diff'].abs() < 1).sum()}/{len(comparison)}")
+
+        logger.info(f"\nt_orth:")
+        logger.info(f"  Mean absolute diff: {comparison['t_orth_diff'].abs().mean():.6f}")
+        logger.info(f"  Mean % diff: {comparison['t_orth_pct_diff'].abs().mean():.2f}%")
+        logger.info(f"  Within 10%: {(comparison['t_orth_pct_diff'].abs() < 10).sum()}/{len(comparison)}")
+        logger.info(f"  Within 1%: {(comparison['t_orth_pct_diff'].abs() < 1).sum()}/{len(comparison)}")
+
+        logger.info(f"\nt_slope:")
+        logger.info(f"  Mean absolute diff: {comparison['t_slope_diff'].abs().mean():.6f}")
+        logger.info(f"  Mean % diff: {comparison['t_slope_pct_diff'].abs().mean():.2f}%")
+        logger.info(f"  Within 10%: {(comparison['t_slope_pct_diff'].abs() < 10).sum()}/{len(comparison)}")
+        logger.info(f"  Within 1%: {(comparison['t_slope_pct_diff'].abs() < 1).sum()}/{len(comparison)}")
+
+        logger.info(f"\nd_slope:")
+        logger.info(f"  Mean absolute diff: {comparison['d_slope_diff'].abs().mean():.6f}")
+        logger.info(f"  Mean % diff: {comparison['d_slope_pct_diff'].abs().mean():.2f}%")
+        logger.info(f"  Within 10%: {(comparison['d_slope_pct_diff'].abs() < 10).sum()}/{len(comparison)}")
+        logger.info(f"  Within 1%: {(comparison['d_slope_pct_diff'].abs() < 1).sum()}/{len(comparison)}")
+
     logger.info("="*70)
 
     return comparison
 
 
-def run_virtual_screen(dataset: str, compare_baseline: bool = True):
+def run_virtual_screen(dataset: str, compare_baseline: bool = True, calculate_stats: bool = True):
     """Run virtual screen analysis for specified dataset.
 
     Args:
         dataset: Dataset name (taorf, CDRP, lincs, jump_orf, jump_crispr, jump_compound)
         compare_baseline: Whether to compare with baseline CSV and save comparison
+        calculate_stats: Whether to calculate statistical tests (t-values)
     """
     if dataset not in DATASET_INFO:
         raise ValueError(f"Unknown dataset: {dataset}. Must be one of {list(DATASET_INFO.keys())}")
@@ -286,8 +481,16 @@ def run_virtual_screen(dataset: str, compare_baseline: bool = True):
     # Load data
     per_site_df, annot = load_dataset_data(dataset)
 
-    # Calculate metrics
-    results = calculate_simple_metrics(per_site_df, dataset)
+    # Calculate basic metrics
+    results, per_site_df_with_slopes = calculate_simple_metrics(per_site_df, dataset)
+
+    # Calculate statistical tests if requested
+    if calculate_stats:
+        stats_results = calculate_statistical_tests(per_site_df_with_slopes, dataset)
+
+        # Merge with basic metrics
+        pert_col = DATASET_INFO[dataset]["pert_col"]
+        results = pd.merge(results, stats_results, on=pert_col, how="left")
 
     # Save results
     output_path = PROCESSED_DATA_DIR / f"{dataset}_virtual_screen_simple.csv"
@@ -304,9 +507,17 @@ def run_virtual_screen(dataset: str, compare_baseline: bool = True):
         logger.info(f"\nSaved comparison to {comparison_path}")
 
         # Show some examples of large differences
-        logger.info("\nTop 5 largest slope % differences:")
-        pert_col = DATASET_INFO[dataset]["pert_col"]
-        top_diffs = comparison.nlargest(5, "slope_pct_diff")[
-            [pert_col, "slope_new", "slope_baseline", "slope_pct_diff"]
-        ]
-        print(top_diffs.to_string(index=False))
+        if calculate_stats and "t_target_pattern_pct_diff" in comparison.columns:
+            logger.info("\nTop 5 largest t_target_pattern % differences:")
+            pert_col = DATASET_INFO[dataset]["pert_col"]
+            top_diffs = comparison.nlargest(5, "t_target_pattern_pct_diff")[
+                [pert_col, "t_target_pattern_new", "t_target_pattern_baseline", "t_target_pattern_pct_diff"]
+            ]
+            print(top_diffs.to_string(index=False))
+        else:
+            logger.info("\nTop 5 largest slope % differences:")
+            pert_col = DATASET_INFO[dataset]["pert_col"]
+            top_diffs = comparison.nlargest(5, "slope_pct_diff")[
+                [pert_col, "slope_new", "slope_baseline", "slope_pct_diff"]
+            ]
+            print(top_diffs.to_string(index=False))

@@ -90,16 +90,18 @@ def validate_databases_cmd(
 def virtual_screen_cmd(
     dataset: Annotated[str, typer.Option(help="Dataset to analyze (taorf, CDRP, lincs, jump_orf, jump_crispr, jump_compound)")],
     compare_baseline: Annotated[bool, typer.Option(help="Compare results with baseline CSV")] = True,
+    calculate_stats: Annotated[bool, typer.Option(help="Calculate statistical tests (t-values)")] = True,
 ):
     """Run virtual screen analysis from scratch.
 
     Calculates radial distribution metrics (Count_Cells_avg, last_peak_ind, slope)
-    from per-site profiles. Eventually will include orthogonal features and statistical testing.
+    and statistical tests (t_target_pattern, t_orth, t_slope, d_slope)
+    from per-site profiles.
     """
     # Lazy imports for faster startup
     from haghighi_mito.virtual_screen import run_virtual_screen
 
-    run_virtual_screen(dataset=dataset, compare_baseline=compare_baseline)
+    run_virtual_screen(dataset=dataset, compare_baseline=compare_baseline, calculate_stats=calculate_stats)
 
 
 def main():

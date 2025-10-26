@@ -231,6 +231,27 @@ Foundation established for iterative debugging of slope calculation. Can now tes
 
 ---
 
+## 2025-10-25: Statistical Test Implementation & Partial Baseline Match
+
+### Implementation Complete
+- Added statistical test calculations to `haghighi_mito/virtual_screen.py`
+- Implemented all 4 baseline t-values using vectorized functions:
+  - `t_target_pattern`: Hotelling's T² on full radial distribution (bypasses peak detection)
+  - `t_orth`: Hotelling's T² on orthogonal features
+  - `t_slope`: Welch's t-test on slope values
+  - `d_slope`: Cohen's d effect size for slope
+- Fixed orthogonal feature loading (uses `fibroblast_derived.csv` for most datasets, not dataset-specific files)
+
+### Key Finding: t_target_pattern Shows Partial Match
+Comparison with baseline (taorf, 327 perturbations):
+- **t_target_pattern:** 37% within 10%, 25% within 1% → **Partial validation achieved**
+- **t_orth:** 33% within 10%
+- **t_slope & d_slope:** <10% within 10% (confirming slope divergence)
+
+**Significance:** t_target_pattern tests the entire 12-bin radial distribution without peak detection. The 37% match rate validates that control-subtracted radial patterns are reasonably similar to baseline, confirming peak detection (not data processing) is the divergence point.
+
+---
+
 ## Template for Future Entries
 
 ```text
