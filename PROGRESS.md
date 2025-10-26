@@ -1241,6 +1241,201 @@ rule create_database:
 
 ---
 
+## 2025-10-25: Data Organization Refactoring - Snakemake-Driven Downloads & Semantic Directory Structure
+
+### Completed
+
+- [x] Restructured data directories to reflect semantic provenance
+  - Created `virtual_screen_baseline/` for S3-downloaded CSVs (July 2024)
+  - Created `virtual_screen_regenerated/` for locally-generated CSVs (Oct 2025)
+  - Created `virtual_screen_archive/` for historical versions (reference only)
+  - Removed old cluttered `virtual_screen/` directory
+- [x] Eliminated `_REGEN` suffix pollution
+  - Directory name now provides provenance context
+  - Same filename in different directories = different provenance
+- [x] Migrated from bash download script to Snakemake download rules
+  - Added `download_baseline_csv` rule - downloads single CSV from S3
+  - Added `download_all_baseline` target - downloads all 6 baseline CSVs
+  - Downloads are idempotent (only fetches missing files)
+  - Declarative dependencies - pipeline states exactly what it needs
+- [x] Split pipeline into baseline and regenerated modes
+  - **Baseline pipeline**: S3 data → `parquet_baseline/` → `generated_from_s3_baseline/` → `screen_results_baseline.duckdb`
+  - **Regenerated pipeline**: Local data → `parquet_regenerated/` → `generated_from_local/` → `screen_results_regenerated.duckdb`
+  - Each pipeline has independent intermediate and output directories
+- [x] Updated Snakefile with clear structure
+  - Configuration section with all paths centralized
+  - Download rules section for S3 data acquisition
+  - Separate processing rules for baseline vs regenerated
+  - Default target: `screen_results_baseline.duckdb`
+  - Added `all_regenerated` target for regenerated pipeline
+  - Added `onstart:` block that prints configuration automatically
+- [x] Created minimal Justfile for housekeeping tasks
+  - Only convenience commands (run, clean, download, status)
+  - All pipeline logic remains in Snakefile (proper separation of concerns)
+  - Simple, no complex variables or logic
+- [x] Cleaned up old artifacts
+  - Removed `data/interim/parquet/` (replaced with `parquet_baseline/` and `parquet_regenerated/`)
+  - Preserved existing curated Excel files (unchanged)
+
+### Status: Clean, Semantic Data Organization
+
+**New directory structure (external data):**
+```
+data/external/mito_project/workspace/results/
+├── virtual_screen_baseline/          # S3 downloads (July 2024, 6 files, 66 MB)
+│   ├── CDRP_results_pattern_aug_070624.csv
+│   ├── jump_compound_results_pattern_aug_070624.csv
+│   ├── jump_crispr_results_pattern_aug_070624.csv
+│   ├── jump_orf_results_pattern_aug_070624.csv
+│   ├── lincs_results_pattern_aug_070624.csv
+│   └── taorf_results_pattern_aug_070624.csv
+├── virtual_screen_regenerated/       # Local generation (Oct 2025, 2 files, 3.7 MB)
+│   ├── lincs_results_pattern_aug_070624.csv
+│   └── taorf_results_pattern_aug_070624.csv
+└── virtual_screen_archive/           # Historical (5 files, 3.3 MB)
+    └── ... (old versions for reference)
+```
+
+**New directory structure (intermediate/processed):**
+```
+data/interim/
+├── parquet_baseline/        # From baseline CSVs
+└── parquet_regenerated/     # From regenerated CSVs
+
+data/processed/
+├── screen_results_baseline.duckdb      # From baseline pipeline
+├── screen_results_regenerated.duckdb   # From regenerated pipeline (when ready)
+└── tables/
+    ├── curated_2024-08-11/            # Git-tracked
+    ├── curated_2025-10-25/            # Git-tracked
+    ├── generated_from_s3_baseline/    # Gitignored (reproducible)
+    └── generated_from_local/          # Gitignored (reproducible)
+```
+
+**Pipeline flow:**
+```
+S3 Baseline Pipeline (default):
+  aws s3 cp → virtual_screen_baseline/*.csv
+    ↓
+  process_baseline_csv (6 parallel jobs)
+    ↓
+  parquet_baseline/*.parquet + generated_from_s3_baseline/*.xlsx
+    ↓
+  create_baseline_database
+    ↓
+  screen_results_baseline.duckdb
+
+Regenerated Pipeline (when needed):
+  notebook 2.0 → virtual_screen_regenerated/*.csv
+    ↓
+  process_regenerated_csv (6 parallel jobs)
+    ↓
+  parquet_regenerated/*.parquet + generated_from_local/*.xlsx
+    ↓
+  create_regenerated_database
+    ↓
+  screen_results_regenerated.duckdb
+```
+
+### Benefits Achieved
+
+**1. Semantic clarity**
+   - Directory structure is self-documenting
+   - No need for suffix pollution (`_REGEN`, `_BASELINE`, etc.)
+   - Clear separation: baseline (validated) vs regenerated (experimental)
+
+**2. Declarative data management**
+   - Snakemake rules declare exactly what data is needed
+   - Pipeline automatically downloads missing baseline CSVs
+   - Idempotent downloads (safe to re-run)
+   - Parallel downloads when multiple files missing
+
+**3. Independent workflows**
+   - Baseline and regenerated pipelines don't interfere
+   - Can run both simultaneously for comparison
+   - Each has its own intermediate and final outputs
+   - Easy to validate: compare `*_baseline.duckdb` vs `*_regenerated.duckdb`
+
+**4. Better maintainability**
+   - Removed bash download script (Snakemake handles downloads)
+   - Clean separation: Snakefile = pipeline logic, Justfile = convenience commands
+   - Clear provenance: directory name tells the story
+   - Easy to extend: add new datasets to `DATASETS` list
+   - Simple discoverability: `just --list` shows all commands
+
+**5. Clean gitignore strategy**
+   - External data always gitignored (`data/external/`)
+   - Intermediate always gitignored (`data/interim/`)
+   - Generated outputs gitignored (reproducible from code)
+   - Curated outputs tracked (manual work, irreplaceable)
+
+### Commands Available
+
+**Baseline pipeline (S3 data):**
+```bash
+just run        # Run full baseline pipeline
+just download   # Download baseline CSVs from S3
+just dry        # Preview what will run
+just clean      # Clean baseline outputs
+```
+
+**Regenerated pipeline (local data):**
+```bash
+just run-regen    # Run regenerated pipeline
+just clean-regen  # Clean regenerated outputs
+```
+
+**Utilities:**
+```bash
+just clean-all    # Clean everything (both pipelines)
+just status       # Show pipeline status
+just --list       # Show all available commands
+```
+
+**Note:** Configuration prints automatically via `onstart:` block when pipeline runs
+
+### Next Actions
+
+1. [ ] Test download functionality: `just download`
+2. [ ] Verify baseline pipeline produces identical results to before refactoring
+3. [ ] Run validation: compare new `screen_results_baseline.duckdb` vs old `screen_results.duckdb`
+4. [ ] Once regenerated CSVs are debugged, run: `just run-regen`
+5. [ ] Compare baseline vs regenerated databases to investigate slope calculation divergence
+
+### Notes
+
+**Why Snakemake for downloads is superior:**
+- Eliminates standalone bash script that duplicates dependency logic
+- Pipeline explicitly declares data requirements
+- Downloads are checkpointed (won't re-download existing files)
+- Can leverage Snakemake's parallelization for multiple downloads
+- Self-documenting: Snakefile IS the data provenance
+
+**Why semantic directories over suffixes:**
+- `virtual_screen_baseline/lincs_*.csv` vs `virtual_screen/lincs_*_BASELINE.csv`
+- Directory name provides context, keeps filenames clean
+- Matches downstream structure (`generated_from_s3_baseline/` vs `generated_from_local/`)
+- Easier to maintain: add file = drop in directory, no renaming needed
+- Clear visual separation when browsing filesystem
+
+**Migration from old structure:**
+- Old: `virtual_screen/{dataset}_*.csv` + `virtual_screen/{dataset}_*_REGEN.csv` (mixed)
+- New: `virtual_screen_baseline/{dataset}_*.csv` + `virtual_screen_regenerated/{dataset}_*.csv` (separated)
+- Archive: Old versions moved to `virtual_screen_archive/` for reference
+
+**Impact on downstream:**
+- Notebooks 2.0 (regenerated): Update output path to `virtual_screen_regenerated/`
+- Snakefile: Updated to use new paths, only contains pipeline logic
+- Justfile: Minimal version for convenience commands only
+- download_data.sh: Can be deprecated (Snakemake handles downloads now)
+- All other code: Unaffected (works with processed outputs, not raw CSVs)
+
+**Clean separation of concerns:**
+- **Snakefile**: Pipeline DAG (download rules, processing rules, targets, onstart hook)
+- **Justfile**: Housekeeping tasks (run, clean, status - just wrappers for snakemake)
+
+---
+
 ## Template for Future Entries
 
 ```text
