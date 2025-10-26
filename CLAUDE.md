@@ -22,6 +22,10 @@ This repository follows the [Carpenter-Singh lab workflow conventions](protocols
 ├── notebooks/             # Analysis notebooks (numbered by phase)
 ├── pipelines/             # CellProfiler pipelines (.cppipe files)
 ├── protocols/             # Experimental protocols and workflow documentation
+├── docs/                  # Documentation and analysis notes
+│   ├── DATA_DOWNLOAD.md   # S3 data download requirements
+│   ├── DATA_FLOW.md       # Complete pipeline data flow documentation
+│   └── PROGRESS.md        # High-level progress log
 ├── Snakefile              # Pipeline automation (download + processing)
 ├── Justfile               # Convenience commands (run, clean, etc.)
 ├── manuscript.md          # Manuscript content
@@ -221,7 +225,7 @@ Notebooks are converted to `.py` scripts for command-line execution:
 - Regenerated pipeline produces experimental results → **use for validation only**
 - Optimization work (vectorization) cannot be validated against baseline
 
-**Decision Point:** Accept baseline as-is OR commit to regenerated version (requires domain expert validation). See PROGRESS.md for detailed analysis.
+**Decision Point:** Accept baseline as-is OR commit to regenerated version (requires domain expert validation). See docs/PROGRESS.md for detailed analysis.
 
 **Recommendation:** Always use `just run-baseline` for validated results. Regenerated pipeline exists for future improvements.
 
@@ -238,11 +242,11 @@ Excel files in `curated_2024-08-11/` and `curated_2025-10-25/` are **manually cu
 - NEVER use emojis in any output, documentation, code comments, or commit messages unless explicitly requested
 - Always use `pixi run python` instead of just `python`
 
-### PROGRESS.md Management
+### docs/PROGRESS.md Management
 
-**DO NOT update PROGRESS.md unless explicitly asked by the user.**
+**DO NOT update docs/PROGRESS.md unless explicitly asked by the user.**
 
-PROGRESS.md is a high-level runlog, not a step-by-step session log.
+docs/PROGRESS.md is a high-level runlog, not a step-by-step session log.
 
 **Only add entries when:**
 - User explicitly asks to document progress
