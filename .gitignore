@@ -181,6 +181,7 @@ logs/
 
 # Snakemake
 .snakemake/
+.download_complete
 
 # Claude Code settings
 .claude/
@@ -188,3 +189,4 @@ logs/
 .direnv/
 
 .DS_Store
+data_bak_*/

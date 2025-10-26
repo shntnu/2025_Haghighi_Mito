@@ -17,6 +17,10 @@ run-regen:
 download:
     pixi run snakemake download_all_baseline --cores 4 --printshellcmds
 
+# Download all data needed for virtual screening analysis (notebook 2.0)
+download-screening:
+    pixi run snakemake download_screening_data --cores 4 --printshellcmds
+
 # Preview what will run (dry run)
 dry:
     pixi run snakemake -n -p
