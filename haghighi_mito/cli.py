@@ -104,28 +104,53 @@ def virtual_screen_cmd(
     run_virtual_screen(dataset=dataset, compare_baseline=compare_baseline, calculate_stats=calculate_stats)
 
 
-@app.command(name="analyze-edge-cases")
-def analyze_edge_cases_cmd(
+@app.command(name="analyze-t-target-pattern")
+def analyze_t_target_pattern_cmd(
     dataset: Annotated[str, typer.Option(help="Dataset to analyze (taorf, CDRP, lincs, jump_orf, jump_crispr, jump_compound)")],
-    n_best: Annotated[int, typer.Option(help="Number of best matches to visualize")] = 5,
-    n_worst: Annotated[int, typer.Option(help="Number of worst matches to visualize")] = 5,
-    sort_by: Annotated[str, typer.Option(help="Metric to sort by (t_target_pattern, slope, t_orth, t_slope)")] = "t_target_pattern",
 ):
-    """Analyze edge cases from baseline comparison.
+    """Analyze t_target_pattern distribution and relationship to baseline.
 
-    Visualizes radial patterns and peak detection for perturbations with the
-    smallest (best matches) and largest (worst matches) differences from baseline.
+    Explores the distribution of t_target_pattern (Hotelling's T² on full radial
+    distribution) and its relationship to the baseline values. Analyzes:
+    - Distribution statistics (mean, median, percentiles)
+    - Correlation with baseline (Pearson, Spearman)
+    - Systematic transformations (linear regression)
+    - Relationship between t_target_pattern match quality and slope match quality
+    - Divergence patterns (where t_target_pattern matches but slope diverges)
 
-    Default sorting is by t_target_pattern (Hotelling's T² on full radial distribution),
-    which bypasses peak detection entirely and compares raw pattern similarity.
+    t_target_pattern is the most direct test for pattern similarity as it bypasses
+    peak detection entirely and compares the full 12-bin radial distribution using
+    multivariate statistics.
 
     Requires running 'virtual-screen --compare-baseline' first to generate comparison file.
-    Saves diagnostic plots to data/processed/figures/edge_cases/{dataset}/
     """
     # Lazy imports for faster startup
-    from haghighi_mito.virtual_screen import analyze_edge_cases
+    from haghighi_mito.virtual_screen import analyze_t_target_pattern_distribution
 
-    analyze_edge_cases(dataset=dataset, n_best=n_best, n_worst=n_worst, sort_by=sort_by)
+    analyze_t_target_pattern_distribution(dataset=dataset)
+
+
+@app.command(name="compare-per-plate")
+def compare_per_plate_cmd(
+    dataset: Annotated[str, typer.Option(help="Dataset to analyze (taorf, CDRP, lincs, jump_orf, jump_crispr, jump_compound)")],
+):
+    """Compare per-plate statistical results with baseline.
+
+    Instead of comparing median-aggregated results (one value per perturbation),
+    this compares ALL plate-level results. For each perturbation that appears on
+    multiple plates, checks if ANY of the regenerated plate values match the
+    baseline plate values.
+
+    This tests whether:
+    - Per-plate calculations are identical (problem is aggregation method)
+    - Or per-plate calculations differ (problem is in core statistics)
+
+    Requires running 'virtual-screen --compare-baseline' first.
+    """
+    # Lazy imports for faster startup
+    from haghighi_mito.virtual_screen import compare_per_plate_results
+
+    compare_per_plate_results(dataset=dataset)
 
 
 def main():

@@ -276,6 +276,38 @@ Default sorting metric changed from `slope` to `t_target_pattern` because:
 
 ---
 
+## 2025-10-26: t_target_pattern Analysis - Promising Alternative Metric
+
+### Key Discovery: Strong Correlation Despite Systematic Scaling
+- **t_target_pattern (Hotelling's T² on full radial distribution) shows r=0.92 with baseline**
+- Systematic transformation: `new = 0.83 * baseline + 0.40` (R²=0.85)
+- 98.8% sign agreement (vs 75.2% for slope)
+- Bypasses peak detection entirely - tests all 12 radial bins directly
+
+### Scatter Plot Analysis
+Created baseline vs regenerated plots for 4 metrics (taorf, n=327):
+- **t_target_pattern**: Excellent linear correlation, tight clustering around fit line
+- **slope**: Terrible - most points compressed to horizontal band, fundamentally different
+- **t_orth**: Good correlation (r=0.858), validates non-radial processing
+- **t_slope**: Moderate (r=0.779), inherits slope issues
+
+### Root Cause Identified: Not Plate Selection
+Per-plate analysis revealed **only 1.2% exact matches** (4/324 perturbations):
+- Baseline aggregated value matches ANY regenerated plate value in only 1.2% of cases
+- Proves issue is in **core per-plate calculations**, not aggregation method
+- Even with perfect plate selection matching, 0.83x scaling would persist
+
+### Implication
+t_target_pattern is more robust than slope (no peak detection dependency) and shows strong baseline agreement. The 0.83x systematic scaling likely comes from preprocessing differences (standardization/normalization steps in notebook 2.0 lines 1212, 1251).
+
+### Infrastructure Added
+- `analyze_t_target_pattern_distribution()` - correlation and transformation analysis
+- `compare_per_plate_results()` - per-plate exact match testing
+- `return_per_plate` flag in `calculate_statistical_tests()`
+- Scatter plot generation with linear fits
+
+---
+
 ## Template for Future Entries
 
 ```text
