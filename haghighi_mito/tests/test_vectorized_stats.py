@@ -26,9 +26,7 @@ def cohens_d_original(x, y):
     nx = len(x)
     ny = len(y)
     dof = nx + ny - 2
-    pooled_std = np.sqrt(
-        ((nx - 1) * np.std(x, ddof=1) ** 2 + (ny - 1) * np.std(y, ddof=1) ** 2) / dof
-    )
+    pooled_std = np.sqrt(((nx - 1) * np.std(x, ddof=1) ** 2 + (ny - 1) * np.std(y, ddof=1) ** 2) / dof)
     return (np.mean(x) - np.mean(y)) / pooled_std
 
 
@@ -218,113 +216,105 @@ class TestBatchPlateStatistics:
 
         # Create synthetic data
         n_sites = 100
-        plates = ['plate1', 'plate2']
+        plates = ["plate1", "plate2"]
 
         # Perturbation data
-        per_site_df_pert = pd.DataFrame({
-            'batch_plate': np.repeat(plates, 50),
-            'Count_Cells': np.random.randint(50, 200, n_sites),
-            'last_peak_loc': np.random.randint(8, 16, n_sites),
-            'slope': np.random.randn(n_sites) * 0.1 + 0.5,
-        })
+        per_site_df_pert = pd.DataFrame(
+            {
+                "batch_plate": np.repeat(plates, 50),
+                "Count_Cells": np.random.randint(50, 200, n_sites),
+                "last_peak_loc": np.random.randint(8, 16, n_sites),
+                "slope": np.random.randn(n_sites) * 0.1 + 0.5,
+            }
+        )
 
         # Add target and orthogonal features
         for i in range(5, 17):
-            per_site_df_pert[f'Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16'] = \
-                np.random.randn(n_sites) * 0.1
+            per_site_df_pert[f"Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16"] = np.random.randn(n_sites) * 0.1
 
         for i in range(10):
-            per_site_df_pert[f'Cells_feature_{i}'] = np.random.randn(n_sites) * 0.1
+            per_site_df_pert[f"Cells_feature_{i}"] = np.random.randn(n_sites) * 0.1
 
         # Control data
         control_dfs_by_plate = {}
         for plate in plates:
-            control_dfs_by_plate[plate] = pd.DataFrame({
-                'batch_plate': [plate] * 50,
-                'Count_Cells': np.random.randint(50, 200, 50),
-                'last_peak_loc': np.random.randint(8, 16, 50),
-                'slope': np.random.randn(50) * 0.1 + 0.3,
-            })
+            control_dfs_by_plate[plate] = pd.DataFrame(
+                {
+                    "batch_plate": [plate] * 50,
+                    "Count_Cells": np.random.randint(50, 200, 50),
+                    "last_peak_loc": np.random.randint(8, 16, 50),
+                    "slope": np.random.randn(50) * 0.1 + 0.3,
+                }
+            )
 
             for i in range(5, 17):
-                control_dfs_by_plate[plate][f'Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16'] = \
-                    np.random.randn(50) * 0.1
+                control_dfs_by_plate[plate][f"Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16"] = np.random.randn(50) * 0.1
 
             for i in range(10):
-                control_dfs_by_plate[plate][f'Cells_feature_{i}'] = np.random.randn(50) * 0.1
+                control_dfs_by_plate[plate][f"Cells_feature_{i}"] = np.random.randn(50) * 0.1
 
-        target_columns = [f'Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16'
-                         for i in range(5, 17)]
-        uncorr_feats = [f'Cells_feature_{i}' for i in range(10)]
+        target_columns = [f"Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16" for i in range(5, 17)]
+        uncorr_feats = [f"Cells_feature_{i}" for i in range(10)]
 
         # Run batch statistics
-        result = batch_plate_statistics(
-            per_site_df_pert,
-            control_dfs_by_plate,
-            target_columns,
-            uncorr_feats
-        )
+        result = batch_plate_statistics(per_site_df_pert, control_dfs_by_plate, target_columns, uncorr_feats)
 
         assert result is not None
-        assert 'cell_counts' in result
-        assert 'pvals' in result
-        assert 'tvals' in result
-        assert 'peak_slope' in result
-        assert 'plates' in result
+        assert "cell_counts" in result
+        assert "pvals" in result
+        assert "tvals" in result
+        assert "peak_slope" in result
+        assert "plates" in result
 
-        assert len(result['cell_counts']) == 2
-        assert result['pvals'].shape == (2, 6)
-        assert result['tvals'].shape == (2, 4)
-        assert result['peak_slope'].shape == (2, 2)
+        assert len(result["cell_counts"]) == 2
+        assert result["pvals"].shape == (2, 6)
+        assert result["tvals"].shape == (2, 4)
+        assert result["peak_slope"].shape == (2, 2)
 
     def test_single_plate(self):
         """Test with single plate."""
         np.random.seed(42)
 
-        per_site_df_pert = pd.DataFrame({
-            'batch_plate': ['plate1'] * 30,
-            'Count_Cells': np.random.randint(50, 200, 30),
-            'last_peak_loc': np.random.randint(8, 16, 30),
-            'slope': np.random.randn(30) * 0.1 + 0.5,
-        })
+        per_site_df_pert = pd.DataFrame(
+            {
+                "batch_plate": ["plate1"] * 30,
+                "Count_Cells": np.random.randint(50, 200, 30),
+                "last_peak_loc": np.random.randint(8, 16, 30),
+                "slope": np.random.randn(30) * 0.1 + 0.5,
+            }
+        )
 
         for i in range(5, 17):
-            per_site_df_pert[f'Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16'] = \
-                np.random.randn(30) * 0.1
+            per_site_df_pert[f"Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16"] = np.random.randn(30) * 0.1
 
         for i in range(5):
-            per_site_df_pert[f'Cells_feature_{i}'] = np.random.randn(30) * 0.1
+            per_site_df_pert[f"Cells_feature_{i}"] = np.random.randn(30) * 0.1
 
         control_dfs_by_plate = {
-            'plate1': pd.DataFrame({
-                'batch_plate': ['plate1'] * 30,
-                'Count_Cells': np.random.randint(50, 200, 30),
-                'last_peak_loc': np.random.randint(8, 16, 30),
-                'slope': np.random.randn(30) * 0.1 + 0.3,
-            })
+            "plate1": pd.DataFrame(
+                {
+                    "batch_plate": ["plate1"] * 30,
+                    "Count_Cells": np.random.randint(50, 200, 30),
+                    "last_peak_loc": np.random.randint(8, 16, 30),
+                    "slope": np.random.randn(30) * 0.1 + 0.3,
+                }
+            )
         }
 
         for i in range(5, 17):
-            control_dfs_by_plate['plate1'][f'Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16'] = \
-                np.random.randn(30) * 0.1
+            control_dfs_by_plate["plate1"][f"Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16"] = np.random.randn(30) * 0.1
 
         for i in range(5):
-            control_dfs_by_plate['plate1'][f'Cells_feature_{i}'] = np.random.randn(30) * 0.1
+            control_dfs_by_plate["plate1"][f"Cells_feature_{i}"] = np.random.randn(30) * 0.1
 
-        target_columns = [f'Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16'
-                         for i in range(5, 17)]
-        uncorr_feats = [f'Cells_feature_{i}' for i in range(5)]
+        target_columns = [f"Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16" for i in range(5, 17)]
+        uncorr_feats = [f"Cells_feature_{i}" for i in range(5)]
 
-        result = batch_plate_statistics(
-            per_site_df_pert,
-            control_dfs_by_plate,
-            target_columns,
-            uncorr_feats
-        )
+        result = batch_plate_statistics(per_site_df_pert, control_dfs_by_plate, target_columns, uncorr_feats)
 
         assert result is not None
-        assert len(result['plates']) == 1
-        assert result['pvals'].shape == (1, 6)
+        assert len(result["plates"]) == 1
+        assert result["pvals"].shape == (1, 6)
 
 
 class TestEndToEnd:
@@ -339,50 +329,46 @@ class TestEndToEnd:
         for _ in range(2):
             np.random.seed(42)
 
-            per_site_df_pert = pd.DataFrame({
-                'batch_plate': np.repeat(['plate1', 'plate2'], 25),
-                'Count_Cells': np.random.randint(50, 200, 50),
-                'last_peak_loc': np.random.randint(8, 16, 50),
-                'slope': np.random.randn(50) * 0.1 + 0.5,
-            })
+            per_site_df_pert = pd.DataFrame(
+                {
+                    "batch_plate": np.repeat(["plate1", "plate2"], 25),
+                    "Count_Cells": np.random.randint(50, 200, 50),
+                    "last_peak_loc": np.random.randint(8, 16, 50),
+                    "slope": np.random.randn(50) * 0.1 + 0.5,
+                }
+            )
 
             for i in range(5, 17):
-                per_site_df_pert[f'Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16'] = \
-                    np.random.randn(50) * 0.1
+                per_site_df_pert[f"Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16"] = np.random.randn(50) * 0.1
 
             for i in range(5):
-                per_site_df_pert[f'Cells_feature_{i}'] = np.random.randn(50) * 0.1
+                per_site_df_pert[f"Cells_feature_{i}"] = np.random.randn(50) * 0.1
 
             control_dfs_by_plate = {}
-            for plate in ['plate1', 'plate2']:
-                control_dfs_by_plate[plate] = pd.DataFrame({
-                    'batch_plate': [plate] * 25,
-                    'Count_Cells': np.random.randint(50, 200, 25),
-                    'last_peak_loc': np.random.randint(8, 16, 25),
-                    'slope': np.random.randn(25) * 0.1 + 0.3,
-                })
+            for plate in ["plate1", "plate2"]:
+                control_dfs_by_plate[plate] = pd.DataFrame(
+                    {
+                        "batch_plate": [plate] * 25,
+                        "Count_Cells": np.random.randint(50, 200, 25),
+                        "last_peak_loc": np.random.randint(8, 16, 25),
+                        "slope": np.random.randn(25) * 0.1 + 0.3,
+                    }
+                )
 
                 for i in range(5, 17):
-                    control_dfs_by_plate[plate][f'Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16'] = \
-                        np.random.randn(25) * 0.1
+                    control_dfs_by_plate[plate][f"Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16"] = np.random.randn(25) * 0.1
 
                 for i in range(5):
-                    control_dfs_by_plate[plate][f'Cells_feature_{i}'] = np.random.randn(25) * 0.1
+                    control_dfs_by_plate[plate][f"Cells_feature_{i}"] = np.random.randn(25) * 0.1
 
-            target_columns = [f'Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16'
-                             for i in range(5, 17)]
-            uncorr_feats = [f'Cells_feature_{i}' for i in range(5)]
+            target_columns = [f"Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16" for i in range(5, 17)]
+            uncorr_feats = [f"Cells_feature_{i}" for i in range(5)]
 
-            result = batch_plate_statistics(
-                per_site_df_pert,
-                control_dfs_by_plate,
-                target_columns,
-                uncorr_feats
-            )
+            result = batch_plate_statistics(per_site_df_pert, control_dfs_by_plate, target_columns, uncorr_feats)
 
             results.append(result)
 
         # Results should be identical
-        assert np.allclose(results[0]['pvals'], results[1]['pvals'])
-        assert np.allclose(results[0]['tvals'], results[1]['tvals'])
-        assert np.allclose(results[0]['peak_slope'], results[1]['peak_slope'])
+        assert np.allclose(results[0]["pvals"], results[1]["pvals"])
+        assert np.allclose(results[0]["tvals"], results[1]["tvals"])
+        assert np.allclose(results[0]["peak_slope"], results[1]["peak_slope"])

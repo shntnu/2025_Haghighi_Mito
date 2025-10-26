@@ -160,20 +160,13 @@ def calculate_simple_metrics(per_site_df, dataset: str):
     pert_col = DATASET_INFO[dataset]["pert_col"]
 
     # Define target columns (radial bins 5-16)
-    target_columns = [
-        f"Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16"
-        for i in range(5, 17)
-    ]
+    target_columns = [f"Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16" for i in range(5, 17)]
 
     logger.info(f"Using {len(target_columns)} radial distribution bins (5-16)")
 
     # Step 1: Calculate per-plate control means
     logger.info("Calculating per-plate control means...")
-    control_df_perplate = (
-        per_site_df.loc[per_site_df["ctrl_well"]]
-        .groupby("batch_plate")[target_columns]
-        .mean()
-    )
+    control_df_perplate = per_site_df.loc[per_site_df["ctrl_well"]].groupby("batch_plate")[target_columns].mean()
 
     logger.info(f"Found controls for {len(control_df_perplate)} plates")
 
@@ -244,11 +237,17 @@ def calculate_simple_metrics(per_site_df, dataset: str):
     logger.info(f"Filtered to {len(pert_df)} perturbation observations")
     logger.info(f"Unique perturbations: {pert_df[pert_col].nunique()}")
 
-    results = pert_df.groupby(pert_col).agg({
-        "Count_Cells": "mean",  # Average cell count
-        "last_peak_ind": "median",  # Median peak index
-        "slope": "median"  # Median slope
-    }).reset_index()
+    results = (
+        pert_df.groupby(pert_col)
+        .agg(
+            {
+                "Count_Cells": "mean",  # Average cell count
+                "last_peak_ind": "median",  # Median peak index
+                "slope": "median",  # Median slope
+            }
+        )
+        .reset_index()
+    )
 
     results.rename(columns={"Count_Cells": "Count_Cells_avg"}, inplace=True)
 
@@ -264,9 +263,7 @@ def load_orthogonal_features(dataset: str):
     - LINCS uses hardcoded list
     - All other datasets use fibroblast_derived.csv
     """
-    orth_features_dir = (
-        EXTERNAL_DATA_DIR / "mito_project/workspace/results/target_pattern_orth_features_lists"
-    )
+    orth_features_dir = EXTERNAL_DATA_DIR / "mito_project/workspace/results/target_pattern_orth_features_lists"
 
     if dataset == "lincs":
         # Hardcoded for LINCS (from notebook 2.0, lines 1123-1132)
@@ -317,10 +314,7 @@ def calculate_statistical_tests(per_site_df, dataset: str):
     pert_col = DATASET_INFO[dataset]["pert_col"]
 
     # Define target columns (radial bins 5-16)
-    target_columns = [
-        f"Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16"
-        for i in range(5, 17)
-    ]
+    target_columns = [f"Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16" for i in range(5, 17)]
 
     # Load orthogonal features
     orth_features = load_orthogonal_features(dataset)
@@ -328,9 +322,7 @@ def calculate_statistical_tests(per_site_df, dataset: str):
     # Prepare control data by plate
     logger.info("Preparing control data by plate...")
     control_df = per_site_df[per_site_df["ctrl_well"]].copy()
-    control_dfs_by_plate = {
-        plate: group for plate, group in control_df.groupby("batch_plate")
-    }
+    control_dfs_by_plate = {plate: group for plate, group in control_df.groupby("batch_plate")}
     logger.info(f"Prepared controls for {len(control_dfs_by_plate)} plates")
 
     # Get unique perturbations (non-controls only)
@@ -344,25 +336,20 @@ def calculate_statistical_tests(per_site_df, dataset: str):
 
     for i, pert in enumerate(unique_perts):
         if (i + 1) % 50 == 0:
-            logger.info(f"  Processed {i+1}/{len(unique_perts)} perturbations")
+            logger.info(f"  Processed {i + 1}/{len(unique_perts)} perturbations")
 
         # Get data for this perturbation
         per_site_df_pert = pert_df[pert_df[pert_col] == pert].copy()
 
         # Calculate statistics using vectorized function
-        batch_results = batch_plate_statistics(
-            per_site_df_pert,
-            control_dfs_by_plate,
-            target_columns,
-            orth_features
-        )
+        batch_results = batch_plate_statistics(per_site_df_pert, control_dfs_by_plate, target_columns, orth_features)
 
         if batch_results is None:
             continue
 
         # Extract results
-        tvals = batch_results['tvals']  # shape (n_plates, 4)
-        plates = batch_results['plates']
+        tvals = batch_results["tvals"]  # shape (n_plates, 4)
+        plates = batch_results["plates"]
 
         # Find plate with median t_target_pattern (index 0)
         median_plate_idx = np.argsort(np.abs(tvals[:, 0]))[len(tvals) // 2]
@@ -373,13 +360,15 @@ def calculate_statistical_tests(per_site_df, dataset: str):
         t_slope = tvals[median_plate_idx, 2]
         d_slope = tvals[median_plate_idx, 3]
 
-        results_list.append({
-            pert_col: pert,
-            "t_target_pattern": t_target_pattern,
-            "t_orth": t_orth,
-            "t_slope": t_slope,
-            "d_slope": d_slope,
-        })
+        results_list.append(
+            {
+                pert_col: pert,
+                "t_target_pattern": t_target_pattern,
+                "t_orth": t_orth,
+                "t_slope": t_slope,
+                "d_slope": d_slope,
+            }
+        )
 
     logger.info(f"Calculated statistical tests for {len(results_list)} perturbations")
 
@@ -424,6 +413,7 @@ def run_virtual_screen(dataset: str, compare_baseline: bool = True, calculate_st
     # Compare with baseline if requested
     if compare_baseline:
         from haghighi_mito.diagnostics import compare_with_baseline
+
         comparison = compare_with_baseline(results, dataset)
 
         # Save comparison
@@ -435,14 +425,10 @@ def run_virtual_screen(dataset: str, compare_baseline: bool = True, calculate_st
         if calculate_stats and "t_target_pattern_pct_diff" in comparison.columns:
             logger.info("\nTop 5 largest t_target_pattern % differences:")
             pert_col = DATASET_INFO[dataset]["pert_col"]
-            top_diffs = comparison.nlargest(5, "t_target_pattern_pct_diff")[
-                [pert_col, "t_target_pattern_new", "t_target_pattern_baseline", "t_target_pattern_pct_diff"]
-            ]
+            top_diffs = comparison.nlargest(5, "t_target_pattern_pct_diff")[[pert_col, "t_target_pattern_new", "t_target_pattern_baseline", "t_target_pattern_pct_diff"]]
             print(top_diffs.to_string(index=False))
         else:
             logger.info("\nTop 5 largest slope % differences:")
             pert_col = DATASET_INFO[dataset]["pert_col"]
-            top_diffs = comparison.nlargest(5, "slope_pct_diff")[
-                [pert_col, "slope_new", "slope_baseline", "slope_pct_diff"]
-            ]
+            top_diffs = comparison.nlargest(5, "slope_pct_diff")[[pert_col, "slope_new", "slope_baseline", "slope_pct_diff"]]
             print(top_diffs.to_string(index=False))
