@@ -140,6 +140,20 @@ Set enrichment uses **blitzgsea** package for:
 
 ## Working with This Repository
 
+### Pipeline Documentation
+
+**See the Snakefile docstring for comprehensive pipeline documentation** including:
+- Three analysis methods (Method 0: baseline, Method 1: notebook, Method 2: clean module)
+- Current status and gaps
+- The reproducibility issue (~77% baseline agreement)
+- Output directory structure
+- Data flow diagrams
+
+**Quick reference:**
+- **Production results**: `just download-baseline && just run-baseline` (uses validated July 2024 CSVs)
+- **Regeneration (complete)**: `just download-raw && just run-notebook` (Method 1: notebook, full pipeline)
+- **Regeneration (clean, incomplete)**: `just download-raw && just run-module-for DATASET` (Method 2: module, stops at CSV)
+
 ### Quick Start - Running the Pipeline
 
 The repository uses **Snakemake** for pipeline automation and **Justfile** for convenience commands.

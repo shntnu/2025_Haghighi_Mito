@@ -493,3 +493,35 @@ slope: r=0.849, within_10%=63/327 (19.3%)
 - Reverted parallelization code to sequential loop (minimal benefit, added complexity)
 - Future optimization would require batching (process chunks of perturbations per worker)
 - Not worth complexity for current dataset sizes
+
+---
+
+## 2025-10-26: Pipeline Documentation & Naming Standardization
+
+### Comprehensive Documentation Added
+- Rewrote Snakefile docstring (120 lines) documenting all three methods:
+  - Method 0: Baseline (validated S3 CSVs, production)
+  - Method 1: Notebook (complete pipeline, 1433 lines)
+  - Method 2: Module (incomplete, clean 448 lines)
+- Added data flow diagrams, reproducibility issue explanation, output directory structure
+- Clear status indicators (✅ Complete, ⚠️ Incomplete)
+
+### Naming Collision Fixed
+- Removed generic "regenerated" term (was Method 1 specific, sounded generic)
+- Renamed all rules/variables to method-specific naming:
+  - `all_regenerated` → `all_notebook` (Method 1) / `all_module` (Method 2, TODO)
+  - `process_regenerated_csv` → `process_notebook_csv` / `process_module_csv`
+  - `REGEN_DIR` → `NOTEBOOK_DIR` / `MODULE_DIR`
+- Updated Justfile: `run-regenerated` → `run-notebook`, added `run-module` (TODO)
+- Added `clean-notebook` and `clean-module` commands
+
+### TODO Section Standardized
+- Rewrote Method 2 completion rules to mirror Method 1 pattern
+- Consistent naming: `process_module_csv`, `create_module_database`, `all_module`
+- Added new variables: `MODULE_DIR`, `INTERIM_MODULE`, `TABLES_MODULE`
+- Updated output paths: `screen_results_module.duckdb`
+
+### Validation
+- Tested Method 2 commands: `just run-module-for taorf` + `just plot-comparison-for taorf`
+- Confirmed pipeline works (5s execution, generates CSV + comparison + plots)
+- All syntax validated, commands working as documented
