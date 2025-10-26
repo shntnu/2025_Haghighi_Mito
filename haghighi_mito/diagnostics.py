@@ -14,7 +14,7 @@ from scipy.stats import linregress, pearsonr, spearmanr
 
 from haghighi_mito.config import DATASET_INFO, EXTERNAL_DATA_DIR, PROCESSED_DATA_DIR
 from haghighi_mito.virtual_screen import (
-    calculate_simple_metrics,
+    calculate_metrics,
     calculate_statistical_tests,
     load_dataset_data,
 )
