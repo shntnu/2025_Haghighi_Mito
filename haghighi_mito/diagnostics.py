@@ -165,7 +165,7 @@ def plot_baseline_comparison(dataset: str):
                         metrics.append((metric, corr, within_10, pct_within_10))
 
     # Create scatter plots
-    output_dir = PROCESSED_DATA_DIR / "figures" / "t_target_pattern_analysis"
+    output_dir = PROCESSED_DATA_DIR / "figures" / "diagnostics"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 12))
@@ -210,7 +210,7 @@ def plot_baseline_comparison(dataset: str):
     fig.suptitle(f"{dataset.upper()}: Baseline vs Regenerated Metrics (n={n_perts})", fontsize=14, fontweight="bold")
     plt.tight_layout()
 
-    plot_path = output_dir / f"{dataset}_baseline_vs_regenerated.png"
+    plot_path = output_dir / f"{dataset}_comparison_metrics.png"
     plt.savefig(plot_path, dpi=150, bbox_inches="tight")
     logger.info(f"Saved plots to {plot_path}")
     plt.close()

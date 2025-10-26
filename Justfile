@@ -58,7 +58,7 @@ run-module-for DATASET:
 
 # [Method 2] Generate baseline comparison plots for a specific dataset
 plot-comparison-for DATASET:
-    pixi run snakemake data/processed/figures/t_target_pattern_analysis/{{DATASET}}_baseline_vs_regenerated.png --cores 1 --printshellcmds
+    pixi run snakemake data/processed/figures/diagnostics/{{DATASET}}_comparison_metrics.png --cores 1 --printshellcmds
 
 # [Method 2] Run clean module for all datasets (CSV + comparison only, ⚠️ no Excel/DuckDB)
 run-all-modules:
@@ -100,7 +100,7 @@ clean-notebook:
 clean-module:
     rm -f data/processed/screen_results_module.duckdb
     rm -rf data/processed/virtual_screen_module/
-    rm -rf data/processed/figures/t_target_pattern_analysis/
+    rm -rf data/processed/figures/diagnostics/
     rm -rf data/interim/parquet_module/
     rm -rf data/processed/tables/generated_from_module/
 
