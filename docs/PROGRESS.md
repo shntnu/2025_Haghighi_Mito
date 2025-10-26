@@ -607,3 +607,45 @@ Added `preprocess_metadata()` function to `virtual_screen.py` (lines 84-176):
 - All three methods tested and working
 
 ---
+
+## 2025-10-26: Method 2 CSV Output Fixed - Matches Baseline Format
+
+### Problem Identified
+Module CSV had only 8 columns (vs 17 in baseline/notebook):
+- Missing: 3 metadata columns (Metadata_gene_name, Metadata_pert_name, Metadata_moa)
+- Missing: 6 p-value columns (p_target_pattern, p_orth, p_slope, p_slope_std, p_pattern_std, p_orth_std)
+- Wrong column order
+
+### Root Cause
+`calculate_simple_metrics()` started with aggregated perturbation data only, not full metadata table.
+`calculate_statistical_tests()` only returned t-values, not p-values.
+
+### Solution Implemented
+**virtual_screen.py changes:**
+- Renamed `calculate_simple_metrics()` → `calculate_metrics()` (clearer purpose)
+- Modified to accept `annot` parameter and start with `annot[meta_cols].drop_duplicates()`
+- Added all 6 p-value extractions from `batch_results["pvals"]` in `calculate_statistical_tests()`
+- Fixed median plate selection to use d_slope (index 3) instead of t_target_pattern (matches notebook 2.0 line 1388)
+- Added column reordering in `run_virtual_screen()` to match baseline exactly
+
+### Validation Results
+**taorf dataset (327 perturbations):**
+- ✅ Column count: 8 → 17 (matches baseline/notebook)
+- ✅ Column order: Exact match to baseline
+- ✅ Row count: 328 (1 header + 327 data rows, matches baseline)
+- ✅ Metadata columns: All 4 dataset-specific columns present
+- ✅ Format verified across different datasets (taorf has 4 meta cols, lincs has 10)
+
+**Column order (correct):**
+```
+Metadata_gene_name, Metadata_pert_name, Metadata_broad_sample, Metadata_moa,
+Count_Cells_avg,
+p_target_pattern, p_orth, p_slope, p_slope_std, p_pattern_std, p_orth_std,
+t_target_pattern, t_orth, t_slope, d_slope,
+last_peak_ind, slope
+```
+
+### Impact
+Method 2 (module) CSV output now has identical format to Method 0 (baseline) and Method 1 (notebook). Ready for next step: Add Excel/Parquet/DuckDB processing to complete Method 2 pipeline.
+
+---
