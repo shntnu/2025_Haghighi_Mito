@@ -346,6 +346,24 @@ Baseline is now reproducible at 20-70% level (vs 0% before). Remaining differenc
 
 ---
 
+## 2025-10-26: CLI Command Rename for Clarity
+
+### Refactoring
+- Renamed `analyze-t-target-pattern` command to `compare-baseline-metrics`
+- Updated docstring to clarify it compares all 4 statistical metrics, not just t_target_pattern:
+  - t_target_pattern (Hotelling's T² on radial distribution)
+  - t_orth (Hotelling's T² on orthogonal features)
+  - t_slope (Welch's t-test on slope)
+  - d_slope (Cohen's d effect size)
+- Previous name was misleading - implied single-metric analysis when it actually performs comprehensive baseline comparison
+
+### Command Usage
+```bash
+pixi run haghighi-mito compare-baseline-metrics --dataset taorf
+```
+
+---
+
 ## Template for Future Entries
 
 ```text
