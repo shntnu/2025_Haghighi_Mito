@@ -84,6 +84,12 @@ dry:
 status:
     pixi run snakemake --summary
 
+# Compare two DuckDB databases for validation (e.g., 'baseline' vs 'notebook')
+validate-databases DB1 DB2:
+    pixi run haghighi-mito validate-databases \
+        --baseline data/processed/screen_results_{{DB1}}.duckdb \
+        --new data/processed/screen_results_{{DB2}}.duckdb
+
 # Clean baseline outputs (Method 0)
 clean-baseline:
     rm -f data/processed/screen_results_baseline.duckdb
