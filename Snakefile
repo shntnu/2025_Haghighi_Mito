@@ -29,8 +29,8 @@ What:     Exploratory Jupyter notebook converted to .py script (1,433 lines)
 Status:   ✅ COMPLETE - Full pipeline works (CSV → Excel → DuckDB)
 Use case: Only regenerated method with complete output chain
 Code:     notebooks/2.0-mh-virtual-screen.py + haghighi_mito/data.py
-Commands: just download-raw && just run-regenerated
-Output:   data/processed/screen_results_regenerated.duckdb
+Commands: just download-raw && just run-notebook
+Output:   data/processed/screen_results_notebook.duckdb
 Speed:    ~10 minutes per dataset
 Note:     Messy code with dead branches (if 0:), but functional
           NEEDED until Method 2 gains Excel/DuckDB processing steps
@@ -51,7 +51,7 @@ Gap:      Needs process_csv + create_database rules (exist for Method 1)
 Use case: Baseline comparison, diagnostics, methodology validation
 Code:     haghighi_mito/virtual_screen.py + vectorized helpers + diagnostics.py
 Commands: just download-raw && just run-virtual-screen-for DATASET
-Output:   CSVs in virtual_screen_simple/ + baseline comparison + plots
+Output:   CSVs in virtual_screen_module/ + baseline comparison + plots
 Speed:    ~10 minutes per dataset
 TODO:     Add Excel/Parquet/DuckDB processing → then can deprecate Method 1
 
@@ -94,19 +94,19 @@ OUTPUT DIRECTORY STRUCTURE
 data/
 ├── external/mito_project/workspace/results/
 │   ├── virtual_screen_baseline/          # Method 0: S3 downloads (65 MB)
-│   └── virtual_screen_regenerated/       # Method 1: Notebook CSVs
+│   └── virtual_screen_notebook/          # Method 1: Notebook CSVs
 │
 ├── processed/
 │   ├── screen_results_baseline.duckdb    # Method 0 final database
-│   ├── screen_results_regenerated.duckdb # Method 1 final database
+│   ├── screen_results_notebook.duckdb    # Method 1 final database
 │   ├── screen_results_module.duckdb      # Method 2 final database (TODO)
 │   │
 │   ├── tables/
 │   │   ├── generated_from_s3_baseline/   # Method 0 Excel files
-│   │   ├── generated_from_local/         # Method 1 Excel files
+│   │   ├── generated_from_notebook/      # Method 1 Excel files
 │   │   └── generated_from_module/        # Method 2 Excel files (TODO)
 │   │
-│   ├── virtual_screen_simple/            # Method 2: CSVs + comparisons
+│   ├── virtual_screen_module/            # Method 2: CSVs + comparisons
 │   │   ├── {dataset}_results_pattern_aug_070624.csv
 │   │   └── {dataset}_baseline_comparison.csv
 │   │
@@ -115,7 +115,7 @@ data/
 │
 └── interim/
     ├── parquet_baseline/                 # Method 0 intermediate
-    ├── parquet_regenerated/              # Method 1 intermediate
+    ├── parquet_notebook/                 # Method 1 intermediate
     └── parquet_module/                   # Method 2 intermediate (TODO)
 
 """
@@ -125,7 +125,8 @@ data/
 # ============================================================================
 
 # Dataset configuration
-DATASETS = ["CDRP", "jump_compound", "jump_crispr", "jump_orf", "lincs", "taorf"]
+# DATASETS = ["CDRP", "jump_compound", "jump_crispr", "jump_orf", "lincs", "taorf"]
+DATASETS = ["lincs", "taorf"]
 
 # S3 configuration
 S3_BASE = "s3://imaging-platform/projects/2016_08_01_RadialMitochondriaDistribution_donna/workspace"
@@ -133,15 +134,15 @@ S3_BASE = "s3://imaging-platform/projects/2016_08_01_RadialMitochondriaDistribut
 # Local directory structure
 EXTERNAL_BASE = "data/external/mito_project/workspace"
 BASELINE_DIR = f"{EXTERNAL_BASE}/results/virtual_screen_baseline"
-NOTEBOOK_DIR = f"{EXTERNAL_BASE}/results/virtual_screen_regenerated"  # Method 1 output
-MODULE_DIR = "data/processed/virtual_screen_simple"  # Method 2 output
+NOTEBOOK_DIR = f"{EXTERNAL_BASE}/results/virtual_screen_notebook"  # Method 1 output
+MODULE_DIR = "data/processed/virtual_screen_module"  # Method 2 output
 
 # Processing output directories
 INTERIM_BASELINE = "data/interim/parquet_baseline"
-INTERIM_NOTEBOOK = "data/interim/parquet_regenerated"  # Method 1 intermediate
+INTERIM_NOTEBOOK = "data/interim/parquet_notebook"  # Method 1 intermediate
 INTERIM_MODULE = "data/interim/parquet_module"  # Method 2 intermediate
 TABLES_BASELINE = "data/processed/tables/generated_from_s3_baseline"
-TABLES_NOTEBOOK = "data/processed/tables/generated_from_local"  # Method 1 tables
+TABLES_NOTEBOOK = "data/processed/tables/generated_from_notebook"  # Method 1 tables
 TABLES_MODULE = "data/processed/tables/generated_from_module"  # Method 2 tables
 
 
@@ -301,8 +302,8 @@ rule download_screening_data:
 # STATUS: ✅ COMPLETE - Full pipeline works (CSV → Excel → DuckDB)
 #          NEEDED until Method 2 gains Excel/DuckDB processing steps
 #
-# Commands: just download-raw && just run-regenerated
-# Output: data/processed/screen_results_regenerated.duckdb
+# Commands: just download-raw && just run-notebook
+# Output: data/processed/screen_results_notebook.duckdb
 
 ## Notebook Execution Rules ##
 
@@ -356,9 +357,9 @@ rule create_notebook_database:
         expand(f"{INTERIM_NOTEBOOK}/{{dataset}}_unfiltered.parquet",
                dataset=DATASETS)
     output:
-        "data/processed/screen_results_regenerated.duckdb"
+        "data/processed/screen_results_notebook.duckdb"
     params:
-        output_path="data/processed/screen_results_regenerated.duckdb"
+        output_path="data/processed/screen_results_notebook.duckdb"
     shell:
         """
         pixi run haghighi-mito create-database \
@@ -373,7 +374,7 @@ rule create_notebook_database:
 rule all_notebook:
     """Target: Complete Method 1 pipeline (notebook → CSV → Excel → DuckDB)."""
     input:
-        "data/processed/screen_results_regenerated.duckdb"
+        "data/processed/screen_results_notebook.duckdb"
 
 rule run_all_virtual_screen_notebooks:
     """Target: Run notebook method for all datasets (CSV generation only)."""
@@ -391,12 +392,12 @@ rule run_all_virtual_screen_notebooks:
 # STATUS: ⚠️ INCOMPLETE - Stops at CSV generation + baseline comparison
 #          Missing Excel + Parquet + DuckDB processing steps
 #
-# TODO: Add process_virtual_screen_simple_csv and create_virtual_screen_simple_database
+# TODO: Add process_module_csv and create_module_database
 #       rules (similar to Method 1) to complete the pipeline.
 #       Once added, Method 1 (notebook) can be deprecated.
 #
 # Commands: just download-raw && just run-virtual-screen-for DATASET
-# Current output: CSVs in virtual_screen_simple/ + comparison + plots
+# Current output: CSVs in virtual_screen_module/ + comparison + plots
 
 ## Analysis Rules ##
 
@@ -419,8 +420,8 @@ rule run_virtual_screen_analysis:
         # Also need baseline CSV for comparison
         baseline_csv=f"{BASELINE_DIR}/{{dataset}}_results_pattern_aug_070624.csv"
     output:
-        results_csv="data/processed/virtual_screen_simple/{dataset}_results_pattern_aug_070624.csv",
-        comparison_csv="data/processed/virtual_screen_simple/{dataset}_baseline_comparison.csv"
+        results_csv="data/processed/virtual_screen_module/{dataset}_results_pattern_aug_070624.csv",
+        comparison_csv="data/processed/virtual_screen_module/{dataset}_baseline_comparison.csv"
     shell:
         """
         pixi run haghighi-mito virtual-screen --dataset {wildcards.dataset} --compare-baseline
@@ -430,7 +431,7 @@ rule run_virtual_screen_analysis:
 rule plot_baseline_comparison:
     """Generate 2x2 scatter plots comparing regenerated vs baseline metrics."""
     input:
-        comparison_csv="data/processed/virtual_screen_simple/{dataset}_baseline_comparison.csv"
+        comparison_csv="data/processed/virtual_screen_module/{dataset}_baseline_comparison.csv"
     output:
         plot="data/processed/figures/t_target_pattern_analysis/{dataset}_baseline_vs_regenerated.png"
     shell:
@@ -444,7 +445,7 @@ rule plot_baseline_comparison:
 rule run_all_virtual_screen_analysis:
     """Target: Run clean module method for all datasets (CSV generation + comparison)."""
     input:
-        expand("data/processed/virtual_screen_simple/{dataset}_results_pattern_aug_070624.csv",
+        expand("data/processed/virtual_screen_module/{dataset}_results_pattern_aug_070624.csv",
                dataset=DATASETS)
 
 rule plot_all_baseline_comparisons:
@@ -519,5 +520,5 @@ onstart:
     print(f"Notebook input:  {NOTEBOOK_DIR}")
     print(f"Notebook output: {TABLES_NOTEBOOK}")
     print(f"Notebook Parquet: {INTERIM_NOTEBOOK}")
-    print(f"Notebook DB: data/processed/screen_results_regenerated.duckdb")
+    print(f"Notebook DB: data/processed/screen_results_notebook.duckdb")
     print("=" * 70)

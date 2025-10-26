@@ -39,9 +39,9 @@ download-raw:
 run-notebook:
     pixi run snakemake all_notebook --cores 4 --printshellcmds
 
-# [Method 1] Run notebook for a specific dataset (generates CSV only, use run-notebook for full pipeline)
-run-notebook-csv-for DATASET:
-    pixi run snakemake data/external/mito_project/workspace/results/virtual_screen_regenerated/{{DATASET}}_results_pattern_aug_070624.csv --cores 1 --printshellcmds
+# [Method 1] Run notebook for a specific dataset (CSV only, use run-notebook for full pipeline)
+run-notebook-for DATASET:
+    pixi run snakemake data/external/mito_project/workspace/results/virtual_screen_notebook/{{DATASET}}_results_pattern_aug_070624.csv --cores 1 --printshellcmds
 
 # ============================================================================
 # METHOD 2: REGENERATED - Clean Module (Incomplete - Stops at CSV)
@@ -54,7 +54,7 @@ run-notebook-csv-for DATASET:
 
 # [Method 2] Run clean module for a specific dataset (CSV + comparison only, ⚠️ no Excel/DuckDB)
 run-module-for DATASET:
-    pixi run snakemake data/processed/virtual_screen_simple/{{DATASET}}_results_pattern_aug_070624.csv --cores 1 --printshellcmds
+    pixi run snakemake data/processed/virtual_screen_module/{{DATASET}}_results_pattern_aug_070624.csv --cores 1 --printshellcmds
 
 # [Method 2] Generate baseline comparison plots for a specific dataset
 plot-comparison-for DATASET:
@@ -92,14 +92,14 @@ clean-baseline:
 
 # Clean notebook outputs (Method 1)
 clean-notebook:
-    rm -f data/processed/screen_results_regenerated.duckdb
-    rm -rf data/interim/parquet_regenerated/
-    rm -rf data/processed/tables/generated_from_local/
+    rm -f data/processed/screen_results_notebook.duckdb
+    rm -rf data/interim/parquet_notebook/
+    rm -rf data/processed/tables/generated_from_notebook/
 
 # Clean module outputs (Method 2)
 clean-module:
     rm -f data/processed/screen_results_module.duckdb
-    rm -rf data/processed/virtual_screen_simple/
+    rm -rf data/processed/virtual_screen_module/
     rm -rf data/processed/figures/t_target_pattern_analysis/
     rm -rf data/interim/parquet_module/
     rm -rf data/processed/tables/generated_from_module/
