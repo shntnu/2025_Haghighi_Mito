@@ -143,6 +143,29 @@ Ran "nuclear option" test (deleted all data, rebuilt from scratch):
 
 ---
 
+## 2025-10-25: Deep Debugging - Baseline Code Lost
+
+### Investigation Summary
+Systematic debugging to identify root cause of 99.99% divergence from baseline (TAORF dataset):
+- Confirmed input data identical: Count_Cells_avg matches 100% between baseline and regenerated
+- Vectorization correctness verified: `find_end_slope2_vectorized` produces identical results to row-by-row implementation
+- Neither `if 0` nor `if 1` branch matches baseline: Both produce ~77% within 10%, ~11% with opposite signs
+
+### Root Cause Identified
+**100% of large slope differences have different `last_peak_ind` values** - peak-finding algorithm identifies different peaks in identical input data.
+
+**Critical finding:** Original `if 0` branch has a bug (assigns `slope` but line 1249 expects `peak_slope`) - this code path couldn't run successfully.
+
+**Conclusion:** Baseline was generated with code that **no longer exists** in this repository. Repository created September 2025, baseline uploaded July 2024. Original implementation lost.
+
+### Decision Point
+Cannot reproduce baseline without access to July 2024 code. Three options:
+1. Accept baseline as-is (use S3 results, optimization work unvalidated)
+2. Commit to regenerated version (re-run all datasets, document divergence)
+3. Validate regenerated results independently (check biological plausibility with domain expert)
+
+---
+
 ## Current Status
 
 ### What's Working ✅
@@ -179,6 +202,32 @@ Ran "nuclear option" test (deleted all data, rebuilt from scratch):
 - Accept baseline as-is (use S3 results, optimization unvalidated)
 - OR commit to regenerated version (document divergence from baseline)
 - OR reverse-engineer baseline methodology from results
+
+---
+
+## 2025-10-25: Minimal Virtual Screen Module - Baseline Validation
+
+### New Infrastructure Created
+- Built `haghighi_mito/virtual_screen.py` - minimal from-scratch implementation
+- Added `virtual-screen` CLI command to Typer interface
+- Reads same per-site aggregated profiles as notebook 2.0 (confirmed from manuscript methods)
+- Calculates simplest metrics: Count_Cells_avg, last_peak_ind, slope
+
+### Validation Results - Input Data Confirmed Identical
+Ran taorf dataset comparison with baseline:
+- **Count_Cells_avg:** 0.03% mean diff, 98% within 1% → **Input data is identical** ✓
+- **last_peak_ind:** 0 exact matches, mean diff 6 bins → Peak detection finds different peaks ✗
+- **slope:** 104% mean diff, 0 within 10% → Completely different slopes ✗
+
+### Root Cause Narrowed
+- Input data confirmed identical (cell counts match perfectly)
+- Data aggregation level confirmed correct (per-site, not per-cell - matches manuscript methods)
+- Issue isolated to **peak detection algorithm** in `find_end_slope2_simple()`
+- Peak detection finds different local extrema in identical radial patterns
+- This is not a numerical precision issue - it's algorithmic
+
+### Next Steps
+Foundation established for iterative debugging of slope calculation. Can now test alternative peak detection methods and compare against baseline systematically.
 
 ---
 

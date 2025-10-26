@@ -86,6 +86,22 @@ def validate_databases_cmd(
         sys.exit(1)
 
 
+@app.command(name="virtual-screen")
+def virtual_screen_cmd(
+    dataset: Annotated[str, typer.Option(help="Dataset to analyze (taorf, CDRP, lincs, jump_orf, jump_crispr, jump_compound)")],
+    compare_baseline: Annotated[bool, typer.Option(help="Compare results with baseline CSV")] = True,
+):
+    """Run virtual screen analysis from scratch.
+
+    Calculates radial distribution metrics (Count_Cells_avg, last_peak_ind, slope)
+    from per-site profiles. Eventually will include orthogonal features and statistical testing.
+    """
+    # Lazy imports for faster startup
+    from haghighi_mito.virtual_screen import run_virtual_screen
+
+    run_virtual_screen(dataset=dataset, compare_baseline=compare_baseline)
+
+
 def main():
     """Entry point for CLI."""
     app()
