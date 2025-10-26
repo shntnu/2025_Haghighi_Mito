@@ -47,21 +47,17 @@ generate-module-all:
 generate-module-csv-for DATASET:
     pixi run snakemake data/processed/virtual_screen_module/{{DATASET}}_results_pattern_aug_070624.csv --cores 1 --printshellcmds
 
-# [Method 2] Compare module CSV with baseline for a specific dataset (FAST - ~1 sec)
-compare-baseline-for DATASET:
-    pixi run snakemake data/processed/virtual_screen_module/{{DATASET}}_baseline_comparison.csv --cores 1 --printshellcmds
-
-# [Method 2] Generate baseline comparison plots for a specific dataset
-plot-comparison-for DATASET:
+# [Method 2] Run diagnostics: compare with baseline + generate plots (FAST - ~1 sec)
+diagnose-for DATASET:
     pixi run snakemake data/processed/figures/diagnostics/{{DATASET}}_comparison_metrics.png --cores 1 --printshellcmds
 
 # [Method 2] Generate results CSVs for all datasets (virtual screen analysis only, ⚠️ no Excel/DuckDB)
 generate-module-csvs:
     pixi run snakemake all_module_csvs --cores 4 --printshellcmds
 
-# [Method 2] Generate all baseline comparison plots
-plot-all-comparisons:
-    pixi run snakemake plot_all_baseline_comparisons --cores 4 --printshellcmds
+# [Method 2] Run diagnostics for all datasets (comparison CSV + plots)
+diagnose-all:
+    pixi run snakemake all_module_diagnostics --cores 4 --printshellcmds
 
 # ============================================================================
 # UTILITIES

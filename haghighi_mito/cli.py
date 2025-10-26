@@ -116,34 +116,16 @@ def virtual_screen_cmd(
 def compare_baseline_cmd(
     dataset: Annotated[str, typer.Option(help="Dataset to analyze (taorf, CDRP, lincs, jump_orf, jump_crispr, jump_compound)")],
 ):
-    """Compare module-generated CSV with baseline CSV.
+    """Compare module CSV with baseline and generate diagnostic plots.
 
-    This is FAST (~1 second) and can be re-run without regenerating the entire screen.
-    Creates comparison CSV showing differences between module and baseline results.
-
-    Requires running 'virtual-screen' first to generate the CSV.
+    FAST (~1 second) - can re-run without regenerating the entire screen.
+    Generates: comparison CSV + 2x2 scatter plot PNG.
+    Requires running 'virtual-screen' first to generate module CSV.
     """
     # Lazy imports for faster startup
-    from haghighi_mito.virtual_screen import compare_with_baseline_csv
+    from haghighi_mito.diagnostics import compare_with_baseline_csv
 
     compare_with_baseline_csv(dataset=dataset)
-
-
-@app.command(name="plot-baseline-comparison")
-def plot_baseline_comparison_cmd(
-    dataset: Annotated[str, typer.Option(help="Dataset to analyze (taorf, CDRP, lincs, jump_orf, jump_crispr, jump_compound)")],
-):
-    """Create 2x2 scatter plots comparing baseline vs regenerated metrics.
-
-    Plots correlations for t_target_pattern, slope, t_orth, and t_slope.
-    Outputs greppable correlation and match statistics.
-
-    Requires running 'compare-baseline' first to generate comparison CSV.
-    """
-    # Lazy imports for faster startup
-    from haghighi_mito.diagnostics import plot_baseline_comparison
-
-    plot_baseline_comparison(dataset=dataset)
 
 
 def main():

@@ -1,7 +1,18 @@
-"""Diagnostic and analysis tools for virtual screen results.
+"""Compare regenerated (module) results with validated baseline (July 2024).
 
-Functions for comparing regenerated results with baseline, analyzing distributions,
-and creating visualizations. Separated from core pipeline logic.
+Functions:
+    compare_with_baseline_csv(dataset) - Main entry: load CSVs, compute diffs, generate plots
+    plot_baseline_comparison(dataset) - Internal: create 2x2 scatter plots (auto-called)
+    compare_with_baseline(results, dataset) - Internal: comparison logic
+
+Workflow:
+    just diagnose-for taorf  → comparison CSV + diagnostic PNG (1 command!)
+
+Files:
+    Input:  virtual_screen_module/{dataset}_results_pattern_aug_070624.csv (module)
+            virtual_screen_baseline/{dataset}_results_pattern_aug_070624.csv (S3)
+    Output: virtual_screen_module/{dataset}_baseline_comparison.csv (comparison)
+            figures/diagnostics/{dataset}_comparison_metrics.png (plots)
 """
 
 from pathlib import Path
@@ -13,27 +24,23 @@ from loguru import logger
 from scipy.stats import linregress, pearsonr, spearmanr
 
 from haghighi_mito.config import DATASET_INFO, EXTERNAL_DATA_DIR, PROCESSED_DATA_DIR
-from haghighi_mito.virtual_screen import (
-    calculate_metrics,
-    calculate_statistical_tests,
-    load_dataset_data,
-)
 
 
 def compare_with_baseline(results, dataset: str):
-    """Compare calculated metrics with baseline CSV."""
+    """Load baseline CSV, merge with results, calculate diffs (internal helper).
+
+    Returns DataFrame with columns: *_new, *_baseline, *_diff, *_pct_diff
+    Prints summary statistics to logger.
+    """
     baseline_path = EXTERNAL_DATA_DIR / "mito_project/workspace/results/virtual_screen_baseline" / f"{dataset}_results_pattern_aug_070624.csv"
 
     logger.info(f"Loading baseline from {baseline_path}")
     baseline = pd.read_csv(baseline_path)
 
-    # Merge on perturbation ID
     pert_col = DATASET_INFO[dataset]["pert_col"]
-
-    # Determine which columns to compare based on what's in results
     baseline_cols = [pert_col, "Count_Cells_avg", "last_peak_ind", "slope"]
 
-    # Add t-values if they're in results
+    # Add t-values if they exist
     if "t_target_pattern" in results.columns:
         baseline_cols.extend(["t_target_pattern", "t_orth", "t_slope", "d_slope"])
 
@@ -41,7 +48,7 @@ def compare_with_baseline(results, dataset: str):
 
     logger.info(f"Matched {len(comparison)} perturbations between new and baseline")
 
-    # Calculate differences
+    # Calculate differences: absolute (_diff) and percentage (_pct_diff)
     comparison["Count_Cells_diff"] = comparison["Count_Cells_avg_new"] - comparison["Count_Cells_avg_baseline"]
     comparison["Count_Cells_pct_diff"] = 100 * comparison["Count_Cells_diff"] / comparison["Count_Cells_avg_baseline"]
 
@@ -50,7 +57,7 @@ def compare_with_baseline(results, dataset: str):
     comparison["slope_diff"] = comparison["slope_new"] - comparison["slope_baseline"]
     comparison["slope_pct_diff"] = 100 * comparison["slope_diff"] / comparison["slope_baseline"].abs()
 
-    # Calculate t-value differences if present
+    # T-values if present
     if "t_target_pattern_new" in comparison.columns:
         for col in ["t_target_pattern", "t_orth", "t_slope", "d_slope"]:
             comparison[f"{col}_diff"] = comparison[f"{col}_new"] - comparison[f"{col}_baseline"]
@@ -111,16 +118,11 @@ def compare_with_baseline(results, dataset: str):
 
 
 def plot_baseline_comparison(dataset: str):
-    """Create scatter plots comparing baseline vs regenerated metrics.
+    """Create 2x2 scatter plots (t_target_pattern, slope, t_orth, t_slope).
 
-    Generates 2x2 plot showing correlations for:
-    - t_target_pattern (Hotelling's T² on radial distribution)
-    - slope (direct metric)
-    - t_orth (Hotelling's T² on orthogonal features)
-    - t_slope (Welch's t-test on slope)
-
-    Args:
-        dataset: Dataset name
+    Loads comparison CSV and generates PNG with correlation stats.
+    Prints greppable correlation summary to logger.
+    Requires: comparison CSV from compare_with_baseline_csv()
     """
     logger.info(f"Creating baseline comparison plots for {dataset}")
 
@@ -142,7 +144,7 @@ def plot_baseline_comparison(dataset: str):
         logger.error("Statistical tests not found. Run with calculate_stats=True")
         return None
 
-    # Calculate correlations for greppable output
+    # Calculate correlations and print greppable output
     metrics = []
     if has_stats:
         for metric in ["t_target_pattern", "t_orth", "t_slope", "slope"]:
@@ -156,11 +158,11 @@ def plot_baseline_comparison(dataset: str):
                 if n_valid > 2:
                     corr, _ = pearsonr(comparison.loc[valid_mask, col_baseline], comparison.loc[valid_mask, col_new])
 
-                    # Count matches within 10%
                     pct_diff_col = f"{metric}_pct_diff"
                     if pct_diff_col in comparison.columns:
                         within_10 = (comparison[pct_diff_col].abs() < 10).sum()
                         pct_within_10 = 100 * within_10 / n_perts
+                        # GREPPABLE FORMAT - do not change!
                         logger.info(f"{metric}: r={corr:.3f}, within_10%={within_10}/{n_perts} ({pct_within_10:.1f}%)")
                         metrics.append((metric, corr, within_10, pct_within_10))
 
@@ -170,7 +172,6 @@ def plot_baseline_comparison(dataset: str):
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 12))
 
-    # Helper to create scatter plot for each metric
     def plot_metric(ax, metric_name):
         col_new = f"{metric_name}_new"
         col_baseline = f"{metric_name}_baseline"
@@ -216,3 +217,51 @@ def plot_baseline_comparison(dataset: str):
     plt.close()
 
     return comparison
+
+
+def compare_with_baseline_csv(dataset: str):
+    """Load module + baseline CSVs, compute diffs, save comparison CSV + plots.
+
+    Fast (<1 sec) - generates both CSV and 2x2 scatter plot PNG automatically.
+    Prints summary stats, top 5 mismatches, and correlation metrics.
+    Raises FileNotFoundError if module CSV missing (run virtual-screen first).
+    """
+    if dataset not in DATASET_INFO:
+        raise ValueError(f"Unknown dataset: {dataset}. Must be one of {list(DATASET_INFO.keys())}")
+
+    logger.info(f"Comparing {dataset} results with baseline...")
+
+    # Load module-generated results
+    module_dir = PROCESSED_DATA_DIR / "virtual_screen_module"
+    results_path = module_dir / f"{dataset}_results_pattern_aug_070624.csv"
+
+    if not results_path.exists():
+        raise FileNotFoundError(f"Module results not found: {results_path}\nRun 'haghighi-mito virtual-screen --dataset {dataset}' first")
+
+    results = pd.read_csv(results_path)
+    logger.info(f"Loaded {len(results)} perturbations from {results_path}")
+
+    # Compare with baseline
+    comparison = compare_with_baseline(results, dataset)
+
+    # Save comparison
+    comparison_path = module_dir / f"{dataset}_baseline_comparison.csv"
+    comparison.to_csv(comparison_path, index=False)
+    logger.info(f"\nSaved comparison to {comparison_path}")
+
+    # Show some examples of large differences
+    has_stats = "t_target_pattern_pct_diff" in comparison.columns
+    if has_stats:
+        logger.info("\nTop 5 largest t_target_pattern % differences:")
+        pert_col = DATASET_INFO[dataset]["pert_col"]
+        top_diffs = comparison.nlargest(5, "t_target_pattern_pct_diff")[[pert_col, "t_target_pattern_new", "t_target_pattern_baseline", "t_target_pattern_pct_diff"]]
+        print(top_diffs.to_string(index=False))
+    else:
+        logger.info("\nTop 5 largest slope % differences:")
+        pert_col = DATASET_INFO[dataset]["pert_col"]
+        top_diffs = comparison.nlargest(5, "slope_pct_diff")[[pert_col, "slope_new", "slope_baseline", "slope_pct_diff"]]
+        print(top_diffs.to_string(index=False))
+
+    # Generate diagnostic plots (auto-run)
+    logger.info("\nGenerating diagnostic plots...")
+    plot_baseline_comparison(dataset)
