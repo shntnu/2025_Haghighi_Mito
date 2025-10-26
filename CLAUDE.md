@@ -205,22 +205,25 @@ Notebooks are converted to `.py` scripts for command-line execution:
 
 ## Known Issues
 
-### Vectorized Slope Calculation Divergence
+### Baseline Non-Reproducibility
 
-**Problem:** The vectorized slope calculation (`haghighi_mito/vectorized_slope.py`) produces **99.99% different results** compared to the S3 baseline (July 2024).
+**Problem:** Locally-regenerated results differ from S3 baseline (July 2024) by ~77% (within 10% tolerance).
 
-**Evidence:**
-- LINCS: 9,394/9,395 rows differ in `slope`, `last_peak_ind`, `d_slope` values
-- TAORF: 323/327 rows differ in slope-related values
-- Cell counts match exactly → same input data, different algorithm behavior
+**Root Cause:** Baseline was generated with code that **no longer exists** in this repository:
+- Repository created September 2025, baseline uploaded July 2024
+- Current code (both `if 0` and `if 1` branches) produces different results
+- 100% of large differences have different `last_peak_ind` values (peak detection differs)
+- Input data confirmed identical (Count_Cells_avg matches 100%)
+- Vectorization confirmed correct (produces identical results to row-by-row implementation)
 
 **Impact:**
 - Baseline pipeline (`just run-baseline`) uses validated S3 CSVs → **safe for publication**
-- Regenerated pipeline produces experimental results → **use for debugging only**
+- Regenerated pipeline produces experimental results → **use for validation only**
+- Optimization work (vectorization) cannot be validated against baseline
 
-**Current Status:** Under investigation. See PROGRESS.md for detailed analysis.
+**Decision Point:** Accept baseline as-is OR commit to regenerated version (requires domain expert validation). See PROGRESS.md for detailed analysis.
 
-**Recommendation:** Always use `just run-baseline` for validated results. The regenerated pipeline exists only for development/debugging.
+**Recommendation:** Always use `just run-baseline` for validated results. Regenerated pipeline exists for future improvements.
 
 ### Data Provenance
 
