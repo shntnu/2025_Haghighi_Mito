@@ -525,3 +525,36 @@ slope: r=0.849, within_10%=63/327 (19.3%)
 - Tested Method 2 commands: `just run-module-for taorf` + `just plot-comparison-for taorf`
 - Confirmed pipeline works (5s execution, generates CSV + comparison + plots)
 - All syntax validated, commands working as documented
+
+---
+
+## 2025-10-26: Naming Refactoring - Eliminated Semantic Inconsistencies
+
+### Problem Identified
+Inconsistent naming across the three pipeline methods:
+- Method 1 used "regenerated" in some places, "local" in others
+- Method 2 used "module" in some places, "simple" in others
+- Created confusion about what "regenerated" meant (both methods regenerate from raw data)
+
+### Changes Implemented
+**Filesystem renames (no backward compatibility):**
+- `virtual_screen_regenerated/` → `virtual_screen_notebook/`
+- `virtual_screen_simple/` → `virtual_screen_module/`
+- `parquet_regenerated/` → `parquet_notebook/`
+- `generated_from_local/` → `generated_from_notebook/`
+
+**Code updates:**
+- Snakefile: 17 locations (variables, documentation, rules, onstart display)
+- Justfile: 6 locations (commands, clean targets)
+- Command rename: `run-notebook-csv-for` → `run-notebook-for` (cleaner parallel with `run-module-for`)
+
+### New Consistent Pattern
+```
+Method 0: baseline    baseline    baseline    s3_baseline
+Method 1: notebook    notebook    notebook    notebook
+Method 2: module      module      module      module
+          ↓           ↓           ↓           ↓
+          database    CSV dir     parquet     tables
+```
+
+Each method now uses ONE name consistently across all directory paths, variables, and commands.
