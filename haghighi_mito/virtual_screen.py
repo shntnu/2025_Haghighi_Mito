@@ -116,9 +116,7 @@ def preprocess_metadata(dataset: str, mito_project_root: Path) -> pd.DataFrame:
 
     elif dataset == "taorf":
         # Load raw metadata
-        annot = pd.read_csv(
-            mito_project_root / "workspace/metadata/TA-ORF/replicate_level_cp_normalized.csv.gz"
-        )
+        annot = pd.read_csv(mito_project_root / "workspace/metadata/TA-ORF/replicate_level_cp_normalized.csv.gz")
 
         # Add standard columns
         annot["Batch"] = "2013_10_11_SIGMA2_Pilot"
@@ -562,21 +560,25 @@ def run_virtual_screen(dataset: str, calculate_stats: bool = True):
 
     if calculate_stats:
         # Add p-value columns
-        column_order.extend([
-            "p_target_pattern",
-            "p_orth",
-            "p_slope",
-            "p_slope_std",
-            "p_pattern_std",
-            "p_orth_std",
-        ])
+        column_order.extend(
+            [
+                "p_target_pattern",
+                "p_orth",
+                "p_slope",
+                "p_slope_std",
+                "p_pattern_std",
+                "p_orth_std",
+            ]
+        )
         # Add t-value columns
-        column_order.extend([
-            "t_target_pattern",
-            "t_orth",
-            "t_slope",
-            "d_slope",
-        ])
+        column_order.extend(
+            [
+                "t_target_pattern",
+                "t_orth",
+                "t_slope",
+                "d_slope",
+            ]
+        )
 
     # Add slope columns
     column_order.extend(["last_peak_ind", "slope"])
@@ -613,10 +615,7 @@ def compare_with_baseline_csv(dataset: str):
     results_path = module_dir / f"{dataset}_results_pattern_aug_070624.csv"
 
     if not results_path.exists():
-        raise FileNotFoundError(
-            f"Module results not found: {results_path}\n"
-            f"Run 'haghighi-mito virtual-screen --dataset {dataset}' first"
-        )
+        raise FileNotFoundError(f"Module results not found: {results_path}\nRun 'haghighi-mito virtual-screen --dataset {dataset}' first")
 
     results = pd.read_csv(results_path)
     logger.info(f"Loaded {len(results)} perturbations from {results_path}")
@@ -636,14 +635,10 @@ def compare_with_baseline_csv(dataset: str):
     if has_stats:
         logger.info("\nTop 5 largest t_target_pattern % differences:")
         pert_col = DATASET_INFO[dataset]["pert_col"]
-        top_diffs = comparison.nlargest(5, "t_target_pattern_pct_diff")[
-            [pert_col, "t_target_pattern_new", "t_target_pattern_baseline", "t_target_pattern_pct_diff"]
-        ]
+        top_diffs = comparison.nlargest(5, "t_target_pattern_pct_diff")[[pert_col, "t_target_pattern_new", "t_target_pattern_baseline", "t_target_pattern_pct_diff"]]
         print(top_diffs.to_string(index=False))
     else:
         logger.info("\nTop 5 largest slope % differences:")
         pert_col = DATASET_INFO[dataset]["pert_col"]
-        top_diffs = comparison.nlargest(5, "slope_pct_diff")[
-            [pert_col, "slope_new", "slope_baseline", "slope_pct_diff"]
-        ]
+        top_diffs = comparison.nlargest(5, "slope_pct_diff")[[pert_col, "slope_new", "slope_baseline", "slope_pct_diff"]]
         print(top_diffs.to_string(index=False))
