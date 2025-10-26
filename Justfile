@@ -44,13 +44,12 @@ run-notebook-for DATASET:
     pixi run snakemake data/external/mito_project/workspace/results/virtual_screen_notebook/{{DATASET}}_results_pattern_aug_070624.csv --cores 1 --printshellcmds
 
 # ============================================================================
-# METHOD 2: REGENERATED - Clean Module (Incomplete - Stops at CSV)
+# METHOD 2: REGENERATED - Clean Module (Complete Pipeline)
 # ============================================================================
 
-# TODO: Add when Method 2 Excel/DuckDB processing is complete
 # [Method 2] Run full module pipeline for all datasets (CSV → Excel → DuckDB)
-# run-module:
-#     pixi run snakemake all_module --cores 4 --printshellcmds
+run-module:
+    pixi run snakemake all_module --cores 4 --printshellcmds
 
 # [Method 2] Run clean module for a specific dataset (CSV + comparison only, ⚠️ no Excel/DuckDB)
 run-module-for DATASET:

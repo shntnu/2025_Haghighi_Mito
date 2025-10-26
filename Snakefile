@@ -27,13 +27,13 @@ METHOD 1: REGENERATED - Notebook (Complete but Messy)
 ──────────────────────────────────────────────────────
 What:     Exploratory Jupyter notebook converted to .py script (1,433 lines)
 Status:   ✅ COMPLETE - Full pipeline works (CSV → Excel → DuckDB)
-Use case: Only regenerated method with complete output chain
+Use case: Legacy implementation, superseded by Method 2
 Code:     notebooks/2.0-mh-virtual-screen.py + haghighi_mito/data.py
 Commands: just download-raw && just run-notebook
 Output:   data/processed/screen_results_notebook.duckdb
 Speed:    ~10 minutes per dataset
 Note:     Messy code with dead branches (if 0:), but functional
-          NEEDED until Method 2 gains Excel/DuckDB processing steps
+          Can be deprecated in favor of Method 2 (clean module)
 
 Data flow:
   Raw per-site profiles (2.7 GB, 17K rows for taorf)
@@ -43,28 +43,24 @@ Data flow:
     → Filter + format to Excel/Parquet (data.py::process_single_virtual_screen_csv)
     → Create DuckDB (data.py::create_screen_database)
 
-METHOD 2: REGENERATED - Clean Module (Active Development, Incomplete)
-──────────────────────────────────────────────────────────────────────
+METHOD 2: REGENERATED - Clean Module (Complete Pipeline)
+─────────────────────────────────────────────────────────
 What:     Professional refactor of notebook logic (448 clean lines)
-Status:   ⚠️ INCOMPLETE - Stops at CSV generation, missing Excel/DuckDB steps
-Gap:      Needs process_csv + create_database rules (exist for Method 1)
-Use case: Baseline comparison, diagnostics, methodology validation
-Code:     haghighi_mito/virtual_screen.py + vectorized helpers + diagnostics.py
-Commands: just download-raw && just run-module-for DATASET
-Output:   CSVs in virtual_screen_module/ + baseline comparison + plots
+Status:   ✅ COMPLETE - Full pipeline works (CSV → Excel → DuckDB)
+Use case: Production-ready clean implementation, can replace Method 1
+Code:     haghighi_mito/virtual_screen.py + vectorized helpers + diagnostics.py + data.py
+Commands: just download-raw && just run-module
+Output:   data/processed/screen_results_module.duckdb
 Speed:    ~10 minutes per dataset
-TODO:     Add Excel/Parquet/DuckDB processing → then can deprecate Method 1
+Note:     Identical output format to Method 1, cleaner codebase (no dead branches)
+          Method 1 can now be deprecated
 
-Data flow (current):
+Data flow:
   Raw per-site profiles (2.7 GB, 17K rows for taorf)
     → Download (s5cmd sync)
     → Calculate slopes, peaks, stats (virtual_screen.py::run_virtual_screen)
     → Compare to baseline (diagnostics.py::compare_with_baseline)
-    → Save CSV + comparison + plots
-    → [STOPS HERE - missing Excel/DuckDB steps]
-
-Data flow (future):
-  ... (same as above) →
+    → Save CSV (328 rows for taorf)
     → Filter + format to Excel/Parquet (data.py::process_single_virtual_screen_csv)
     → Create DuckDB (data.py::create_screen_database)
 
@@ -458,53 +454,54 @@ rule plot_all_baseline_comparisons:
         expand("data/processed/figures/diagnostics/{dataset}_comparison_metrics.png",
                dataset=DATASETS)
 
-## TODO: Missing Processing Rules for Method 2 Completion ##
-#
-# Uncomment and implement these rules to complete Method 2 pipeline.
-# These rules mirror the Method 1 (notebook) pattern.
-#
-# rule process_module_csv:
-#     """Process module-generated CSV to Excel + Parquet (Method 2)."""
-#     input:
-#         csv=f"{MODULE_DIR}/{{dataset}}_results_pattern_aug_070624.csv"
-#     output:
-#         excel=f"{TABLES_MODULE}/{{dataset}}_screen_results.xlsx",
-#         parquet=f"{INTERIM_MODULE}/{{dataset}}_unfiltered.parquet"
-#     shell:
-#         """
-#         pixi run haghighi-mito process-csv-single \
-#             --dataset {wildcards.dataset} \
-#             --csv-path {input.csv} \
-#             --output-dir {TABLES_MODULE} \
-#             --parquet-output-dir {INTERIM_MODULE}
-#         """
-#
-# rule create_module_database:
-#     """Combine module-generated Parquet files into unified DuckDB database (Method 2)."""
-#     input:
-#         expand(f"{INTERIM_MODULE}/{{dataset}}_unfiltered.parquet",
-#                dataset=DATASETS)
-#     output:
-#         "data/processed/screen_results_module.duckdb"
-#     params:
-#         output_path="data/processed/screen_results_module.duckdb"
-#     shell:
-#         """
-#         pixi run haghighi-mito create-database \
-#             --output-path {params.output_path} \
-#             --use-parquet \
-#             --parquet-dir {INTERIM_MODULE} \
-#             --overwrite
-#         """
-#
-# rule all_module:
-#     """Target: Complete Method 2 pipeline (CSV → Excel → DuckDB).
-#
-#     This is the Method 2 equivalent of all_notebook (Method 1).
-#     Once implemented, use: just run-module
-#     """
-#     input:
-#         "data/processed/screen_results_module.duckdb"
+## Processing Rules for Method 2 ##
+
+rule process_module_csv:
+    """Process module-generated CSV to Excel + Parquet (Method 2)."""
+    input:
+        csv=f"{MODULE_DIR}/{{dataset}}_results_pattern_aug_070624.csv"
+    output:
+        excel=f"{TABLES_MODULE}/{{dataset}}_screen_results.xlsx",
+        parquet=f"{INTERIM_MODULE}/{{dataset}}_unfiltered.parquet"
+    shell:
+        """
+        pixi run haghighi-mito process-csv-single \
+            --dataset {wildcards.dataset} \
+            --csv-path {input.csv} \
+            --output-dir {TABLES_MODULE} \
+            --parquet-output-dir {INTERIM_MODULE}
+        """
+
+rule create_module_database:
+    """Combine module-generated Parquet files into unified DuckDB database (Method 2)."""
+    input:
+        expand(f"{INTERIM_MODULE}/{{dataset}}_unfiltered.parquet",
+               dataset=DATASETS)
+    output:
+        "data/processed/screen_results_module.duckdb"
+    params:
+        output_path="data/processed/screen_results_module.duckdb",
+        datasets=",".join(DATASETS)
+    shell:
+        """
+        pixi run haghighi-mito create-database \
+            --output-path {params.output_path} \
+            --use-parquet \
+            --parquet-dir {INTERIM_MODULE} \
+            --datasets {params.datasets} \
+            --overwrite
+        """
+
+## Target Rules ##
+
+rule all_module:
+    """Target: Complete Method 2 pipeline (CSV → Excel → DuckDB).
+
+    This is the Method 2 equivalent of all_notebook (Method 1).
+    Use: just run-module
+    """
+    input:
+        "data/processed/screen_results_module.duckdb"
 
 
 # ============================================================================

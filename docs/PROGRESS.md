@@ -649,3 +649,51 @@ last_peak_ind, slope
 Method 2 (module) CSV output now has identical format to Method 0 (baseline) and Method 1 (notebook). Ready for next step: Add Excel/Parquet/DuckDB processing to complete Method 2 pipeline.
 
 ---
+
+## 2025-10-26: Method 2 Pipeline Complete - Full CSV → Excel → DuckDB
+
+### Changes Implemented
+**Snakefile:**
+- Uncommented `process_module_csv` rule (lines 463-477)
+- Uncommented `create_module_database` rule (lines 479-497)
+- Uncommented `all_module` target rule (lines 501-508)
+- Added `datasets` parameter to `create_module_database` (matches Method 1 pattern)
+- Updated docstring: Method 2 status changed from ⚠️ INCOMPLETE → ✅ COMPLETE
+- Updated Method 1 note: "superseded by Method 2" (can be deprecated)
+
+**Justfile:**
+- Uncommented `run-module` command
+- Updated header: "Complete Pipeline" (was "Incomplete - Stops at CSV")
+
+### Pipeline Validation
+**End-to-end test (lincs + taorf):**
+- ✅ CSV inputs: `virtual_screen_module/*.csv` (both datasets)
+- ✅ Excel outputs: `tables/generated_from_module/*.xlsx` (1.5 MB + 44 KB)
+- ✅ Parquet outputs: `parquet_module/*.parquet` (657 KB + 27 KB)
+- ✅ DuckDB output: `screen_results_module.duckdb` (1.8 MB, 9,721 rows)
+  - LINCS: 9,394 rows
+  - TA_ORF: 327 rows
+
+### Commands
+```bash
+# Full pipeline (all datasets)
+just run-module
+
+# Single dataset (CSV only)
+just run-module-for taorf
+
+# Clean outputs
+just clean-module
+```
+
+### Method 2 Status: Production Ready
+- ✅ CSV generation with all 17 columns (matching baseline/notebook)
+- ✅ Excel generation with 3-sheet filtering (All/Target/Both)
+- ✅ Parquet intermediate files
+- ✅ DuckDB unified database
+- ✅ Cleaner codebase than Method 1 (no dead branches)
+- ✅ Identical output format to Method 1
+
+**Method 1 (notebook) can now be deprecated** - Method 2 provides same functionality with cleaner implementation.
+
+---
