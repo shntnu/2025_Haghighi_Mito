@@ -13,14 +13,17 @@ This repository follows the [Carpenter-Singh lab workflow conventions](protocols
 ```
 2025_Haghighi_Mito/
 ├── data/                  # Project data following lab conventions
-│   ├── external/          # Third-party reference datasets (KEGG, WikiPathways)
-│   ├── interim/           # Intermediate processing outputs
+│   ├── external/          # Downloaded data from S3 (gitignored)
+│   ├── interim/           # Intermediate processing outputs (Parquet files)
 │   └── processed/         # Final analysis outputs
 │       ├── figures/       # Publication figures (PDFs)
-│       └── tables/        # Screen results (XLSX)
+│       └── tables/        # Screen results (XLSX) - versioned directories
+├── haghighi_mito/         # Python package with processing code
 ├── notebooks/             # Analysis notebooks (numbered by phase)
 ├── pipelines/             # CellProfiler pipelines (.cppipe files)
 ├── protocols/             # Experimental protocols and workflow documentation
+├── Snakefile              # Pipeline automation (download + processing)
+├── Justfile               # Convenience commands (run, clean, etc.)
 ├── manuscript.md          # Manuscript content
 ├── CLAUDE.md             # Repository documentation
 └── README.md             # Project overview
@@ -37,18 +40,18 @@ Following the conventions documented in `protocols/workflows.md`:
 
 ### Analysis Notebooks (`notebooks/`)
 
-Notebooks follow Carpenter-Singh lab convention: `<phase>.<sequence>-<initials>-<description>.ipynb`
+Notebooks follow Carpenter-Singh lab convention: `<phase>.<sequence>-<initials>-<description>.py`
 
 - Phase 1 = Data cleaning/feature engineering
 - Phase 2 = Analysis/screening
 
-- **`1.0-mh-feat-importance.ipynb`**: Feature importance analysis for mitochondrial morphology measurements.
+- **`1.0-mh-feat-importance.py`**: Feature importance analysis for mitochondrial morphology measurements.
 
-- **`2.0-mh-virtual-screen.ipynb`**: Primary pipeline for screening phenotype strength of mitochondrial radial distribution features across datasets (LINCS, CDRP, JUMP-ORF, JUMP-CRISPR, JUMP-Compound, TA-ORF). Performs statistical testing, filtering, and generates ranked perturbation lists.
+- **`2.0-mh-virtual-screen.py`**: Primary pipeline for screening phenotype strength of mitochondrial radial distribution features across datasets (LINCS, CDRP, JUMP-ORF, JUMP-CRISPR, JUMP-Compound, TA-ORF). Performs statistical testing, filtering, and generates ranked perturbation lists.
 
-- **`2.1-mh-set-enrichment-analysis.ipynb`**: Gene set enrichment analysis (GSEA) using blitzgsea package. Analyzes enrichment in GO terms, pathways (KEGG, WikiPathways), disease associations (OMIM, HPO), and mechanism-of-action (MOA) categories.
+- **`2.1-mh-set-enrichment-analysis.py`**: Gene set enrichment analysis (GSEA) using blitzgsea package. Analyzes enrichment in GO terms, pathways (KEGG, WikiPathways), disease associations (OMIM, HPO), and mechanism-of-action (MOA) categories.
 
-- **`2.2-mh-check-vs-lists.ipynb`**: Validation and comparison of virtual screen hit lists.
+- **`2.2-mh-check-vs-lists.py`**: Validation and comparison of virtual screen hit lists.
 
 ### CellProfiler Pipelines (`pipelines/`)
 
@@ -72,25 +75,25 @@ All pipelines are `.cppipe` files for CellProfiler image analysis:
 
 Organized following Carpenter-Singh lab data flow conventions:
 
-- **`data/external/`**: Third-party reference datasets
-  - `KEGG_2021_Human_table.txt`: KEGG pathway annotations for enrichment analysis
-  - `WikiPathways_2024_Human_table.txt`: WikiPathways annotations for enrichment analysis
+- **`data/external/mito_project/workspace/`**: Downloaded data from S3 (gitignored)
+  - `results/virtual_screen_baseline/`: Pre-computed virtual screen CSVs (July 2024, validated)
+  - `results/virtual_screen_regenerated/`: Locally-generated CSVs from notebook 2.0 (experimental)
+  - `per_site_aggregated_profiles_newpattern_2/`: Per-site profile data by dataset
+  - `metadata/`: Dataset metadata files
+  - Reference datasets: `KEGG_2021_Human_table.txt`, `WikiPathways_2024_Human_table.txt`
 
-- **`data/interim/`**: Intermediate processing outputs
-  - Currently empty (large profile datasets remain at remote locations)
+- **`data/interim/`**: Intermediate pipeline outputs (gitignored)
+  - `parquet_baseline/`: Parquet files from baseline CSVs
+  - `parquet_regenerated/`: Parquet files from regenerated CSVs
 
-- **`data/processed/`**: Final analysis outputs from notebooks
-  - **`data/processed/tables/`**: Virtual screen results for each dataset
-    - `CDRP_screen_results.xlsx`: CDRP compound screen results
-    - `jump_compound_screen_results.xlsx`: JUMP compound screen results
-    - `jump_crispr_screen_results.xlsx`: JUMP CRISPR screen results
-    - `jump_orf_screen_results.xlsx`: JUMP ORF screen results
-    - `lincs_screen_results.xlsx`: LINCS compound screen results
-    - `taorf_screen_results.xlsx`: TA-ORF screen results
-  - **`data/processed/figures/`**: Publication figures
-    - `Figure3.pdf`, `Figure4b.pdf`, `Figure4c.pdf`: Main figures
-    - `SuppFigure2.pdf`: Supplementary figure
-    - `dendrogram_mito.pdf`: Hierarchical clustering dendrogram
+- **`data/processed/`**: Final analysis outputs
+  - **`data/processed/tables/`**: Virtual screen results - versioned directories
+    - `curated_2024-08-11/`: Original curated Excel files (git-tracked)
+    - `curated_2025-10-25/`: Current curated Excel files (git-tracked)
+    - `generated_from_s3_baseline/`: Pipeline outputs from baseline CSVs (gitignored, reproducible)
+    - `generated_from_local/`: Pipeline outputs from regenerated CSVs (gitignored, experimental)
+  - **`data/processed/figures/`**: Publication figures (PDFs)
+  - **`screen_results_baseline.duckdb`**: Query interface for baseline results (178,826 rows)
 
 ### Protocols (`protocols/`)
 
@@ -133,45 +136,65 @@ Set enrichment uses **blitzgsea** package for:
 
 ## Working with This Repository
 
-### Jupyter Notebooks
+### Quick Start - Running the Pipeline
 
-All analysis is performed in Jupyter notebooks (`.ipynb` files). These notebooks:
+The repository uses **Snakemake** for pipeline automation and **Justfile** for convenience commands.
 
-- Connect to remote data sources (S3 buckets at paths like `/home/jupyter-mhaghigh@broadinst-ee45a/bucket/`)
-- Use custom single-cell analysis package: `singlecell` (imported from `SingleCell_Morphological_Analysis/`)
-- Read external reference data from `data/external/`
-- Generate figures saved to `data/processed/figures/`
-- Generate screen results saved to `data/processed/tables/`
+**View available commands:**
+```bash
+just --list
+```
 
-### CellProfiler Pipelines
+**Process baseline data (recommended - validated results):**
+```bash
+just download-baseline  # Download pre-computed virtual screen CSVs from S3
+just run-baseline       # Process CSVs → Excel + Parquet → DuckDB
+```
 
-- Pipelines use `.cppipe` format (CellProfiler pipeline files)
-- Batch processing versions include `_batch` suffix
-- CP3-compatible versions include `_cp3` suffix
-- To modify pipelines, open in CellProfiler application
+**Download raw data for notebook 2.0:**
+```bash
+just download-raw       # Download metadata, profiles, orth features (~2.8 GB)
+```
 
-### Key Python Dependencies
+**Visualize pipeline DAG:**
+```bash
+just viz                # Generate pipeline diagrams in docs/pipeline/
+```
 
-- pandas, numpy, scipy: Data analysis
-- matplotlib, seaborn: Visualization
-- sklearn: Preprocessing and normalization
-- blitzgsea: Gene set enrichment analysis
-- Custom `singlecell` package for morphological analysis
+### Python Package (`haghighi_mito/`)
 
-### Important File Paths
+Processing code is organized as a package with CLI interface:
 
-Remote data paths referenced in notebooks (may not be accessible locally):
+```bash
+pixi run haghighi-mito --help              # View all commands
+pixi run haghighi-mito process-csv-single  # Process single dataset CSV
+pixi run haghighi-mito create-database     # Create DuckDB from Parquet files
+pixi run haghighi-mito validate-databases  # Compare two DuckDB databases
+```
 
-- Profiles: `~/gallery/cpg0016-jump/`, `~/gallery/cpg0012-wawer-bioactivecompoundprofiling/`
-- Project workspace: `~/bucket/projects/2016_08_01_RadialMitochondriaDistribution_donna/workspace/`
+Package modules:
+- `config.py`: Dataset configuration (DATASET_INFO dict)
+- `data.py`: Processing functions (CSV → Excel/Parquet, DuckDB creation)
+- `vectorized_slope.py`: Optimized slope calculation (~200x speedup)
+- `vectorized_stats.py`: Batch statistical testing
+- `cli.py`: Typer CLI interface
 
-## Analysis Workflow
+### Analysis Notebooks
 
-1. **CellProfiler Processing**: Run `.cppipe` pipelines on microscopy images to extract morphological features
-2. **Feature Analysis**: Use `notebooks/1.0-mh-feat-importance.ipynb` to analyze feature importance
-3. **Virtual Screening**: Use `notebooks/2.0-mh-virtual-screen.ipynb` to identify hits across datasets
-4. **Enrichment Analysis**: Use `notebooks/2.1-mh-set-enrichment-analysis.ipynb` to find enriched pathways/gene sets
-5. **Validation**: Use `notebooks/2.2-mh-check-vs-lists.ipynb` to compare and validate results
+Notebooks are converted to `.py` scripts for command-line execution:
+
+- **`1.0-mh-feat-importance.py`**: Feature importance analysis
+- **`2.0-mh-virtual-screen.py`**: Virtual screening pipeline (accepts `--dataset` argument)
+- **`2.1-mh-set-enrichment-analysis.py`**: Gene set enrichment analysis (GSEA)
+- **`2.2-mh-check-vs-lists.py`**: Validation and comparison
+
+### Key Dependencies
+
+- **Pipeline**: snakemake, pixi, s5cmd (fast S3 downloads)
+- **Data**: pandas, numpy, scipy, pyarrow (Parquet), duckdb
+- **Visualization**: matplotlib, seaborn
+- **Analysis**: sklearn, blitzgsea
+- **Custom**: singlecell package (morphological analysis)
 
 ## Critical Analysis Parameters
 
@@ -179,6 +202,29 @@ Remote data paths referenced in notebooks (may not be accessible locally):
 - **Minimum gene set size**: 4-10 depending on analysis
 - **Cell count quantile filter**: 0.1 (bottom 10%)
 - **Target feature**: `slope` or `d_slope` (effect size of radial distribution slope)
+
+## Known Issues
+
+### Vectorized Slope Calculation Divergence
+
+**Problem:** The vectorized slope calculation (`haghighi_mito/vectorized_slope.py`) produces **99.99% different results** compared to the S3 baseline (July 2024).
+
+**Evidence:**
+- LINCS: 9,394/9,395 rows differ in `slope`, `last_peak_ind`, `d_slope` values
+- TAORF: 323/327 rows differ in slope-related values
+- Cell counts match exactly → same input data, different algorithm behavior
+
+**Impact:**
+- Baseline pipeline (`just run-baseline`) uses validated S3 CSVs → **safe for publication**
+- Regenerated pipeline produces experimental results → **use for debugging only**
+
+**Current Status:** Under investigation. See PROGRESS.md for detailed analysis.
+
+**Recommendation:** Always use `just run-baseline` for validated results. The regenerated pipeline exists only for development/debugging.
+
+### Data Provenance
+
+Excel files in `curated_2024-08-11/` and `curated_2025-10-25/` are **manually curated via Google Sheets**, not direct pipeline outputs. Pipeline-generated Excel files are in `generated_from_*/` directories (gitignored, reproducible).
 
 ## Important Instructions for Claude Code
 
@@ -188,3 +234,25 @@ Remote data paths referenced in notebooks (may not be accessible locally):
 - NEVER proactively create documentation files (*.md) or README files unless explicitly requested
 - NEVER use emojis in any output, documentation, code comments, or commit messages unless explicitly requested
 - Always use `pixi run python` instead of just `python`
+
+### PROGRESS.md Management
+
+**DO NOT update PROGRESS.md unless explicitly asked by the user.**
+
+PROGRESS.md is a high-level runlog, not a step-by-step session log.
+
+**Only add entries when:**
+- User explicitly asks to document progress
+- Major milestone completed (pipeline working, critical bug resolved)
+- Critical decision point requiring future reference
+
+**Entry format (max 20 lines per entry):**
+- Brief title: what was accomplished
+- Key findings or decisions (not step-by-step debugging)
+- Blocking issues or next actions only if unresolved
+- No command outputs, error messages, or exploratory analysis details
+
+**Monthly maintenance (user will request):**
+- Summarize entries older than 30 days to 1-3 lines per week
+- Keep detailed recent history for active debugging
+- Git history preserves all details if forensics needed
