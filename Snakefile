@@ -38,6 +38,23 @@ rule download_all_baseline:
         expand(f"{BASELINE_DIR}/{{dataset}}_results_pattern_aug_070624.csv",
                dataset=DATASETS)
 
+# Target: Download all data needed for virtual screening analysis (notebook 2.0)
+rule download_screening_data:
+    input:
+        f"{EXTERNAL_BASE}/results/target_pattern_orth_features_lists/.download_complete",
+        expand(f"{EXTERNAL_BASE}/per_site_aggregated_profiles_newpattern_2/{{dataset}}/.download_complete",
+               dataset=DATASETS),
+        f"{EXTERNAL_BASE}/metadata/CDRP_meta.csv",
+        f"{EXTERNAL_BASE}/metadata/JUMP-ORF/ORF_list.tsv",
+        f"{EXTERNAL_BASE}/metadata/JUMP/compound.csv.gz",
+        f"{EXTERNAL_BASE}/metadata/JUMP/crispr.csv.gz",
+        f"{EXTERNAL_BASE}/metadata/JUMP/orf.csv.gz",
+        f"{EXTERNAL_BASE}/metadata/JUMP/plate.csv.gz",
+        f"{EXTERNAL_BASE}/metadata/JUMP/well.csv.gz",
+        f"{EXTERNAL_BASE}/metadata/LINCS_meta.csv",
+        f"{EXTERNAL_BASE}/metadata/TA-ORF/replicate_level_cp_normalized.csv.gz",
+        f"{EXTERNAL_BASE}/metadata/lincs/DrugRepurposing_Metadata.csv"
+
 
 # ============================================================================
 # Download Rules - Baseline Data from S3
@@ -53,6 +70,49 @@ rule download_baseline_csv:
         """
         mkdir -p {BASELINE_DIR}
         aws s3 cp {params.s3_path} {output.csv}
+        """
+
+
+# ============================================================================
+# Download Rules - Virtual Screening Analysis Data (Notebook 2.0)
+# ============================================================================
+
+# Download all orthogonal feature lists (7 files, ~9.6 KB)
+rule download_orth_features:
+    output:
+        touch(f"{EXTERNAL_BASE}/results/target_pattern_orth_features_lists/.download_complete")
+    params:
+        s3_dir=f"{S3_BASE}/results/target_pattern_orth_features_lists/",
+        local_dir=f"{EXTERNAL_BASE}/results/target_pattern_orth_features_lists/"
+    shell:
+        """
+        mkdir -p {params.local_dir}
+        s5cmd sync '{params.s3_dir}*' {params.local_dir}
+        """
+
+# Download per-site profiles for a specific dataset
+rule download_per_site_profiles_dataset:
+    output:
+        touch(f"{EXTERNAL_BASE}/per_site_aggregated_profiles_newpattern_2/{{dataset}}/.download_complete")
+    params:
+        s3_dir=lambda wildcards: f"{S3_BASE}/per_site_aggregated_profiles_newpattern_2/{wildcards.dataset}/",
+        local_dir=lambda wildcards: f"{EXTERNAL_BASE}/per_site_aggregated_profiles_newpattern_2/{wildcards.dataset}/"
+    shell:
+        """
+        mkdir -p {params.local_dir}
+        s5cmd sync '{params.s3_dir}*' {params.local_dir}
+        """
+
+# Download individual metadata files
+rule download_metadata_file:
+    output:
+        f"{EXTERNAL_BASE}/metadata/{{metadata_path}}"
+    params:
+        s3_path=lambda wildcards: f"{S3_BASE}/metadata/{wildcards.metadata_path}"
+    shell:
+        """
+        mkdir -p $(dirname {output})
+        s5cmd cp {params.s3_path} {output}
         """
 
 
