@@ -127,6 +127,10 @@ save_results_dir = mito_project_root_dir + "workspace/results/"
 
 logger.info("PREPROCESSING SECTION: Creating standardized metadata files")
 
+# Create preprocessed metadata directory if it doesn't exist
+preprocessed_dir = os.path.join(mito_project_root_dir, "workspace/metadata/preprocessed")
+os.makedirs(preprocessed_dir, exist_ok=True)
+
 # ########## jump_orf
 dataset = "jump_orf"
 logger.info(f"Processing {dataset}...")
