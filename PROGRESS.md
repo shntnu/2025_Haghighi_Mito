@@ -1671,6 +1671,117 @@ data/processed/screen_results_baseline.duckdb (178,826 rows, 24 MB)
 
 ---
 
+## 2025-10-25: Notebook CLI Integration & Pipeline Visualization
+
+### Completed
+
+- [x] **Integrated notebook 2.0 into Snakemake workflow**
+  - Added argparse CLI support to `notebooks/2.0-mh-virtual-screen.py`
+  - Accepts `--dataset` argument for automated execution
+  - Removed `--use-regen-suffix` approach (suffix pollution eliminated)
+- [x] **Created Snakemake rule for notebook execution**
+  - `run_virtual_screen_notebook` rule executes notebook with dependencies
+  - Depends on: screening data download, metadata files, per-site profiles
+  - Output: CSVs in `virtual_screen_regenerated/` directory
+  - Target: `run_all_virtual_screen_notebooks` for all 6 datasets
+- [x] **Fixed semantic directory structure**
+  - Confirmed: `virtual_screen_baseline/` (S3, publication results)
+  - Confirmed: `virtual_screen_regenerated/` (local, notebook output)
+  - Same filename, different directory = different provenance
+  - No more `_REGEN` suffix pollution
+- [x] **Updated Snakemake targets for clarity**
+  - Renamed `all` → `all_baseline` (explicit naming)
+  - Added `all` as alias to `all_baseline` (default target)
+  - `all_regenerated` stays (processes locally-generated CSVs)
+- [x] **Standardized Justfile commands**
+  - `run-baseline` → `all_baseline` target
+  - `run-regenerated` → `all_regenerated` target
+  - `download-baseline` → Download pre-computed results (6 CSVs)
+  - `download-raw` → Download screening data for notebook 2.0
+  - `run-notebook-for DATASET` → Run notebook for specific dataset (e.g., `just run-notebook-for taorf`)
+  - `clean-baseline` / `clean-regenerated` / `clean-all`
+- [x] **Added DAG visualization command**
+  - `just viz` generates 4 visualizations in `docs/pipeline/`
+  - Rule graphs (simplified): `dag_baseline_rules.png`, `dag_regenerated_rules.png`
+  - Full DAGs (all jobs): `dag_baseline_jobs.png`, `dag_regenerated_jobs.png`
+  - Auto-cleanup of intermediate .dot files in `/tmp/`
+  - Visualizations are git-tracked for documentation
+- [x] **Deleted redundant README**
+  - Removed `data/processed/tables/README.md` (replaced by semantic directory structure)
+  - Added `docs/pipeline/README.md` to gitignore (no auto-generated docs)
+
+### Status: Notebook Fully Integrated into Pipeline
+
+**Pipeline architecture now supports two workflows:**
+
+**1. Baseline (publication results):**
+```bash
+just download-baseline  # Download pre-computed CSVs
+just run-baseline       # Process → Excel + DuckDB
+```
+
+**2. Regenerated (validation/debugging):**
+```bash
+just download-raw                                          # Download raw data
+snakemake run_all_virtual_screen_notebooks --cores 4       # Run notebook 2.0
+just run-regenerated                                       # Process → Excel + DuckDB
+```
+
+**Visualization:**
+```bash
+just viz  # Generate all 4 DAG visualizations in docs/pipeline/
+```
+
+### Files Changed
+
+**Modified:**
+- `notebooks/2.0-mh-virtual-screen.py` (+24, -20) - Added CLI arguments, semantic directory output
+- `Snakefile` (+45, -1) - Added notebook execution rules, renamed targets
+- `Justfile` (+50, -9) - Standardized command naming, added viz command
+- `.gitignore` (+5, -1) - Removed DAG pattern, added docs/pipeline/README.md exclusion
+
+**Deleted:**
+- `data/processed/tables/README.md` - Replaced by semantic directory structure
+
+**Generated:**
+- `docs/pipeline/dag_baseline_rules.png` - Simplified baseline pipeline visualization
+- `docs/pipeline/dag_baseline_jobs.png` - Full baseline pipeline with all jobs
+- `docs/pipeline/dag_regenerated_rules.png` - Simplified regenerated pipeline visualization
+- `docs/pipeline/dag_regenerated_jobs.png` - Full regenerated pipeline with all jobs
+
+### Next Actions
+
+1. [x] Run `just viz` to generate initial DAG documentation - **DONE** (4 visualizations in `docs/pipeline/`)
+2. [ ] Test notebook execution: `just run-notebook-for taorf` (single dataset test)
+3. [ ] Test full notebook execution: `snakemake run_all_virtual_screen_notebooks --cores 4`
+4. [ ] Verify outputs in `virtual_screen_regenerated/` directory
+5. [ ] Continue investigating vectorized slope calculation divergence (99.99% difference vs baseline)
+
+### Notes
+
+**Design decisions:**
+- **Semantic directories over suffixes**: `virtual_screen_baseline/` vs `virtual_screen_regenerated/` (not `*_REGEN.csv`)
+- **Explicit naming**: `all_baseline` and `all_regenerated` are clear and symmetric
+- **Minimal Justfile**: Just convenience wrappers, all logic stays in Snakemake
+- **Git-tracked visualizations**: DAG PNGs in `docs/pipeline/` serve as documentation
+- **No auto-generated READMEs**: Following project convention (CLAUDE.md)
+
+**Justfile command structure:**
+- `run-baseline` / `run-regenerated` - Execute pipelines
+- `run-notebook-for DATASET` - Run notebook for single dataset
+- `download-baseline` / `download-raw` - Get data
+- `clean-baseline` / `clean-regenerated` / `clean-all` - Cleanup
+- `viz` - Generate documentation (4 DAG PNGs in `docs/pipeline/`)
+- `dry` / `status` - Utilities
+
+**Notebook CLI integration benefits:**
+- Automated execution via Snakemake
+- Parallel processing of datasets via wildcards
+- Declarative dependencies (data downloads, metadata)
+- Reproducible and trackable
+
+---
+
 ## Template for Future Entries
 
 ```text
