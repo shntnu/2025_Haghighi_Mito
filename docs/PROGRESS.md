@@ -48,6 +48,26 @@
 
 ---
 
+## 2025-10-26: Justfile Command Refactoring
+
+### What was done
+- Standardized all command naming to use consistent `generate-` prefix
+- Renamed Snakefile rules for clarity: `run_all_virtual_screen_modules` → `all_module_csvs`, `run_all_virtual_screen_notebooks` → `all_notebook_csvs`
+- Removed redundant commands: download commands (Snakemake auto-downloads), database-only commands (identical to `-all` targets), clean commands
+
+### Key decisions
+- **Naming pattern**: `generate-{method}-all` (full pipeline), `generate-{method}-csvs` (all datasets CSVs), `generate-{method}-csv-for DATASET` (single CSV)
+- Singular/plural distinction: `-csv-for` (one dataset) vs `-csvs` (all datasets)
+- Single-command workflows: `just generate-module-all` auto-downloads and processes in one step
+
+### Final command structure
+- Method 0: `generate-baseline-all`
+- Method 1: `generate-notebook-all`, `generate-notebook-csvs`, `generate-notebook-csv-for DATASET`
+- Method 2: `generate-module-all`, `generate-module-csvs`, `generate-module-csv-for DATASET`
+- Diagnostics: `compare-baseline-for`, `plot-comparison-for`, `plot-all-comparisons`
+
+---
+
 ## 2025-10-17 to 2025-10-24: Initial Data Download
 Downloaded S3 data (178 files, 4.6 GB) after Glacier restoration. Set up local analysis infrastructure with metadata, per-site profiles, and orthogonal features.
 
