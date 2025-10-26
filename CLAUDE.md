@@ -58,10 +58,10 @@ just generate-module-all           # Download raw data if needed, then run full 
 just generate-module-csv-for taorf # Generate single dataset CSV
 ```
 
-**Compare regenerated results with baseline:**
+**Diagnose regenerated results (compare with baseline + plots):**
 ```bash
-just compare-baseline-for taorf    # Compare CSVs (~1 sec)
-just plot-comparison-for taorf     # Generate diagnostic plots
+just diagnose-for taorf    # Compare CSV + generate plots in one command (~1 sec)
+just diagnose-all          # Run diagnostics for all datasets
 ```
 
 ### Python CLI Commands
@@ -74,11 +74,8 @@ pixi run haghighi-mito --help                    # View all commands
 # Run virtual screen from per-site profiles
 pixi run haghighi-mito virtual-screen --dataset taorf
 
-# Compare with baseline (fast, no regeneration)
+# Compare with baseline + generate plots (fast, no regeneration)
 pixi run haghighi-mito compare-baseline --dataset taorf
-
-# Generate diagnostic plots
-pixi run haghighi-mito plot-baseline-comparison --dataset taorf
 
 # Process CSV to Excel + Parquet
 pixi run haghighi-mito process-csv-single \

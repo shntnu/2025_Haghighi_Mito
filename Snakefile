@@ -420,28 +420,17 @@ rule run_virtual_screen_module:
         pixi run haghighi-mito virtual-screen --dataset {wildcards.dataset}
         """
 
-rule compare_module_with_baseline:
-    """Compare module-generated CSV with baseline (FAST - no regeneration)."""
+rule diagnose_module:
+    """Compare module CSV with baseline and generate diagnostic plots (FAST - ~1 sec)."""
     input:
         results_csv="data/processed/virtual_screen_module/{dataset}_results_pattern_aug_070624.csv",
         baseline_csv=f"{BASELINE_DIR}/{{dataset}}_results_pattern_aug_070624.csv"
     output:
-        comparison_csv="data/processed/virtual_screen_module/{dataset}_baseline_comparison.csv"
-    shell:
-        """
-        pixi run haghighi-mito compare-baseline --dataset {wildcards.dataset}
-        """
-
-
-rule plot_baseline_comparison:
-    """Generate 2x2 scatter plots comparing regenerated vs baseline metrics."""
-    input:
-        comparison_csv="data/processed/virtual_screen_module/{dataset}_baseline_comparison.csv"
-    output:
+        comparison_csv="data/processed/virtual_screen_module/{dataset}_baseline_comparison.csv",
         plot="data/processed/figures/diagnostics/{dataset}_comparison_metrics.png"
     shell:
         """
-        pixi run haghighi-mito plot-baseline-comparison --dataset {wildcards.dataset}
+        pixi run haghighi-mito compare-baseline --dataset {wildcards.dataset}
         """
 
 
@@ -453,8 +442,8 @@ rule all_module_csvs:
         expand("data/processed/virtual_screen_module/{dataset}_results_pattern_aug_070624.csv",
                dataset=DATASETS)
 
-rule plot_all_baseline_comparisons:
-    """Target: Generate comparison plots for all datasets."""
+rule all_module_diagnostics:
+    """Target: Run diagnostics (comparison CSV + plots) for all datasets."""
     input:
         expand("data/processed/figures/diagnostics/{dataset}_comparison_metrics.png",
                dataset=DATASETS)

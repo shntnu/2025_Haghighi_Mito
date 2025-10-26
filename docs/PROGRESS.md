@@ -68,6 +68,31 @@
 
 ---
 
+## 2025-10-26: Diagnostic Workflow Simplification & Module Cleanup
+
+### What was done
+- **Moved function**: `compare_with_baseline_csv()` from `virtual_screen.py` → `diagnostics.py` (proper separation of concerns)
+- **Unified workflow**: Combined two-step diagnostic (compare → plot) into single command
+- **Removed CLI command**: `plot-baseline-comparison` (now auto-called internally)
+- **Updated Snakefile**: Merged two rules into one `diagnose_module` rule with both outputs (CSV + PNG)
+- **Fixed naming**: `diagnose_all_modules` → `all_module_diagnostics` (consistent with `all_module_csvs`)
+
+### Key decisions
+- **One command, both outputs**: `just diagnose-for taorf` now generates comparison CSV + diagnostic PNG automatically
+- **Module boundaries**: `virtual_screen.py` = pipeline (raw data → CSV), `diagnostics.py` = analysis (CSV → comparison + plots)
+- **No dead imports**: Removed unused imports from `diagnostics.py` (calculate_metrics, calculate_statistical_tests, load_dataset_data)
+
+### Final diagnostic commands
+- Single dataset: `just diagnose-for DATASET` → CSV + PNG (~1 sec)
+- All datasets: `just diagnose-all` → all diagnostics in parallel
+- Removed: `compare-baseline-for`, `plot-comparison-for`, `plot-all-comparisons` (replaced by unified commands)
+
+### Code quality
+- 7 files changed: 99 additions, 140 deletions (net -41 lines)
+- Tighter docstrings, cleaner architecture, better UX
+
+---
+
 ## 2025-10-17 to 2025-10-24: Initial Data Download
 Downloaded S3 data (178 files, 4.6 GB) after Glacier restoration. Set up local analysis infrastructure with metadata, per-site profiles, and orthogonal features.
 
