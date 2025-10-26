@@ -50,6 +50,7 @@ from haghighi_mito.config import (
     EXTERNAL_DATA_DIR,
     PROCESSED_DATA_DIR,
 )
+from haghighi_mito.vectorized_slope import find_end_slope2_vectorized
 from haghighi_mito.vectorized_stats import batch_plate_statistics
 
 
@@ -177,37 +178,33 @@ def calculate_simple_metrics(per_site_df, dataset: str):
     logger.info(f"Found controls for {len(control_df_perplate)} plates")
 
     # Step 2: Subtract controls per plate and calculate slope
-    logger.info("Subtracting controls and calculating slopes...")
+    logger.info("Subtracting controls and calculating slopes (vectorized)...")
 
-    slopes = []
-    last_peak_inds = []
+    # Build matrix of radial patterns (all rows at once)
+    radial_patterns = per_site_df[target_columns].values  # shape: (n_rows, 12)
 
-    for idx, row in per_site_df.iterrows():
-        batch_plate = row["batch_plate"]
+    # Build control matrix - map batch_plate to control values
+    control_matrix = np.zeros_like(radial_patterns)
+    batch_plates = per_site_df["batch_plate"].values
 
-        # Get radial pattern for this observation
-        radial_pattern = row[target_columns].values
-
-        # Subtract control if available for this plate
+    for i, batch_plate in enumerate(batch_plates):
         if batch_plate in control_df_perplate.index:
-            control_values = control_df_perplate.loc[batch_plate].values
-            radial_pattern_corrected = radial_pattern - control_values
-        else:
-            radial_pattern_corrected = radial_pattern
+            control_matrix[i] = control_df_perplate.loc[batch_plate].values
 
-        # Calculate slope
-        last_peak_ind, slope = find_end_slope2_simple(radial_pattern_corrected)
-        last_peak_inds.append(last_peak_ind)
-        slopes.append(slope)
+    # Subtract controls (vectorized)
+    radial_patterns_corrected = radial_patterns - control_matrix
 
-    per_site_df["last_peak_ind"] = last_peak_inds
-    per_site_df["last_peak_loc"] = last_peak_inds  # Alias for batch_plate_statistics compatibility
-    per_site_df["slope"] = slopes
+    # VECTORIZED SLOPE CALCULATION - processes all rows at once (~200x faster)
+    slope_results = find_end_slope2_vectorized(radial_patterns_corrected)
+
+    per_site_df["last_peak_ind"] = slope_results[:, 0]
+    per_site_df["last_peak_loc"] = slope_results[:, 0]  # Alias for batch_plate_statistics compatibility
+    per_site_df["slope"] = slope_results[:, 1]
 
     # Reset index to ensure clean indexing
     per_site_df = per_site_df.reset_index(drop=True)
 
-    logger.info(f"Calculated slopes for {len(slopes)} observations")
+    logger.info(f"Calculated slopes for {len(slope_results)} observations")
 
     # Step 3: Z-score normalize slope and last_peak_ind per plate
     # This matches notebook 2.0 line 1251-1254: standardize_per_catX normalizes per batch_plate
