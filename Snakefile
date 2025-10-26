@@ -27,9 +27,14 @@ TABLES_REGEN = "data/processed/tables/generated_from_local"
 # ============================================================================
 
 # Default rule - runs baseline pipeline
-rule all:
+rule all_baseline:
     input:
         "data/processed/screen_results_baseline.duckdb"
+
+# Alias for default target
+rule all:
+    input:
+        rules.all_baseline.input
 
 
 # Target: Download all baseline CSVs from S3
@@ -113,6 +118,37 @@ rule download_metadata_file:
         """
         mkdir -p $(dirname {output})
         s5cmd cp {params.s3_path} {output}
+        """
+
+
+# ============================================================================
+# Notebook Execution Rules - Virtual Screening from Downloaded Data
+# ============================================================================
+
+# Run virtual screening notebook for a single dataset
+# This regenerates virtual screen results from per-site profiles
+rule run_virtual_screen_notebook:
+    input:
+        notebook="notebooks/2.0-mh-virtual-screen.py",
+        # Ensure all required data is downloaded first
+        orth_features=f"{EXTERNAL_BASE}/results/target_pattern_orth_features_lists/.download_complete",
+        per_site_profiles=f"{EXTERNAL_BASE}/per_site_aggregated_profiles_newpattern_2/{{dataset}}/.download_complete",
+        metadata_cdrp=f"{EXTERNAL_BASE}/metadata/CDRP_meta.csv",
+        metadata_orf_list=f"{EXTERNAL_BASE}/metadata/JUMP-ORF/ORF_list.tsv",
+        metadata_compound=f"{EXTERNAL_BASE}/metadata/JUMP/compound.csv.gz",
+        metadata_crispr=f"{EXTERNAL_BASE}/metadata/JUMP/crispr.csv.gz",
+        metadata_orf=f"{EXTERNAL_BASE}/metadata/JUMP/orf.csv.gz",
+        metadata_plate=f"{EXTERNAL_BASE}/metadata/JUMP/plate.csv.gz",
+        metadata_well=f"{EXTERNAL_BASE}/metadata/JUMP/well.csv.gz",
+        metadata_lincs=f"{EXTERNAL_BASE}/metadata/LINCS_meta.csv",
+        metadata_taorf=f"{EXTERNAL_BASE}/metadata/TA-ORF/replicate_level_cp_normalized.csv.gz",
+        metadata_lincs_drug=f"{EXTERNAL_BASE}/metadata/lincs/DrugRepurposing_Metadata.csv"
+    output:
+        csv=f"{REGEN_DIR}/{{dataset}}_results_pattern_aug_070624.csv"
+    shell:
+        """
+        mkdir -p {REGEN_DIR}
+        pixi run python {input.notebook} --dataset {wildcards.dataset}
         """
 
 
@@ -204,6 +240,13 @@ rule create_regenerated_database:
 rule all_regenerated:
     input:
         "data/processed/screen_results_regenerated.duckdb"
+
+
+# Target: Run virtual screening notebook for all datasets
+rule run_all_virtual_screen_notebooks:
+    input:
+        expand(f"{REGEN_DIR}/{{dataset}}_results_pattern_aug_070624.csv",
+               dataset=DATASETS)
 
 
 # ============================================================================

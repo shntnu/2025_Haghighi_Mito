@@ -1065,11 +1065,10 @@ len(uncorr_feats_condese)
 
 logger.info("ANALYSIS SECTION: Virtual screen on per-site aggregated profiles")
 
-# Configuration: Output file naming
-# Set USE_REGEN_SUFFIX=True to avoid overwriting S3 baseline files downloaded to local
-# - True: saves as *_REGEN.csv (preserves baseline files from S3)
-# - False: saves as *.csv (overwrites baseline files)
-USE_REGEN_SUFFIX = True  # Default: True to preserve S3 baseline for comparison
+# Configuration: Output directory
+# Results saved to virtual_screen_regenerated/ (locally-generated)
+# This is separate from virtual_screen_baseline/ (S3 downloads)
+# Same filename, different directory = different provenance
 
 # %% [markdown] heading_collapsed=true
 # ## 3. Load per_site aggregated data and control target feature for cell counts
@@ -1078,22 +1077,32 @@ USE_REGEN_SUFFIX = True  # Default: True to preserve S3 baseline for comparison
 #   - PER PLATE low variance feature removal
 
 # %% hidden=true
+import argparse
 import pandas as pd
 from sklearn import linear_model
+
+# Parse command-line arguments
+parser = argparse.ArgumentParser(description='Virtual screening analysis for mitochondrial morphology')
+parser.add_argument('--dataset', type=str,
+                    choices=['CDRP', 'jump_orf', 'lincs', 'jump_crispr', 'taorf', 'jump_compound'],
+                    default='lincs',
+                    help='Dataset to analyze (default: lincs)')
+
+# Parse args if running as script, otherwise use defaults for notebook mode
+try:
+    args = parser.parse_args()
+    dataset = args.dataset
+    logger.info(f"CLI mode: dataset={dataset}")
+except SystemExit:
+    # Running in notebook/interactive mode - use defaults
+    dataset = "lincs"
+    logger.info(f"Notebook mode: dataset={dataset}")
 
 f_substr = "MeanFrac"
 target_columns = [
     "Cells_RadialDistribution_" + f_substr + "_mito_tubeness_" + str(i) + "of16"
     for i in range(5, 17)
 ]
-
-# Dataset selection - only the LAST uncommented line determines which dataset runs
-dataset = "CDRP"
-dataset = "jump_orf"
-dataset="lincs" # <- Currently selected dataset
-# dataset = "jump_crispr" 
-# dataset = "taorf" 
-#dataset = "jump_compound"  
 
 logger.info(f"Analyzing dataset: {dataset}")
 
@@ -1269,7 +1278,9 @@ dataset
 # %%
 # import pingouin
 root_res_dir = mito_project_root_dir + "workspace/"
-write_res_path = root_res_dir + "/results/virtual_screen/"
+# Save to virtual_screen_regenerated/ (locally-generated results)
+# Separate from virtual_screen_baseline/ (S3 downloads)
+write_res_path = root_res_dir + "/results/virtual_screen_regenerated/"
 f_substr = "MeanFrac"
 ##############################################
 from scipy.stats import norm, ttest_ind
@@ -1407,9 +1418,8 @@ for peri, pert in enumerate(perts):
 
 logger.info(f"Statistical testing complete for {len(perts)} perturbations")
 
-# Determine output filename based on USE_REGEN_SUFFIX configuration
-suffix = "_REGEN" if USE_REGEN_SUFFIX else ""
-output_filename = f"{dataset}_results_pattern_aug_070624{suffix}.csv"
+# Save to virtual_screen_regenerated/ directory (provenance via directory, not suffix)
+output_filename = f"{dataset}_results_pattern_aug_070624.csv"
 output_path = write_res_path + "/" + output_filename
 
 logger.info(f"Saving results to {output_path}")
