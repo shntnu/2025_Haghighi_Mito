@@ -558,3 +558,30 @@ Method 2: module      module      module      module
 ```
 
 Each method now uses ONE name consistently across all directory paths, variables, and commands.
+
+---
+
+## 2025-10-26: Method 2 Self-Contained - Metadata Preprocessing
+
+### Problem Identified
+Module (`virtual_screen.py`) failed with missing file error:
+- Expected preprocessed metadata: `workspace/metadata/preprocessed/annot_{dataset}.csv`
+- Files exist on S3 from July 2024, but not part of Method 2 download dependencies
+- Method 1 (notebook) has built-in preprocessing that creates these files as side effect
+
+### Solution: In-Memory Preprocessing
+Added `preprocess_metadata()` function to `virtual_screen.py` (lines 84-176):
+- Loads raw metadata for each dataset (LINCS_meta.csv, TA-ORF/replicate_level_cp_normalized.csv.gz, etc.)
+- Adds standardized columns: Batch, batch_plate, ctrl_well, Metadata_pert_type
+- Filters to necessary columns (critical for taorf - prevents merge conflicts)
+- Preprocesses in-memory, nothing written to disk
+
+### Key Design Decision
+**Rejected downloading preprocessed files from S3** - Would create hidden dependency and violate "regenerated from scratch" philosophy. Method 2 now truly self-contained.
+
+### Validation
+- Tested taorf: 324 perturbations processed successfully
+- Module no longer depends on notebook preprocessing or S3 preprocessed files
+- Snakefile rule renamed: `run_virtual_screen_analysis` → `run_virtual_screen_module`
+
+---
