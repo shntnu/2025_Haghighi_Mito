@@ -11,35 +11,32 @@ app = typer.Typer(
 )
 
 
-@app.command(name="process-csvs")
-def process_csvs(
-    output_dir: Annotated[Path, typer.Option(help="Output directory for Excel files")],
-    input_dir: Annotated[Path | None, typer.Option(help="Input directory with CSV files (default: from config)")] = None,
-    results_suffix: Annotated[str, typer.Option(help="Suffix for input CSV files")] = "",
+@app.command(name="process-csv-single")
+def process_csv_single(
+    dataset: Annotated[str, typer.Option(help="Dataset name (e.g., 'CDRP', 'lincs', 'jump_orf')")],
+    csv_path: Annotated[Path, typer.Option(help="Path to input CSV file")],
+    output_dir: Annotated[Path, typer.Option(help="Output directory for Excel file")],
     fdr: Annotated[float, typer.Option(help="False discovery rate for BH correction")] = 0.05,
     cell_count_quantile: Annotated[float | None, typer.Option(help="Filter bottom quantile by cell count (e.g., 0.1)")] = None,
+    parquet_output_dir: Annotated[Path | None, typer.Option(help="Directory to save Parquet file (optional)")] = None,
 ):
-    """Convert virtual screen CSV results to filtered Excel tables.
+    """Process a single virtual screen CSV file to Excel and Parquet.
 
-    Reads CSV files from virtual screen analysis, applies statistical filtering
+    Reads a single CSV file from virtual screen analysis, applies statistical filtering
     (BH-corrected p-values, orthogonal feature filtering), and saves results
-    as multi-sheet Excel files.
+    as a multi-sheet Excel file. Optionally saves unfiltered data as Parquet.
     """
     # Lazy imports for faster startup
-    from haghighi_mito.config import MITO_VIRTUAL_SCREEN_DIR
-    from haghighi_mito.data import convert_virtual_screen_csvs_to_excel
-
-    # Use config default if not provided
-    if input_dir is None:
-        input_dir = MITO_VIRTUAL_SCREEN_DIR
+    from haghighi_mito.data import process_single_virtual_screen_csv
 
     # Call function (already has logging via loguru)
-    convert_virtual_screen_csvs_to_excel(
-        input_dir=input_dir,
+    process_single_virtual_screen_csv(
+        dataset=dataset,
+        csv_path=csv_path,
         output_dir=output_dir,
-        results_suffix=results_suffix,
         fdr=fdr,
         cell_count_quantile=cell_count_quantile,
+        parquet_output_dir=parquet_output_dir,
     )
 
 
@@ -48,10 +45,12 @@ def create_database_cmd(
     output_path: Annotated[Path, typer.Option(help="Path to output DuckDB database file")],
     tables_dir: Annotated[Path | None, typer.Option(help="Directory containing Excel files (default: from config)")] = None,
     overwrite: Annotated[bool, typer.Option(help="Recreate database even if it exists")] = False,
+    use_parquet: Annotated[bool, typer.Option(help="Read from Parquet files instead of Excel")] = False,
+    parquet_dir: Annotated[Path | None, typer.Option(help="Directory containing Parquet files (required if --use-parquet)")] = None,
 ):
-    """Create DuckDB database from Excel screen results.
+    """Create DuckDB database from Excel or Parquet screen results.
 
-    Combines all screen result Excel files into a single DuckDB database.
+    Combines all screen result files into a single DuckDB database.
     Only relevant columns are kept for each dataset to reduce database size.
     """
     # Lazy imports for faster startup
@@ -61,7 +60,30 @@ def create_database_cmd(
         output_path=output_path,
         tables_dir=tables_dir,
         overwrite=overwrite,
+        use_parquet=use_parquet,
+        parquet_dir=parquet_dir,
     )
+
+
+@app.command(name="validate-databases")
+def validate_databases_cmd(
+    baseline: Annotated[Path, typer.Option(help="Path to baseline DuckDB file")],
+    new: Annotated[Path, typer.Option(help="Path to new DuckDB file to validate")],
+):
+    """Compare two DuckDB databases for identical data.
+
+    Validates that two DuckDB databases contain identical data by comparing
+    all rows and columns. Useful for validating refactoring or pipeline changes.
+    """
+    import sys
+
+    # Lazy imports for faster startup
+    from haghighi_mito.data import validate_databases
+
+    identical = validate_databases(baseline_path=baseline, new_path=new)
+
+    if not identical:
+        sys.exit(1)
 
 
 def main():

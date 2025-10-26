@@ -1039,6 +1039,208 @@ pyproject.toml               # UPDATED - Added typer dep and console script
 
 ---
 
+## 2025-10-25: Data Pipeline Refactoring - Parquet Integration & Parallelization
+
+### Completed
+
+- [x] **Phase 1: Parquet Integration**
+  - Added Parquet output to `convert_virtual_screen_csvs_to_excel()` function
+  - Modified `create_screen_database()` to read from Parquet instead of Excel files
+  - Updated Snakefile to generate both Excel and Parquet outputs
+  - Parquet files stored in `data/interim/parquet/` (intermediate data)
+- [x] **Phase 2: Per-File Processing with Parallelization**
+  - Created `process_single_virtual_screen_csv()` - processes one dataset at a time
+  - Refactored Snakefile to use wildcards for parallel execution (6 concurrent jobs)
+  - Replaced monolithic batch processing with granular per-file rules
+  - Snakemake now handles parallelization through wildcard expansion
+- [x] **Cleanup: Removed Batch Mode**
+  - Deleted `convert_virtual_screen_csvs_to_excel()` function entirely
+  - Removed `process-csvs` CLI command (batch mode)
+  - Simplified codebase to single-file processing only
+  - Snakemake provides all batch orchestration via wildcards
+- [x] **Added Validation Functionality**
+  - Integrated `validate_duckdb.py` script into `haghighi_mito/data.py`
+  - Created `validate_databases()` function with proper NaN handling
+  - Added `validate-databases` CLI command
+  - Deleted standalone `validate_duckdb.py` script
+- [x] **Created Baseline Fixture**
+  - Backed up current DuckDB as `data/processed/screen_results_BASELINE.duckdb`
+  - Used for validation that refactored pipeline produces identical results
+  - All validations passed ✓
+
+### Status: Refactoring Complete - Production Ready
+
+**Primary Goals Achieved:**
+- **Clean architecture**: Single-file processing with clear separation of concerns
+- **Best practices**: Parquet for intermediate pipeline data, Excel for human consumption
+- **Config-driven**: DATASETS list in Snakefile, DATASET_INFO in config, no hardcoded loops
+- **Maintainable**: Each function does one thing, easier to test and debug
+- **Modern data patterns**: Industry-standard formats and tools (Parquet, DuckDB, Snakemake)
+
+**Secondary Benefits (nice-to-have):**
+- Parallel execution via Snakemake wildcards (6 concurrent jobs)
+- Faster Parquet I/O compared to Excel
+- Type preservation in Parquet format
+
+**Architecture After Refactoring:**
+```
+CSV files (6 datasets)
+    ↓
+    ↓ [Snakemake: 6 parallel jobs via wildcards]
+    ↓
+process-csv-single (called once per dataset)
+    ├─ Read CSV
+    ├─ Apply BH-corrected filters
+    ├─ Save Excel (3 sheets: unfiltered, orthfilt, bothfilt)
+    └─ Save Parquet (unfiltered only)
+    ↓
+Parquet files (~20MB) → create-database → DuckDB (~24MB)
+```
+
+**Data Flow:**
+- **Input**: CSV files from virtual screen analysis
+- **Intermediate**: Parquet files in `data/interim/parquet/` (machine-readable, fast)
+- **Output for humans**: Excel files in `data/processed/tables/` (3 sheets per dataset)
+- **Output for queries**: DuckDB database in `data/processed/`
+
+**CLI Commands (Final):**
+```bash
+# Process single CSV file to Excel + Parquet
+pixi run haghighi-mito process-csv-single \
+    --dataset CDRP \
+    --csv-path data/external/.../CDRP_results.csv \
+    --output-dir data/processed/tables/ \
+    --parquet-output-dir data/interim/parquet/
+
+# Create DuckDB from Parquet files
+pixi run haghighi-mito create-database \
+    --output-path data/processed/screen_results.duckdb \
+    --use-parquet \
+    --parquet-dir data/interim/parquet/ \
+    --overwrite
+
+# Validate two DuckDB databases
+pixi run haghighi-mito validate-databases \
+    --baseline data/processed/screen_results_BASELINE.duckdb \
+    --new data/processed/screen_results.duckdb
+```
+
+**Snakemake Pipeline:**
+```python
+DATASETS = ["CDRP", "jump_compound", "jump_crispr", "jump_orf", "lincs", "taorf"]
+
+rule process_single_csv:
+    input: "data/external/.../virtual_screen/{dataset}_results_pattern_aug_070624.csv"
+    output:
+        excel="data/processed/tables/{dataset}_screen_results.xlsx",
+        parquet="data/interim/parquet/{dataset}_unfiltered.parquet"
+    shell: "pixi run haghighi-mito process-csv-single ..."
+
+rule create_database:
+    input: expand("data/interim/parquet/{dataset}_unfiltered.parquet", dataset=DATASETS)
+    output: "data/processed/screen_results.duckdb"
+    shell: "pixi run haghighi-mito create-database --use-parquet ..."
+```
+
+**Validation Results:**
+- ✓ All 178,826 rows validated against baseline
+- ✓ All numeric columns match exactly
+- ✓ All metadata columns match (with proper NaN handling)
+- ✓ Pipeline produces identical results after refactoring
+
+### Why This Refactoring Matters
+
+**Code Quality:**
+- **Single Responsibility Principle**: `process_single_virtual_screen_csv()` does one thing well
+- **No redundant code**: Removed batch processing entirely, Snakemake handles orchestration
+- **Easier to understand**: Clear data flow from CSV → Parquet/Excel → DuckDB
+- **Testable**: Each function can be tested independently
+
+**Best Practices:**
+- **Config-driven**: Add new dataset by editing DATASETS list, not Python code
+- **Separation of formats**: Parquet for pipeline (machines), Excel for review (humans)
+- **Industry standards**: Using Parquet (columnar storage), DuckDB (OLAP), Snakemake (workflow)
+- **Reproducibility**: Every step validated, baseline fixture for regression testing
+
+**Maintainability:**
+- **Per-file processing**: Debug one dataset without rerunning all 6
+- **Failure isolation**: One dataset error doesn't break the entire pipeline
+- **Granular dependencies**: Snakemake only reruns what changed
+- **Clear provenance**: Easy to trace data flow through pipeline stages
+
+### Code Changes Summary
+
+**Modified Files:**
+
+1. **`haghighi_mito/data.py`** (+150 lines, -65 lines):
+   - Added `process_single_virtual_screen_csv()` - per-file processing
+   - Removed `convert_virtual_screen_csvs_to_excel()` - batch processing
+   - Modified `create_screen_database()` - added Parquet support
+   - Added `validate_databases()` - database comparison function
+
+2. **`haghighi_mito/cli.py`** (+25 lines, -35 lines):
+   - Added `process-csv-single` command - single-file processing
+   - Removed `process-csvs` command - batch mode
+   - Added `validate-databases` command - validation tool
+
+3. **`Snakefile`** (+20 lines, -29 lines):
+   - Added DATASETS list configuration
+   - Replaced monolithic rule with wildcard-based `process_single_csv` rule
+   - Updated `create_database` rule to use Parquet inputs
+   - Enables 6-way parallel execution
+
+**Deleted Files:**
+- `validate_duckdb.py` - functionality moved to `haghighi_mito/data.py`
+
+**Key Design Decisions:**
+
+1. **Parquet for pipeline data**: Machine-readable intermediate format
+   - Faster I/O than Excel
+   - Preserves exact data types
+   - DuckDB-native format
+
+2. **Excel for human consumption**: Publication-ready tables
+   - Multi-sheet structure (unfiltered, orthfilt, bothfilt)
+   - Easy to review and share
+   - Compatible with existing workflows
+
+3. **Per-file processing**: Granular control and parallelization
+   - Snakemake orchestrates parallelization
+   - No multiprocessing overhead in Python
+   - Clean separation of concerns
+
+4. **Config-driven architecture**: Reduce hardcoding
+   - DATASETS list in Snakefile
+   - DATASET_INFO in config.py
+   - Easy to extend without code changes
+
+### Next Actions
+
+1. [ ] Investigate vectorized slope calculation divergence (separate task, still unresolved)
+
+### Notes
+
+**What this refactoring accomplished:**
+- Clean, maintainable code following single responsibility principle
+- Modern data engineering patterns (Parquet for intermediate data, config-driven pipeline)
+- Easier to extend (add new dataset = one line in Snakefile)
+- Better debugging (process/test one dataset at a time)
+- Validation shows results are identical to baseline
+
+**Validation methodology:**
+- Created baseline DuckDB before refactoring
+- Compared 178,826 rows × 22 columns after refactoring
+- Proper NaN handling for object columns
+- Numerical tolerance for float comparisons
+- Result: Perfect match ✓
+
+**Data organization:**
+- `data/interim/parquet/` - Parquet files (intermediate, for pipeline)
+- `data/processed/tables/` - Excel files (final, for human review)
+- `data/processed/` - DuckDB database (final, for queries)
+
+---
+
 ## Template for Future Entries
 
 ```text
