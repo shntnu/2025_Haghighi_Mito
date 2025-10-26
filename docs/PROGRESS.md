@@ -585,3 +585,25 @@ Added `preprocess_metadata()` function to `virtual_screen.py` (lines 84-176):
 - Snakefile rule renamed: `run_virtual_screen_analysis` → `run_virtual_screen_module`
 
 ---
+
+## 2025-10-26: Dataset Filtering & Diagnostic Naming Cleanup
+
+### Dataset Filtering Feature
+- Added `--datasets` parameter to `create-database` CLI command
+- Allows selective database creation (e.g., `--datasets lincs,taorf` instead of all 6 datasets)
+- Updated Snakefile rules to pass dataset list from `DATASETS` variable
+- Supports both lowercase (lincs, taorf) and uppercase (LINCS, TA_ORF) naming
+
+### Diagnostic Output Renaming
+- Renamed legacy directory: `t_target_pattern_analysis/` → `diagnostics/`
+- Renamed plot files: `baseline_vs_regenerated.png` → `comparison_metrics.png`
+- Old naming was a relic from single-metric analysis; new naming reflects multi-metric comparison (t_target_pattern, slope, t_orth, t_slope)
+- Updated across: diagnostics.py, Snakefile, Justfile
+
+### Validation Tests
+- Baseline database creation: 9,717 rows (LINCS + TA_ORF) ✓
+- Diagnostic plots: Valid PNG files with correct naming ✓
+- Module pipeline end-to-end: taorf dataset processed successfully ✓
+- All three methods tested and working
+
+---
