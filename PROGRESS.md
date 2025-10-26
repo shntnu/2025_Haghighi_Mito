@@ -364,6 +364,62 @@ pixi run haghighi-mito compare-baseline-metrics --dataset taorf
 
 ---
 
+## 2025-10-26: Slope Calculation Method Testing - Endpoint Not Root Cause
+
+### Investigation
+Tested two slope calculation methods found in codebase to determine which baseline used:
+- **Method A** (current): Average of last two points: `endpoint = (smoothed[-1] + smoothed[-2]) / 2`
+- **Method B** (alternative): Last point only: `endpoint = smoothed[-1]`
+
+Implemented toggle via `use_last_two_average` parameter in `find_end_slope2_simple()`, threaded through pipeline.
+
+### Results (taorf, n=327)
+- **Method A**: 63/327 (19.3%) within 10%, mean % diff 184.75%
+- **Method B**: 56/327 (17.1%) within 10%, mean % diff 156.70%
+- **Difference**: Only 2% improvement with Method A
+
+### Key Finding
+**Slope endpoint calculation is NOT the root cause of 81% mismatch with baseline.**
+
+The remaining divergence must come from:
+1. Peak detection differences (both methods show same 0.23 bin offset in `last_peak_ind`)
+2. Other algorithmic differences not yet identified
+3. Baseline generated with fundamentally different code (July 2024, repository created Sept 2025)
+
+### Decision
+Implementation stashed - no value in maintaining alternative method when difference is negligible. Current Method A (average of last two) performs slightly better and remains default.
+
+---
+
+## 2025-10-26: Diagnostic Code Cleanup - Removed Completed Investigations
+
+### Code Removal
+Removed diagnostic functions that served their purpose:
+- `compare_per_plate_results()` - found 1.2% per-plate match rate, investigation complete
+- `return_per_plate` parameter from `calculate_statistical_tests()`
+- `compare-per-plate` CLI command
+- `analyze-edge-cases-for` from Justfile (dead command)
+
+### Function Simplification
+Streamlined `analyze_t_target_pattern_distribution()`:
+- **Renamed**: `plot_baseline_comparison()` - name now matches what it does
+- **Reduced**: 330 lines → 120 lines (64% smaller)
+- **Removed**: All verbose statistical analysis (8 sections)
+- **Kept**: 2x2 scatter plots + greppable correlation summary
+- **CLI command**: `compare-baseline-metrics` → `plot-baseline-comparison`
+
+### Module Size Reduction
+- `diagnostics.py`: 539 lines → 250 lines (54% smaller)
+- Justfile updated with `plot-baseline-comparison-for DATASET`
+
+### Greppable Output Format
+```
+t_target_pattern: r=0.923, within_10%=120/327 (36.7%)
+slope: r=0.849, within_10%=63/327 (19.3%)
+```
+
+---
+
 ## Template for Future Entries
 
 ```text

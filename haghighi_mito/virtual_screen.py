@@ -294,7 +294,7 @@ def load_orthogonal_features(dataset: str):
     return orth_features
 
 
-def calculate_statistical_tests(per_site_df, dataset: str, return_per_plate: bool = False):
+def calculate_statistical_tests(per_site_df, dataset: str):
     """Calculate statistical tests (t-values) for each perturbation.
 
     Uses the vectorized batch_plate_statistics function to compute:
@@ -309,13 +309,11 @@ def calculate_statistical_tests(per_site_df, dataset: str, return_per_plate: boo
         Per-site dataframe with all observations
     dataset : str
         Dataset name
-    return_per_plate : bool
-        If True, return per-plate results instead of median-aggregated
 
     Returns
     -------
     pd.DataFrame
-        Results with t-values for each perturbation (or per plate if return_per_plate=True)
+        Results with t-values for each perturbation
     """
     logger.info("Calculating statistical tests...")
 
@@ -369,36 +367,24 @@ def calculate_statistical_tests(per_site_df, dataset: str, return_per_plate: boo
         tvals = batch_results['tvals']  # shape (n_plates, 4)
         plates = batch_results['plates']
 
-        if return_per_plate:
-            # Return one row per plate
-            for pi in range(len(plates)):
-                results_list.append({
-                    pert_col: pert,
-                    "batch_plate": plates[pi],
-                    "t_target_pattern": tvals[pi, 0],
-                    "t_orth": tvals[pi, 1],
-                    "t_slope": tvals[pi, 2],
-                    "d_slope": tvals[pi, 3],
-                })
-        else:
-            # Find plate with median t_target_pattern (index 0)
-            median_plate_idx = np.argsort(np.abs(tvals[:, 0]))[len(tvals) // 2]
+        # Find plate with median t_target_pattern (index 0)
+        median_plate_idx = np.argsort(np.abs(tvals[:, 0]))[len(tvals) // 2]
 
-            # Get t-values from median plate
-            t_target_pattern = tvals[median_plate_idx, 0]
-            t_orth = tvals[median_plate_idx, 1]
-            t_slope = tvals[median_plate_idx, 2]
-            d_slope = tvals[median_plate_idx, 3]
+        # Get t-values from median plate
+        t_target_pattern = tvals[median_plate_idx, 0]
+        t_orth = tvals[median_plate_idx, 1]
+        t_slope = tvals[median_plate_idx, 2]
+        d_slope = tvals[median_plate_idx, 3]
 
-            results_list.append({
-                pert_col: pert,
-                "t_target_pattern": t_target_pattern,
-                "t_orth": t_orth,
-                "t_slope": t_slope,
-                "d_slope": d_slope,
-            })
+        results_list.append({
+            pert_col: pert,
+            "t_target_pattern": t_target_pattern,
+            "t_orth": t_orth,
+            "t_slope": t_slope,
+            "d_slope": d_slope,
+        })
 
-    logger.info(f"Calculated statistical tests for {len(results_list)} {'plate-level' if return_per_plate else 'perturbation-level'} results")
+    logger.info(f"Calculated statistical tests for {len(results_list)} perturbations")
 
     return pd.DataFrame(results_list)
 
