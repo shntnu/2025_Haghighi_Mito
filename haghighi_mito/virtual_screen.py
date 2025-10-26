@@ -35,7 +35,7 @@ Usage:
     pixi run haghighi-mito virtual-screen --dataset jump_orf --compare-baseline
 
     # For diagnostics/visualization:
-    pixi run haghighi-mito analyze-t-target-pattern --dataset taorf
+    pixi run haghighi-mito compare-baseline-metrics --dataset taorf
 """
 
 from pathlib import Path

@@ -104,23 +104,24 @@ def virtual_screen_cmd(
     run_virtual_screen(dataset=dataset, compare_baseline=compare_baseline, calculate_stats=calculate_stats)
 
 
-@app.command(name="analyze-t-target-pattern")
-def analyze_t_target_pattern_cmd(
+@app.command(name="compare-baseline-metrics")
+def compare_baseline_metrics_cmd(
     dataset: Annotated[str, typer.Option(help="Dataset to analyze (taorf, CDRP, lincs, jump_orf, jump_crispr, jump_compound)")],
 ):
-    """Analyze t_target_pattern distribution and relationship to baseline.
+    """Compare statistical metrics between baseline and regenerated results.
 
-    Explores the distribution of t_target_pattern (Hotelling's T² on full radial
-    distribution) and its relationship to the baseline values. Analyzes:
+    Analyzes the relationship between baseline and regenerated values for multiple metrics:
+    - t_target_pattern: Hotelling's T² on full radial distribution (bins 5-16)
+    - t_orth: Hotelling's T² on orthogonal features
+    - t_slope: Welch's t-test on slope values
+    - d_slope: Cohen's d effect size for slope
+
+    For each metric, calculates:
     - Distribution statistics (mean, median, percentiles)
     - Correlation with baseline (Pearson, Spearman)
     - Systematic transformations (linear regression)
-    - Relationship between t_target_pattern match quality and slope match quality
-    - Divergence patterns (where t_target_pattern matches but slope diverges)
-
-    t_target_pattern is the most direct test for pattern similarity as it bypasses
-    peak detection entirely and compares the full 12-bin radial distribution using
-    multivariate statistics.
+    - Match quality across metrics
+    - Divergence patterns (where one metric matches but others diverge)
 
     Requires running 'virtual-screen --compare-baseline' first to generate comparison file.
     """
