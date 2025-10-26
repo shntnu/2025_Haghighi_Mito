@@ -11,12 +11,12 @@ import pytest
 from scipy.stats import norm, ttest_ind
 
 from haghighi_mito.vectorized_stats import (
-    cohens_d_vectorized,
-    ttest_ind_vectorized,
-    t_to_z_vectorized,
-    z_to_p_vectorized,
     TwoSampleT2Test_vectorized,
     batch_plate_statistics,
+    cohens_d_vectorized,
+    t_to_z_vectorized,
+    ttest_ind_vectorized,
+    z_to_p_vectorized,
 )
 
 
@@ -62,7 +62,7 @@ class TestCohensD:
         x_vals = [np.random.randn(np.random.randint(10, 30)) for _ in range(n_comparisons)]
         y_vals = [np.random.randn(np.random.randint(10, 30)) for _ in range(n_comparisons)]
 
-        original = [cohens_d_original(x, y) for x, y in zip(x_vals, y_vals)]
+        original = [cohens_d_original(x, y) for x, y in zip(x_vals, y_vals, strict=False)]
         vectorized = cohens_d_vectorized(x_vals, y_vals)
 
         assert np.allclose(vectorized, original, rtol=1e-10)
@@ -127,7 +127,7 @@ class TestTToZConversion:
         t_stats = np.array([1.5, 2.0, -1.2, 3.5, 0.0])
         dfs = np.array([10, 20, 30, 50, 100])
 
-        original = np.array([t_to_z_original(t, df) for t, df in zip(t_stats, dfs)])
+        original = np.array([t_to_z_original(t, df) for t, df in zip(t_stats, dfs, strict=False)])
         vectorized = t_to_z_vectorized(t_stats, dfs)
 
         assert np.allclose(vectorized, original, rtol=1e-10)

@@ -61,18 +61,18 @@ def compare_with_baseline(results, dataset: str):
     logger.info("COMPARISON WITH BASELINE")
     logger.info("=" * 70)
 
-    logger.info(f"\nCount_Cells_avg:")
+    logger.info("\nCount_Cells_avg:")
     logger.info(f"  Mean absolute diff: {comparison['Count_Cells_diff'].abs().mean():.4f}")
     logger.info(f"  Mean % diff: {comparison['Count_Cells_pct_diff'].abs().mean():.2f}%")
     logger.info(f"  Max % diff: {comparison['Count_Cells_pct_diff'].abs().max():.2f}%")
     logger.info(f"  Within 1%: {(comparison['Count_Cells_pct_diff'].abs() < 1).sum()}/{len(comparison)}")
 
-    logger.info(f"\nlast_peak_ind:")
+    logger.info("\nlast_peak_ind:")
     logger.info(f"  Exact matches: {(comparison['last_peak_ind_diff'] == 0).sum()}/{len(comparison)}")
     logger.info(f"  Mean absolute diff: {comparison['last_peak_ind_diff'].abs().mean():.4f}")
     logger.info(f"  Max absolute diff: {comparison['last_peak_ind_diff'].abs().max():.0f}")
 
-    logger.info(f"\nslope:")
+    logger.info("\nslope:")
     logger.info(f"  Mean absolute diff: {comparison['slope_diff'].abs().mean():.6f}")
     logger.info(f"  Mean % diff: {comparison['slope_pct_diff'].abs().mean():.2f}%")
     logger.info(f"  Max % diff: {comparison['slope_pct_diff'].abs().max():.2f}%")
@@ -81,25 +81,25 @@ def compare_with_baseline(results, dataset: str):
 
     # T-value statistics if present
     if "t_target_pattern_new" in comparison.columns:
-        logger.info(f"\nt_target_pattern:")
+        logger.info("\nt_target_pattern:")
         logger.info(f"  Mean absolute diff: {comparison['t_target_pattern_diff'].abs().mean():.6f}")
         logger.info(f"  Mean % diff: {comparison['t_target_pattern_pct_diff'].abs().mean():.2f}%")
         logger.info(f"  Within 10%: {(comparison['t_target_pattern_pct_diff'].abs() < 10).sum()}/{len(comparison)}")
         logger.info(f"  Within 1%: {(comparison['t_target_pattern_pct_diff'].abs() < 1).sum()}/{len(comparison)}")
 
-        logger.info(f"\nt_orth:")
+        logger.info("\nt_orth:")
         logger.info(f"  Mean absolute diff: {comparison['t_orth_diff'].abs().mean():.6f}")
         logger.info(f"  Mean % diff: {comparison['t_orth_pct_diff'].abs().mean():.2f}%")
         logger.info(f"  Within 10%: {(comparison['t_orth_pct_diff'].abs() < 10).sum()}/{len(comparison)}")
         logger.info(f"  Within 1%: {(comparison['t_orth_pct_diff'].abs() < 1).sum()}/{len(comparison)}")
 
-        logger.info(f"\nt_slope:")
+        logger.info("\nt_slope:")
         logger.info(f"  Mean absolute diff: {comparison['t_slope_diff'].abs().mean():.6f}")
         logger.info(f"  Mean % diff: {comparison['t_slope_pct_diff'].abs().mean():.2f}%")
         logger.info(f"  Within 10%: {(comparison['t_slope_pct_diff'].abs() < 10).sum()}/{len(comparison)}")
         logger.info(f"  Within 1%: {(comparison['t_slope_pct_diff'].abs() < 1).sum()}/{len(comparison)}")
 
-        logger.info(f"\nd_slope:")
+        logger.info("\nd_slope:")
         logger.info(f"  Mean absolute diff: {comparison['d_slope_diff'].abs().mean():.6f}")
         logger.info(f"  Mean % diff: {comparison['d_slope_pct_diff'].abs().mean():.2f}%")
         logger.info(f"  Within 10%: {(comparison['d_slope_pct_diff'].abs() < 10).sum()}/{len(comparison)}")

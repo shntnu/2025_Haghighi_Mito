@@ -365,7 +365,7 @@ def validate_databases(baseline_path: Path, new_path: Path) -> bool:
         logger.error(f"New file not found: {new_path}")
         return False
 
-    logger.info(f"Comparing databases:")
+    logger.info("Comparing databases:")
     logger.info(f"  Baseline: {baseline_path}")
     logger.info(f"  New:      {new_path}")
 
@@ -390,7 +390,7 @@ def validate_databases(baseline_path: Path, new_path: Path) -> bool:
         logger.error(f"Shape differs: baseline={df_baseline.shape}, new={df_new.shape}")
         identical = False
     elif list(df_baseline.columns) != list(df_new.columns):
-        logger.error(f"Columns differ")
+        logger.error("Columns differ")
         logger.error(f"  Baseline: {list(df_baseline.columns)}")
         logger.error(f"  New: {list(df_new.columns)}")
         identical = False
