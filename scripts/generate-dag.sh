@@ -8,7 +8,7 @@ mkdir -p docs/pipeline
 # Generate simplified DAGs (rules only)
 pixi run snakemake all_baseline --rulegraph 2>&1 | tail -n +2 > /tmp/rg_baseline.dot
 pixi run snakemake all_notebook --rulegraph 2>&1 | tail -n +2 > /tmp/rg_notebook.dot
-pixi run snakemake run_all_virtual_screen_modules plot_all_baseline_comparisons --rulegraph 2>&1 | tail -n +2 > /tmp/rg_module.dot
+pixi run snakemake all_module_csvs plot_all_baseline_comparisons --rulegraph 2>&1 | tail -n +2 > /tmp/rg_module.dot
 dot -Tpng /tmp/rg_baseline.dot -o docs/pipeline/dag_baseline_rules.png
 dot -Tpng /tmp/rg_notebook.dot -o docs/pipeline/dag_notebook_rules.png
 dot -Tpng /tmp/rg_module.dot -o docs/pipeline/dag_module_rules.png
@@ -16,7 +16,7 @@ dot -Tpng /tmp/rg_module.dot -o docs/pipeline/dag_module_rules.png
 # Generate full DAGs (all job instances)
 pixi run snakemake all_baseline --dag 2>&1 | tail -n +2 > /tmp/dag_baseline.dot
 pixi run snakemake all_notebook --dag 2>&1 | tail -n +2 > /tmp/dag_notebook.dot
-pixi run snakemake run_all_virtual_screen_modules plot_all_baseline_comparisons --dag 2>&1 | tail -n +2 > /tmp/dag_module.dot
+pixi run snakemake all_module_csvs plot_all_baseline_comparisons --dag 2>&1 | tail -n +2 > /tmp/dag_module.dot
 dot -Tpng /tmp/dag_baseline.dot -o docs/pipeline/dag_baseline_jobs.png
 dot -Tpng /tmp/dag_notebook.dot -o docs/pipeline/dag_notebook_jobs.png
 dot -Tpng /tmp/dag_module.dot -o docs/pipeline/dag_module_jobs.png

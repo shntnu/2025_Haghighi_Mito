@@ -376,8 +376,8 @@ rule all_notebook:
     input:
         "data/processed/screen_results_notebook.duckdb"
 
-rule run_all_virtual_screen_notebooks:
-    """Target: Run notebook method for all datasets (CSV generation only)."""
+rule all_notebook_csvs:
+    """Target: Generate results CSVs for all datasets (notebook analysis only, no Excel/DuckDB)."""
     input:
         expand(f"{NOTEBOOK_DIR}/{{dataset}}_results_pattern_aug_070624.csv",
                dataset=DATASETS)
@@ -447,8 +447,8 @@ rule plot_baseline_comparison:
 
 ## Target Rules ##
 
-rule run_all_virtual_screen_modules:
-    """Target: Run clean module method for all datasets (CSV generation + comparison)."""
+rule all_module_csvs:
+    """Target: Generate results CSVs for all datasets (virtual screen analysis only, no Excel/DuckDB)."""
     input:
         expand("data/processed/virtual_screen_module/{dataset}_results_pattern_aug_070624.csv",
                dataset=DATASETS)

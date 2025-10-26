@@ -49,15 +49,13 @@ just --list
 
 **Recommended: Process validated baseline data (July 2024):**
 ```bash
-just download-baseline  # Download pre-computed CSVs (65 MB, ~1 min)
-just run-baseline       # Process → Excel + DuckDB (~5 min)
+just generate-baseline-all         # Download from S3 if needed, then process → Excel + DuckDB (~5 min)
 ```
 
 **Alternative: Regenerate from raw data (Method 2 - clean module):**
 ```bash
-just download-raw           # Download per-site profiles (2.7 GB, ~5 min)
-just run-module             # Run full pipeline → CSV → Excel → DuckDB (~10 min/dataset)
-just run-module-for taorf   # Run single dataset
+just generate-module-all           # Download raw data if needed, then run full pipeline → CSV → Excel → DuckDB (~10 min/dataset)
+just generate-module-csv-for taorf # Generate single dataset CSV
 ```
 
 **Compare regenerated results with baseline:**
@@ -118,7 +116,7 @@ The repository supports **three methods** for generating virtual screen results:
 - **Processing**: Filtering and formatting only - NO recalculation
 - **Output**: `data/processed/screen_results_baseline.duckdb` (178,826 rows)
 - **Speed**: ~5 minutes total
-- **Commands**: `just download-baseline && just run-baseline`
+- **Commands**: `just generate-baseline-all` (auto-downloads from S3 if needed)
 - **Code**: `haghighi_mito/data.py` (formatting only)
 
 ### Method 1: Regenerated - Notebook (Complete but Messy)
@@ -127,7 +125,7 @@ The repository supports **three methods** for generating virtual screen results:
 - **Processing**: Calculate slopes + stats + filter + format
 - **Output**: `data/processed/screen_results_notebook.duckdb`
 - **Speed**: ~10 minutes per dataset
-- **Commands**: `just download-raw && just run-notebook`
+- **Commands**: `just generate-notebook-all` (auto-downloads raw data if needed)
 - **Code**: `notebooks/2.0-mh-virtual-screen.py` (1433 lines) + `data.py`
 - **Note**: Exploratory code with dead branches (`if 0:`), but functional
 
@@ -137,7 +135,7 @@ The repository supports **three methods** for generating virtual screen results:
 - **Processing**: Calculate slopes + stats + filter + format
 - **Output**: `data/processed/screen_results_module.duckdb`
 - **Speed**: ~10 minutes per dataset
-- **Commands**: `just download-raw && just run-module`
+- **Commands**: `just generate-module-all` (auto-downloads raw data if needed)
 - **Code**: `haghighi_mito/virtual_screen.py` (448 lines) + `diagnostics.py` + `data.py`
 - **Note**: Professional refactor, identical output to Method 1, cleaner codebase
 
@@ -159,7 +157,7 @@ Key findings:
 - `slope`: 19% within 10% (peak detection differs)
 - `t_orth`: 33% within 10% (validates processing)
 
-**Recommendation**: Always use `just run-baseline` for validated/publication results. Use Methods 1/2 for development and future improvements.
+**Recommendation**: Always use `just generate-baseline-all` for validated/publication results. Use Methods 1/2 for development and future improvements.
 
 See `docs/PROGRESS.md` for detailed investigation history.
 
