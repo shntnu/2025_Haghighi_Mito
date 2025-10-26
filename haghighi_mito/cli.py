@@ -1,9 +1,9 @@
 """Command-line interface for mitochondrial morphology screen analysis."""
 
 from pathlib import Path
+from typing import Annotated
 
 import typer
-from typing_extensions import Annotated
 
 app = typer.Typer(
     name="haghighi-mito",
