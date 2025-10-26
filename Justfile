@@ -62,7 +62,7 @@ plot-comparison-for DATASET:
 
 # [Method 2] Run clean module for all datasets (CSV + comparison only, ⚠️ no Excel/DuckDB)
 run-all-modules:
-    pixi run snakemake run_all_virtual_screen_analysis --cores 4 --printshellcmds
+    pixi run snakemake run_all_virtual_screen_modules --cores 4 --printshellcmds
 
 # [Method 2] Generate all baseline comparison plots
 plot-all-comparisons:

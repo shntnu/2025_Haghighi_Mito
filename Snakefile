@@ -50,7 +50,7 @@ Status:   ⚠️ INCOMPLETE - Stops at CSV generation, missing Excel/DuckDB step
 Gap:      Needs process_csv + create_database rules (exist for Method 1)
 Use case: Baseline comparison, diagnostics, methodology validation
 Code:     haghighi_mito/virtual_screen.py + vectorized helpers + diagnostics.py
-Commands: just download-raw && just run-virtual-screen-for DATASET
+Commands: just download-raw && just run-module-for DATASET
 Output:   CSVs in virtual_screen_module/ + baseline comparison + plots
 Speed:    ~10 minutes per dataset
 TODO:     Add Excel/Parquet/DuckDB processing → then can deprecate Method 1
@@ -396,12 +396,12 @@ rule run_all_virtual_screen_notebooks:
 #       rules (similar to Method 1) to complete the pipeline.
 #       Once added, Method 1 (notebook) can be deprecated.
 #
-# Commands: just download-raw && just run-virtual-screen-for DATASET
+# Commands: just download-raw && just run-module-for DATASET
 # Current output: CSVs in virtual_screen_module/ + comparison + plots
 
 ## Analysis Rules ##
 
-rule run_virtual_screen_analysis:
+rule run_virtual_screen_module:
     """Run virtual screen using clean module (448 lines, recalculates slopes/stats)."""
     input:
         # Ensure all required data is downloaded first
@@ -442,7 +442,7 @@ rule plot_baseline_comparison:
 
 ## Target Rules ##
 
-rule run_all_virtual_screen_analysis:
+rule run_all_virtual_screen_modules:
     """Target: Run clean module method for all datasets (CSV generation + comparison)."""
     input:
         expand("data/processed/virtual_screen_module/{dataset}_results_pattern_aug_070624.csv",

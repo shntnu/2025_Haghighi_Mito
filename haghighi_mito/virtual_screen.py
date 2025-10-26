@@ -81,6 +81,117 @@ def find_end_slope2_simple(data):
     return last_peak_ind, slope
 
 
+def preprocess_metadata(dataset: str, mito_project_root: Path) -> pd.DataFrame:
+    """Preprocess raw metadata for a dataset.
+
+    This replicates the preprocessing logic from notebook 2.0-mh-virtual-screen.py
+    (lines 132-262) to create standardized metadata with Batch, batch_plate, and
+    ctrl_well columns.
+
+    Args:
+        dataset: Dataset name
+        mito_project_root: Path to mito_project root directory
+
+    Returns:
+        Preprocessed metadata DataFrame
+    """
+    logger.info(f"Preprocessing metadata for {dataset}...")
+
+    if dataset == "lincs":
+        # Load raw metadata
+        annot0 = pd.read_csv(mito_project_root / "workspace/metadata/lincs/DrugRepurposing_Metadata.csv")
+        annot = pd.read_csv(mito_project_root / "workspace/metadata/LINCS_meta.csv")
+
+        # Merge perturbation names
+        annot = annot.merge(
+            annot0[["Metadata_Plate", "Metadata_Well", "Metadata_pert_name"]],
+            how="left",
+            on=["Metadata_Plate", "Metadata_Well"],
+        )
+
+        # Add standard columns
+        annot["Batch"] = "2016_04_01_a549_48hr_batch1_Mito_Project"
+        annot["batch_plate"] = annot["Batch"] + "-" + annot["Metadata_Plate"]
+        annot["ctrl_well"] = annot["Metadata_pert_type"].isin(["control"])
+
+    elif dataset == "taorf":
+        # Load raw metadata
+        annot = pd.read_csv(
+            mito_project_root / "workspace/metadata/TA-ORF/replicate_level_cp_normalized.csv.gz"
+        )
+
+        # Add standard columns
+        annot["Batch"] = "2013_10_11_SIGMA2_Pilot"
+        annot["batch_plate"] = annot["Batch"] + "-" + annot["Metadata_Plate"].astype(str)
+        annot["ctrl_well"] = annot["Metadata_gene_name"].isin(["LacZ", "Luciferase"])
+        annot["Metadata_pert_type"] = annot["Metadata_ASSAY_WELL_ROLE"]
+
+        # Keep only necessary columns (as in notebook line 244-256)
+        annot = annot[
+            [
+                "Metadata_Plate",
+                "Metadata_Well",
+                "Metadata_gene_name",
+                "Metadata_pert_name",
+                "Metadata_pert_type",
+                "Metadata_broad_sample",
+                "Metadata_moa",
+                "batch_plate",
+                "Batch",
+                "ctrl_well",
+            ]
+        ]
+
+    elif dataset == "CDRP":
+        annot = pd.read_csv(mito_project_root / "workspace/metadata/CDRP_meta.csv")
+        annot["Batch"] = "CDRP"
+        annot["batch_plate"] = annot["Batch"] + "-" + annot["Metadata_Plate"].astype(str)
+        annot["ctrl_well"] = annot["Metadata_pert_type"].isin(["control"])
+
+    elif dataset == "jump_orf":
+        plates = pd.read_csv(mito_project_root / "workspace/metadata/JUMP/plate.csv.gz")
+        wells = pd.read_csv(mito_project_root / "workspace/metadata/JUMP/well.csv.gz")
+        orf = pd.read_csv(mito_project_root / "workspace/metadata/JUMP/orf.csv.gz")
+
+        annot = wells.merge(plates, on="Metadata_PlateID", how="left")
+        annot = annot.merge(orf, on="Metadata_JCP2022", how="left")
+        annot["batch_plate"] = annot["Metadata_Batch"] + "-" + annot["Metadata_Plate"]
+        annot["ctrl_well"] = annot["Metadata_control_type"].notna()
+        annot["Metadata_pert_type"] = annot["Metadata_control_type"].fillna("trt")
+
+    elif dataset == "jump_crispr":
+        plates = pd.read_csv(mito_project_root / "workspace/metadata/JUMP/plate.csv.gz")
+        wells = pd.read_csv(mito_project_root / "workspace/metadata/JUMP/well.csv.gz")
+        crispr = pd.read_csv(mito_project_root / "workspace/metadata/JUMP/crispr.csv.gz")
+
+        annot = wells.merge(plates, on="Metadata_PlateID", how="left")
+        annot = annot.merge(crispr, on="Metadata_JCP2022", how="left")
+        annot["batch_plate"] = annot["Metadata_Batch"] + "-" + annot["Metadata_Plate"]
+        annot["ctrl_well"] = annot["Metadata_control_type"].notna()
+        annot["Metadata_pert_type"] = annot["Metadata_control_type"].fillna("trt")
+
+    elif dataset == "jump_compound":
+        plates = pd.read_csv(mito_project_root / "workspace/metadata/JUMP/plate.csv.gz")
+        wells = pd.read_csv(mito_project_root / "workspace/metadata/JUMP/well.csv.gz")
+        compound = pd.read_csv(mito_project_root / "workspace/metadata/JUMP/compound.csv.gz")
+
+        annot = wells.merge(plates, on="Metadata_PlateID", how="left")
+        annot = annot.merge(compound, on="Metadata_JCP2022", how="left")
+        annot["batch_plate"] = annot["Metadata_Batch"] + "-" + annot["Metadata_Plate"]
+        annot["ctrl_well"] = annot["Metadata_control_type"].notna()
+        annot["Metadata_pert_type"] = annot["Metadata_control_type"].fillna("trt")
+
+    else:
+        raise ValueError(f"Unknown dataset: {dataset}")
+
+    # Ensure Metadata_Plate is string type (required for merging)
+    if "Metadata_Plate" in annot.columns:
+        annot["Metadata_Plate"] = annot["Metadata_Plate"].astype(str)
+
+    logger.info(f"Preprocessed metadata: {len(annot)} rows")
+    return annot
+
+
 def load_dataset_data(dataset: str):
     """Load per-site profiles and metadata for a given dataset.
 
@@ -95,11 +206,9 @@ def load_dataset_data(dataset: str):
     # Paths
     mito_project_root = EXTERNAL_DATA_DIR / "mito_project"
     per_site_dir = mito_project_root / "workspace/per_site_aggregated_profiles_newpattern_2" / dataset
-    metadata_path = mito_project_root / f"workspace/metadata/preprocessed/annot_{dataset}.csv"
 
-    # Load metadata
-    logger.info(f"Loading metadata from {metadata_path}")
-    annot = pd.read_csv(metadata_path, dtype={"Metadata_Plate": str})
+    # Preprocess metadata from raw files
+    annot = preprocess_metadata(dataset, mito_project_root)
 
     # Load all per-site profile files in the directory
     logger.info(f"Loading per-site profiles from {per_site_dir}")
