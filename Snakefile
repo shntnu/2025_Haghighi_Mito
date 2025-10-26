@@ -95,12 +95,12 @@ data/
 ├── processed/
 │   ├── screen_results_baseline.duckdb    # Method 0 final database
 │   ├── screen_results_notebook.duckdb    # Method 1 final database
-│   ├── screen_results_module.duckdb      # Method 2 final database (TODO)
+│   ├── screen_results_module.duckdb      # Method 2 final database
 │   │
 │   ├── tables/
 │   │   ├── generated_from_s3_baseline/   # Method 0 Excel files
 │   │   ├── generated_from_notebook/      # Method 1 Excel files
-│   │   └── generated_from_module/        # Method 2 Excel files (TODO)
+│   │   └── generated_from_module/        # Method 2 Excel files
 │   │
 │   ├── virtual_screen_module/            # Method 2: CSVs + comparisons
 │   │   ├── {dataset}_results_pattern_aug_070624.csv
@@ -112,7 +112,7 @@ data/
 └── interim/
     ├── parquet_baseline/                 # Method 0 intermediate
     ├── parquet_notebook/                 # Method 1 intermediate
-    └── parquet_module/                   # Method 2 intermediate (TODO)
+    └── parquet_module/                   # Method 2 intermediate
 
 """
 
@@ -181,7 +181,7 @@ rule download_baseline_csv:
         """
 
 rule download_all_baseline:
-    """Target: Download all 6 baseline CSVs from S3 (65 MB total)."""
+    """Target: Download all specified baseline CSVs from S3 (65 MB total)."""
     input:
         expand(f"{BASELINE_DIR}/{{dataset}}_results_pattern_aug_070624.csv",
                dataset=DATASETS)
@@ -298,7 +298,7 @@ rule download_screening_data:
 # This is the original exploratory code with lots of dead branches (if 0:).
 #
 # STATUS: ✅ COMPLETE - Full pipeline works (CSV → Excel → DuckDB)
-#          NEEDED until Method 2 gains Excel/DuckDB processing steps
+#          Can be deprecated in favor of Method 2 (cleaner implementation)
 #
 # Commands: just download-raw && just run-notebook
 # Output: data/processed/screen_results_notebook.duckdb
@@ -384,20 +384,16 @@ rule run_all_virtual_screen_notebooks:
 
 
 # ============================================================================
-# METHOD 2: REGENERATED - Clean Module (Active Development, Incomplete)
+# METHOD 2: REGENERATED - Clean Module (Complete Pipeline)
 # ============================================================================
 # Uses haghighi_mito/virtual_screen.py (448 clean lines of documented code).
 # This is a professional refactor of the notebook logic.
 #
-# STATUS: ⚠️ INCOMPLETE - Stops at CSV generation + baseline comparison
-#          Missing Excel + Parquet + DuckDB processing steps
+# STATUS: ✅ COMPLETE - Full pipeline works (CSV → Excel → DuckDB)
+#          Cleaner implementation than Method 1, recommended for development
 #
-# TODO: Add process_module_csv and create_module_database
-#       rules (similar to Method 1) to complete the pipeline.
-#       Once added, Method 1 (notebook) can be deprecated.
-#
-# Commands: just download-raw && just run-module-for DATASET
-# Current output: CSVs in virtual_screen_module/ + comparison + plots
+# Commands: just download-raw && just run-module
+# Output: data/processed/screen_results_module.duckdb
 
 ## Analysis Rules ##
 

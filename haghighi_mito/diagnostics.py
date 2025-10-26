@@ -129,7 +129,7 @@ def plot_baseline_comparison(dataset: str):
 
     if not comparison_path.exists():
         logger.error(f"Comparison file not found: {comparison_path}")
-        logger.error("Run virtual-screen with --compare-baseline first")
+        logger.error("Run 'haghighi-mito compare-baseline --dataset <dataset>' first")
         return None
 
     comparison = pd.read_csv(comparison_path)

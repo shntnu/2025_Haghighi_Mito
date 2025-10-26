@@ -31,11 +31,17 @@ Note: last_peak_ind and slope are z-score normalized per plate before aggregatio
 matching the baseline methodology (notebook 2.0, lines 1251-1254).
 
 Usage:
+    # Run virtual screen analysis
     pixi run haghighi-mito virtual-screen --dataset taorf
-    pixi run haghighi-mito virtual-screen --dataset jump_orf --compare-baseline
 
-    # For diagnostics/visualization:
-    pixi run haghighi-mito compare-baseline-metrics --dataset taorf
+    # Compare with baseline (separate command)
+    pixi run haghighi-mito compare-baseline --dataset taorf
+
+    # Generate diagnostic plots
+    pixi run haghighi-mito plot-baseline-comparison --dataset taorf
+
+    # For complete command reference, see:
+    pixi run haghighi-mito --help
 """
 
 from pathlib import Path
@@ -52,33 +58,6 @@ from haghighi_mito.config import (
 )
 from haghighi_mito.vectorized_slope import find_end_slope2_vectorized
 from haghighi_mito.vectorized_stats import batch_plate_statistics
-
-
-def find_end_slope2_simple(data):
-    """Simplified version of find_end_slope2 from notebook 2.0.
-
-    Finds the last peak/valley in the data and calculates slope from there to end.
-    Returns (last_peak_index, slope).
-    """
-    # Smooth the data
-    smoothed = savgol_filter(data, window_length=5, polyorder=3)
-
-    # Find min/max indices
-    min_max_indc = [np.argmax(smoothed), np.argmin(smoothed)]
-
-    # Get indices that are not at the end (at least 2 positions before end)
-    last_peak_ind0 = [i for i in min_max_indc if i < len(smoothed) - 2]
-
-    if not last_peak_ind0:
-        return 0, 0
-
-    last_peak_ind = np.max(last_peak_ind0)
-
-    # Calculate slope from last peak to average of last two points
-    last_two_points_amplitude = (smoothed[-1] + smoothed[-2]) / 2
-    slope = (last_two_points_amplitude - smoothed[last_peak_ind]) / (len(smoothed) - last_peak_ind - 1)
-
-    return last_peak_ind, slope
 
 
 def preprocess_metadata(dataset: str, mito_project_root: Path) -> pd.DataFrame:
