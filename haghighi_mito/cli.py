@@ -104,54 +104,21 @@ def virtual_screen_cmd(
     run_virtual_screen(dataset=dataset, compare_baseline=compare_baseline, calculate_stats=calculate_stats)
 
 
-@app.command(name="compare-baseline-metrics")
-def compare_baseline_metrics_cmd(
+@app.command(name="plot-baseline-comparison")
+def plot_baseline_comparison_cmd(
     dataset: Annotated[str, typer.Option(help="Dataset to analyze (taorf, CDRP, lincs, jump_orf, jump_crispr, jump_compound)")],
 ):
-    """Compare statistical metrics between baseline and regenerated results.
+    """Create 2x2 scatter plots comparing baseline vs regenerated metrics.
 
-    Analyzes the relationship between baseline and regenerated values for multiple metrics:
-    - t_target_pattern: Hotelling's T² on full radial distribution (bins 5-16)
-    - t_orth: Hotelling's T² on orthogonal features
-    - t_slope: Welch's t-test on slope values
-    - d_slope: Cohen's d effect size for slope
-
-    For each metric, calculates:
-    - Distribution statistics (mean, median, percentiles)
-    - Correlation with baseline (Pearson, Spearman)
-    - Systematic transformations (linear regression)
-    - Match quality across metrics
-    - Divergence patterns (where one metric matches but others diverge)
-
-    Requires running 'virtual-screen --compare-baseline' first to generate comparison file.
-    """
-    # Lazy imports for faster startup
-    from haghighi_mito.diagnostics import analyze_t_target_pattern_distribution
-
-    analyze_t_target_pattern_distribution(dataset=dataset)
-
-
-@app.command(name="compare-per-plate")
-def compare_per_plate_cmd(
-    dataset: Annotated[str, typer.Option(help="Dataset to analyze (taorf, CDRP, lincs, jump_orf, jump_crispr, jump_compound)")],
-):
-    """Compare per-plate statistical results with baseline.
-
-    Instead of comparing median-aggregated results (one value per perturbation),
-    this compares ALL plate-level results. For each perturbation that appears on
-    multiple plates, checks if ANY of the regenerated plate values match the
-    baseline plate values.
-
-    This tests whether:
-    - Per-plate calculations are identical (problem is aggregation method)
-    - Or per-plate calculations differ (problem is in core statistics)
+    Plots correlations for t_target_pattern, slope, t_orth, and t_slope.
+    Outputs greppable correlation and match statistics.
 
     Requires running 'virtual-screen --compare-baseline' first.
     """
     # Lazy imports for faster startup
-    from haghighi_mito.diagnostics import compare_per_plate_results
+    from haghighi_mito.diagnostics import plot_baseline_comparison
 
-    compare_per_plate_results(dataset=dataset)
+    plot_baseline_comparison(dataset=dataset)
 
 
 def main():
