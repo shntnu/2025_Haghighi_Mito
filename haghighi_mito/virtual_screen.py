@@ -254,19 +254,34 @@ def load_dataset_data(dataset: str):
     return per_site_df, annot
 
 
-def calculate_simple_metrics(per_site_df, dataset: str):
-    """Calculate simple metrics from radial distribution data.
+def calculate_metrics(per_site_df, annot, dataset: str):
+    """Calculate core metrics from radial distribution data.
 
-    Mimics notebook 2.0 logic but in minimal form:
+    Mimics notebook 2.0 logic:
     1. Calculate per-plate control means
     2. Subtract controls from target features
-    3. Calculate slope per observation
+    3. Calculate slope per observation (vectorized)
     4. Z-score normalize slope and last_peak_ind per plate
-    5. Aggregate per perturbation
+    5. Aggregate per perturbation with all metadata columns
+
+    Parameters
+    ----------
+    per_site_df : pd.DataFrame
+        Per-site observations with all features
+    annot : pd.DataFrame
+        Annotation dataframe with all metadata columns
+    dataset : str
+        Dataset name
+
+    Returns
+    -------
+    Tuple[pd.DataFrame, pd.DataFrame]
+        (results_df with metadata + Count_Cells_avg + slope metrics, per_site_df with slopes added)
     """
-    logger.info("Calculating simple metrics...")
+    logger.info("Calculating core metrics...")
 
     pert_col = DATASET_INFO[dataset]["pert_col"]
+    meta_cols = DATASET_INFO[dataset]["meta_cols"]
 
     # Define target columns (radial bins 5-16)
     target_columns = [f"Cells_RadialDistribution_MeanFrac_mito_tubeness_{i}of16" for i in range(5, 17)]
@@ -346,7 +361,13 @@ def calculate_simple_metrics(per_site_df, dataset: str):
     logger.info(f"Filtered to {len(pert_df)} perturbation observations")
     logger.info(f"Unique perturbations: {pert_df[pert_col].nunique()}")
 
-    results = (
+    # START WITH ALL METADATA COLUMNS (matches notebook 2.0 line 1333)
+    # This ensures we have Metadata_gene_name, Metadata_pert_name, Metadata_moa, etc.
+    results = annot[meta_cols].drop_duplicates().reset_index(drop=True)
+    logger.info(f"Starting with {len(results)} unique perturbations from metadata")
+
+    # Calculate numeric aggregates separately
+    numeric_aggs = (
         pert_df.groupby(pert_col)
         .agg(
             {
@@ -358,7 +379,10 @@ def calculate_simple_metrics(per_site_df, dataset: str):
         .reset_index()
     )
 
-    results.rename(columns={"Count_Cells": "Count_Cells_avg"}, inplace=True)
+    numeric_aggs.rename(columns={"Count_Cells": "Count_Cells_avg"}, inplace=True)
+
+    # Merge numeric results into metadata results
+    results = pd.merge(results, numeric_aggs, on=pert_col, how="left")
 
     logger.info(f"Aggregated results for {len(results)} perturbations")
 
@@ -458,10 +482,11 @@ def calculate_statistical_tests(per_site_df, dataset: str):
 
         # Extract results
         tvals = batch_results["tvals"]  # shape (n_plates, 4)
+        pvals = batch_results["pvals"]  # shape (n_plates, 6)
         plates = batch_results["plates"]
 
-        # Find plate with median t_target_pattern (index 0)
-        median_plate_idx = np.argsort(np.abs(tvals[:, 0]))[len(tvals) // 2]
+        # Find plate with median d_slope (index 3 of tvals) - matches notebook 2.0 line 1388
+        median_plate_idx = np.argsort(np.abs(tvals[:, 3]))[len(tvals) // 2]
 
         # Get t-values from median plate
         t_target_pattern = tvals[median_plate_idx, 0]
@@ -469,9 +494,23 @@ def calculate_statistical_tests(per_site_df, dataset: str):
         t_slope = tvals[median_plate_idx, 2]
         d_slope = tvals[median_plate_idx, 3]
 
+        # Get p-values from median plate (matches notebook 2.0 lines 1401-1410)
+        p_target_pattern = pvals[median_plate_idx, 0]
+        p_orth = pvals[median_plate_idx, 1]
+        p_slope = pvals[median_plate_idx, 2]
+        p_slope_std = pvals[median_plate_idx, 3]
+        p_pattern_std = pvals[median_plate_idx, 4]
+        p_orth_std = pvals[median_plate_idx, 5]
+
         results_list.append(
             {
                 pert_col: pert,
+                "p_target_pattern": p_target_pattern,
+                "p_orth": p_orth,
+                "p_slope": p_slope,
+                "p_slope_std": p_slope_std,
+                "p_pattern_std": p_pattern_std,
+                "p_orth_std": p_orth_std,
                 "t_target_pattern": t_target_pattern,
                 "t_orth": t_orth,
                 "t_slope": t_slope,
@@ -500,8 +539,8 @@ def run_virtual_screen(dataset: str, compare_baseline: bool = True, calculate_st
     # Load data
     per_site_df, annot = load_dataset_data(dataset)
 
-    # Calculate basic metrics
-    results, per_site_df_with_slopes = calculate_simple_metrics(per_site_df, dataset)
+    # Calculate core metrics (metadata + Count_Cells_avg + slope metrics)
+    results, per_site_df_with_slopes = calculate_metrics(per_site_df, annot, dataset)
 
     # Calculate statistical tests if requested
     if calculate_stats:
@@ -510,6 +549,39 @@ def run_virtual_screen(dataset: str, compare_baseline: bool = True, calculate_st
         # Merge with basic metrics
         pert_col = DATASET_INFO[dataset]["pert_col"]
         results = pd.merge(results, stats_results, on=pert_col, how="left")
+
+    # Reorder columns to match baseline/notebook format:
+    # Metadata cols, Count_Cells_avg, p-values, t-values, last_peak_ind, slope
+    meta_cols = DATASET_INFO[dataset]["meta_cols"]
+
+    # Build column order
+    column_order = meta_cols.copy()
+    column_order.append("Count_Cells_avg")
+
+    if calculate_stats:
+        # Add p-value columns
+        column_order.extend([
+            "p_target_pattern",
+            "p_orth",
+            "p_slope",
+            "p_slope_std",
+            "p_pattern_std",
+            "p_orth_std",
+        ])
+        # Add t-value columns
+        column_order.extend([
+            "t_target_pattern",
+            "t_orth",
+            "t_slope",
+            "d_slope",
+        ])
+
+    # Add slope columns
+    column_order.extend(["last_peak_ind", "slope"])
+
+    # Reorder (only include columns that exist in results)
+    column_order = [col for col in column_order if col in results.columns]
+    results = results[column_order]
 
     # Save results to symmetric location with baseline/regenerated structure
     output_dir = PROCESSED_DATA_DIR / "virtual_screen_module"
