@@ -51,9 +51,13 @@ run-notebook-for DATASET:
 run-module:
     pixi run snakemake all_module --cores 4 --printshellcmds
 
-# [Method 2] Run clean module for a specific dataset (CSV + comparison only, ⚠️ no Excel/DuckDB)
+# [Method 2] Run clean module for a specific dataset (CSV generation only, ~5-10 min)
 run-module-for DATASET:
     pixi run snakemake data/processed/virtual_screen_module/{{DATASET}}_results_pattern_aug_070624.csv --cores 1 --printshellcmds
+
+# [Method 2] Compare module CSV with baseline for a specific dataset (FAST - ~1 sec)
+compare-baseline-for DATASET:
+    pixi run snakemake data/processed/virtual_screen_module/{{DATASET}}_baseline_comparison.csv --cores 1 --printshellcmds
 
 # [Method 2] Generate baseline comparison plots for a specific dataset
 plot-comparison-for DATASET:

@@ -402,7 +402,7 @@ rule run_all_virtual_screen_notebooks:
 ## Analysis Rules ##
 
 rule run_virtual_screen_module:
-    """Run virtual screen using clean module (448 lines, recalculates slopes/stats)."""
+    """Run virtual screen using clean module (recalculates slopes/stats from per-site profiles)."""
     input:
         # Ensure all required data is downloaded first
         orth_features=f"{EXTERNAL_BASE}/results/target_pattern_orth_features_lists/.download_complete",
@@ -416,15 +416,24 @@ rule run_virtual_screen_module:
         metadata_well=f"{EXTERNAL_BASE}/metadata/JUMP/well.csv.gz",
         metadata_lincs=f"{EXTERNAL_BASE}/metadata/LINCS_meta.csv",
         metadata_taorf=f"{EXTERNAL_BASE}/metadata/TA-ORF/replicate_level_cp_normalized.csv.gz",
-        metadata_lincs_drug=f"{EXTERNAL_BASE}/metadata/lincs/DrugRepurposing_Metadata.csv",
-        # Also need baseline CSV for comparison
+        metadata_lincs_drug=f"{EXTERNAL_BASE}/metadata/lincs/DrugRepurposing_Metadata.csv"
+    output:
+        results_csv="data/processed/virtual_screen_module/{dataset}_results_pattern_aug_070624.csv"
+    shell:
+        """
+        pixi run haghighi-mito virtual-screen --dataset {wildcards.dataset}
+        """
+
+rule compare_module_with_baseline:
+    """Compare module-generated CSV with baseline (FAST - no regeneration)."""
+    input:
+        results_csv="data/processed/virtual_screen_module/{dataset}_results_pattern_aug_070624.csv",
         baseline_csv=f"{BASELINE_DIR}/{{dataset}}_results_pattern_aug_070624.csv"
     output:
-        results_csv="data/processed/virtual_screen_module/{dataset}_results_pattern_aug_070624.csv",
         comparison_csv="data/processed/virtual_screen_module/{dataset}_baseline_comparison.csv"
     shell:
         """
-        pixi run haghighi-mito virtual-screen --dataset {wildcards.dataset} --compare-baseline
+        pixi run haghighi-mito compare-baseline --dataset {wildcards.dataset}
         """
 
 

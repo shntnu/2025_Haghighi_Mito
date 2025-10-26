@@ -96,19 +96,37 @@ def validate_databases_cmd(
 @app.command(name="virtual-screen")
 def virtual_screen_cmd(
     dataset: Annotated[str, typer.Option(help="Dataset to analyze (taorf, CDRP, lincs, jump_orf, jump_crispr, jump_compound)")],
-    compare_baseline: Annotated[bool, typer.Option(help="Compare results with baseline CSV")] = True,
-    calculate_stats: Annotated[bool, typer.Option(help="Calculate statistical tests (t-values)")] = True,
+    calculate_stats: Annotated[bool, typer.Option(help="Calculate statistical tests (t-values, p-values)")] = True,
 ):
     """Run virtual screen analysis from scratch.
 
     Calculates radial distribution metrics (Count_Cells_avg, last_peak_ind, slope)
-    and statistical tests (t_target_pattern, t_orth, t_slope, d_slope)
+    and statistical tests (t_target_pattern, t_orth, t_slope, d_slope, p-values)
     from per-site profiles.
+
+    Does NOT compare with baseline - use 'compare-baseline' command separately.
     """
     # Lazy imports for faster startup
     from haghighi_mito.virtual_screen import run_virtual_screen
 
-    run_virtual_screen(dataset=dataset, compare_baseline=compare_baseline, calculate_stats=calculate_stats)
+    run_virtual_screen(dataset=dataset, calculate_stats=calculate_stats)
+
+
+@app.command(name="compare-baseline")
+def compare_baseline_cmd(
+    dataset: Annotated[str, typer.Option(help="Dataset to analyze (taorf, CDRP, lincs, jump_orf, jump_crispr, jump_compound)")],
+):
+    """Compare module-generated CSV with baseline CSV.
+
+    This is FAST (~1 second) and can be re-run without regenerating the entire screen.
+    Creates comparison CSV showing differences between module and baseline results.
+
+    Requires running 'virtual-screen' first to generate the CSV.
+    """
+    # Lazy imports for faster startup
+    from haghighi_mito.virtual_screen import compare_with_baseline_csv
+
+    compare_with_baseline_csv(dataset=dataset)
 
 
 @app.command(name="plot-baseline-comparison")
@@ -120,7 +138,7 @@ def plot_baseline_comparison_cmd(
     Plots correlations for t_target_pattern, slope, t_orth, and t_slope.
     Outputs greppable correlation and match statistics.
 
-    Requires running 'virtual-screen --compare-baseline' first.
+    Requires running 'compare-baseline' first to generate comparison CSV.
     """
     # Lazy imports for faster startup
     from haghighi_mito.diagnostics import plot_baseline_comparison

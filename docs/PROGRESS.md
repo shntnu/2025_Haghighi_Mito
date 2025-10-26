@@ -697,3 +697,45 @@ just clean-module
 **Method 1 (notebook) can now be deprecated** - Method 2 provides same functionality with cleaner implementation.
 
 ---
+
+## 2025-10-26: Separated Baseline Comparison from Virtual Screen
+
+### Problem
+Baseline comparison was tied to `virtual-screen` command via `--compare-baseline` flag.
+This meant re-running comparison (1 sec) required regenerating entire screen (~5-10 min).
+
+### Solution Implemented
+Split into 3 independent commands:
+
+1. **`virtual-screen`** - Generate CSV from per-site profiles (~5-10 min)
+2. **`compare-baseline`** - Compare existing CSV with baseline (~1 sec, NEW!)
+3. **`plot-baseline-comparison`** - Generate plots from comparison CSV (~1 sec)
+
+**Changes:**
+- `virtual_screen.py`: Removed `compare_baseline` parameter from `run_virtual_screen()`
+- `virtual_screen.py`: Created new `compare_with_baseline_csv()` function
+- `cli.py`: Removed `--compare-baseline` flag from `virtual-screen` command
+- `cli.py`: Added new `compare-baseline` CLI command
+- `Snakefile`: Split `run_virtual_screen_module` into two rules:
+  - `run_virtual_screen_module` - CSV generation only
+  - `compare_module_with_baseline` - Comparison only (NEW)
+- `Justfile`: Added `compare-baseline-for DATASET` command
+
+**Benefits:**
+- Can re-run comparison without regenerating CSV (1000x faster!)
+- Cleaner separation of concerns
+- More flexible workflow
+
+**New workflow:**
+```bash
+# Generate CSV once (slow)
+just run-module-for taorf
+
+# Compare with baseline (fast - can rerun anytime!)
+just compare-baseline-for taorf
+
+# Generate plots (fast)
+just plot-comparison-for taorf
+```
+
+---

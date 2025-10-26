@@ -523,13 +523,15 @@ def calculate_statistical_tests(per_site_df, dataset: str):
     return pd.DataFrame(results_list)
 
 
-def run_virtual_screen(dataset: str, compare_baseline: bool = True, calculate_stats: bool = True):
+def run_virtual_screen(dataset: str, calculate_stats: bool = True):
     """Run virtual screen analysis for specified dataset.
+
+    Generates CSV with all metrics but does NOT compare with baseline.
+    Use compare_with_baseline_csv() separately for comparison.
 
     Args:
         dataset: Dataset name (taorf, CDRP, lincs, jump_orf, jump_crispr, jump_compound)
-        compare_baseline: Whether to compare with baseline CSV and save comparison
-        calculate_stats: Whether to calculate statistical tests (t-values)
+        calculate_stats: Whether to calculate statistical tests (t-values, p-values)
     """
     if dataset not in DATASET_INFO:
         raise ValueError(f"Unknown dataset: {dataset}. Must be one of {list(DATASET_INFO.keys())}")
@@ -591,25 +593,57 @@ def run_virtual_screen(dataset: str, compare_baseline: bool = True, calculate_st
     results.to_csv(output_path, index=False)
     logger.info(f"\nSaved results to {output_path}")
 
-    # Compare with baseline if requested
-    if compare_baseline:
-        from haghighi_mito.diagnostics import compare_with_baseline
 
-        comparison = compare_with_baseline(results, dataset)
+def compare_with_baseline_csv(dataset: str):
+    """Compare module-generated CSV with baseline CSV.
 
-        # Save comparison
-        comparison_path = output_dir / f"{dataset}_baseline_comparison.csv"
-        comparison.to_csv(comparison_path, index=False)
-        logger.info(f"\nSaved comparison to {comparison_path}")
+    This is a separate operation from virtual screen generation,
+    allowing fast re-comparison without regenerating the entire screen.
 
-        # Show some examples of large differences
-        if calculate_stats and "t_target_pattern_pct_diff" in comparison.columns:
-            logger.info("\nTop 5 largest t_target_pattern % differences:")
-            pert_col = DATASET_INFO[dataset]["pert_col"]
-            top_diffs = comparison.nlargest(5, "t_target_pattern_pct_diff")[[pert_col, "t_target_pattern_new", "t_target_pattern_baseline", "t_target_pattern_pct_diff"]]
-            print(top_diffs.to_string(index=False))
-        else:
-            logger.info("\nTop 5 largest slope % differences:")
-            pert_col = DATASET_INFO[dataset]["pert_col"]
-            top_diffs = comparison.nlargest(5, "slope_pct_diff")[[pert_col, "slope_new", "slope_baseline", "slope_pct_diff"]]
-            print(top_diffs.to_string(index=False))
+    Args:
+        dataset: Dataset name (taorf, CDRP, lincs, jump_orf, jump_crispr, jump_compound)
+    """
+    if dataset not in DATASET_INFO:
+        raise ValueError(f"Unknown dataset: {dataset}. Must be one of {list(DATASET_INFO.keys())}")
+
+    logger.info(f"Comparing {dataset} results with baseline...")
+
+    # Load module-generated results
+    module_dir = PROCESSED_DATA_DIR / "virtual_screen_module"
+    results_path = module_dir / f"{dataset}_results_pattern_aug_070624.csv"
+
+    if not results_path.exists():
+        raise FileNotFoundError(
+            f"Module results not found: {results_path}\n"
+            f"Run 'haghighi-mito virtual-screen --dataset {dataset}' first"
+        )
+
+    results = pd.read_csv(results_path)
+    logger.info(f"Loaded {len(results)} perturbations from {results_path}")
+
+    # Compare with baseline
+    from haghighi_mito.diagnostics import compare_with_baseline
+
+    comparison = compare_with_baseline(results, dataset)
+
+    # Save comparison
+    comparison_path = module_dir / f"{dataset}_baseline_comparison.csv"
+    comparison.to_csv(comparison_path, index=False)
+    logger.info(f"\nSaved comparison to {comparison_path}")
+
+    # Show some examples of large differences
+    has_stats = "t_target_pattern_pct_diff" in comparison.columns
+    if has_stats:
+        logger.info("\nTop 5 largest t_target_pattern % differences:")
+        pert_col = DATASET_INFO[dataset]["pert_col"]
+        top_diffs = comparison.nlargest(5, "t_target_pattern_pct_diff")[
+            [pert_col, "t_target_pattern_new", "t_target_pattern_baseline", "t_target_pattern_pct_diff"]
+        ]
+        print(top_diffs.to_string(index=False))
+    else:
+        logger.info("\nTop 5 largest slope % differences:")
+        pert_col = DATASET_INFO[dataset]["pert_col"]
+        top_diffs = comparison.nlargest(5, "slope_pct_diff")[
+            [pert_col, "slope_new", "slope_baseline", "slope_pct_diff"]
+        ]
+        print(top_diffs.to_string(index=False))
