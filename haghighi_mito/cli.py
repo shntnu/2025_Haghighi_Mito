@@ -125,7 +125,7 @@ def analyze_t_target_pattern_cmd(
     Requires running 'virtual-screen --compare-baseline' first to generate comparison file.
     """
     # Lazy imports for faster startup
-    from haghighi_mito.virtual_screen import analyze_t_target_pattern_distribution
+    from haghighi_mito.diagnostics import analyze_t_target_pattern_distribution
 
     analyze_t_target_pattern_distribution(dataset=dataset)
 
@@ -148,7 +148,7 @@ def compare_per_plate_cmd(
     Requires running 'virtual-screen --compare-baseline' first.
     """
     # Lazy imports for faster startup
-    from haghighi_mito.virtual_screen import compare_per_plate_results
+    from haghighi_mito.diagnostics import compare_per_plate_results
 
     compare_per_plate_results(dataset=dataset)
 
