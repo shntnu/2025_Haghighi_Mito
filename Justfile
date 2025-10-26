@@ -25,6 +25,15 @@ download-raw:
 run-notebook-for DATASET:
     pixi run snakemake data/external/mito_project/workspace/results/virtual_screen_regenerated/{{DATASET}}_results_pattern_aug_070624.csv --cores 1 --printshellcmds
 
+# Run virtual screen analysis for a specific dataset (e.g., just run-virtual-screen-for taorf)
+run-virtual-screen-for DATASET:
+    pixi run haghighi-mito virtual-screen --dataset {{DATASET}} --compare-baseline
+
+# Analyze edge cases for a specific dataset (e.g., just analyze-edge-cases-for taorf)
+# Default sorts by t_target_pattern (bypasses peak detection). Use --sort-by slope for slope-based sorting.
+analyze-edge-cases-for DATASET N_BEST="5" N_WORST="5" SORT_BY="t_target_pattern":
+    pixi run haghighi-mito analyze-edge-cases --dataset {{DATASET}} --n-best {{N_BEST}} --n-worst {{N_WORST}} --sort-by {{SORT_BY}}
+
 # Generate DAG visualizations (simplified rules + full jobs for both pipelines)
 viz:
     #!/usr/bin/env bash
