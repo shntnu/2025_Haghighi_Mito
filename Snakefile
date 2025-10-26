@@ -110,8 +110,8 @@ data/
 │   │   ├── {dataset}_results_pattern_aug_070624.csv
 │   │   └── {dataset}_baseline_comparison.csv
 │   │
-│   └── figures/t_target_pattern_analysis/  # Method 2: Diagnostic plots
-│       └── {dataset}_baseline_vs_regenerated.png
+│   └── figures/diagnostics/              # Method 2: Diagnostic plots
+│       └── {dataset}_comparison_metrics.png
 │
 └── interim/
     ├── parquet_baseline/                 # Method 0 intermediate
@@ -433,7 +433,7 @@ rule plot_baseline_comparison:
     input:
         comparison_csv="data/processed/virtual_screen_module/{dataset}_baseline_comparison.csv"
     output:
-        plot="data/processed/figures/t_target_pattern_analysis/{dataset}_baseline_vs_regenerated.png"
+        plot="data/processed/figures/diagnostics/{dataset}_comparison_metrics.png"
     shell:
         """
         pixi run haghighi-mito plot-baseline-comparison --dataset {wildcards.dataset}
@@ -451,7 +451,7 @@ rule run_all_virtual_screen_modules:
 rule plot_all_baseline_comparisons:
     """Target: Generate comparison plots for all datasets."""
     input:
-        expand("data/processed/figures/t_target_pattern_analysis/{dataset}_baseline_vs_regenerated.png",
+        expand("data/processed/figures/diagnostics/{dataset}_comparison_metrics.png",
                dataset=DATASETS)
 
 ## TODO: Missing Processing Rules for Method 2 Completion ##
