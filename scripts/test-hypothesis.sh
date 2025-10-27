@@ -19,9 +19,11 @@ echo "Testing baseline reproduction for dataset: ${DATASET}"
 echo "================================================"
 echo ""
 
-# Remove cached CSV
-echo "Removing cached CSV..."
+# Remove cached outputs to force full regeneration
+echo "Removing cached outputs..."
 rm -f "data/processed/virtual_screen_module/${DATASET}_results_pattern_aug_070624.csv"
+rm -f "data/processed/virtual_screen_module/${DATASET}_baseline_comparison.csv"
+rm -f "data/processed/figures/diagnostics/${DATASET}_comparison_metrics.png"
 
 # Run the tight loop
 echo "Running virtual screen + diagnostics..."
