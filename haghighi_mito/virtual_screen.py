@@ -436,7 +436,8 @@ def calculate_statistical_tests(per_site_df, dataset: str):
     # Prepare control data by plate
     logger.info("Preparing control data by plate...")
     control_df = per_site_df[per_site_df["ctrl_well"]].copy()
-    control_dfs_by_plate = dict(control_df.groupby("batch_plate"))
+    # Dict comprehension is correct here (not dict(groupby)) - GroupBy objects aren't directly convertible to dict
+    control_dfs_by_plate = {plate: group for plate, group in control_df.groupby("batch_plate")}
     logger.info(f"Prepared controls for {len(control_dfs_by_plate)} plates")
 
     # Get unique perturbations (non-controls only)
