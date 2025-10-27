@@ -59,6 +59,10 @@ generate-module-csvs:
 diagnose-all:
     pixi run snakemake all_module_diagnostics --cores 4 --printshellcmds
 
+# [Method 2] Check baseline agreement - regenerate CSV + diagnostics, show correlations (~7 sec)
+check-baseline-quick DATASET="taorf":
+    scripts/check-baseline-quick.sh {{DATASET}}
+
 # ============================================================================
 # UTILITIES
 # ============================================================================

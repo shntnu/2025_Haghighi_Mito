@@ -13,7 +13,7 @@ Supporting repository for:
 
 This repository follows the [Carpenter-Singh lab workflow conventions](protocols/workflows.md):
 
-```
+```text
 2025_Haghighi_Mito/
 ├── haghighi_mito/         # Python package with processing code
 │   ├── cli.py             # Typer CLI interface
@@ -43,30 +43,35 @@ This repository follows the [Carpenter-Singh lab workflow conventions](protocols
 ### Running the Pipeline
 
 View available commands:
+
 ```bash
 just --list
 ```
 
 **Recommended: Process validated baseline data (July 2024):**
+
 ```bash
 just generate-baseline-all         # Download from S3 if needed, then process → Excel + DuckDB (~5 min)
 ```
 
 **Alternative: Regenerate from raw data (Method 2 - clean module):**
+
 ```bash
 just generate-module-all           # Download raw data if needed, then run full pipeline → CSV → Excel → DuckDB (~10 min/dataset)
 just generate-module-csv-for taorf # Generate single dataset CSV
 ```
 
 **Diagnose regenerated results (compare with baseline + plots):**
+
 ```bash
 just diagnose-for taorf    # Compare CSV + generate plots in one command (~1 sec)
 just diagnose-all          # Run diagnostics for all datasets
 ```
 
-**Test hypotheses (tight iteration loop for baseline reproduction):**
+**Check baseline agreement (tight iteration loop for rapid validation):**
+
 ```bash
-scripts/test-hypothesis.sh taorf  # Remove CSV → regenerate → diagnose → show correlations (~7 sec)
+just check-baseline-quick taorf        # Same via Justfile
 ```
 
 ### Python CLI Commands
@@ -113,6 +118,7 @@ pixi run ruff format .    # Format
 The repository supports **three methods** for generating virtual screen results:
 
 ### Method 0: Baseline (Validated, July 2024)
+
 - **Status**: Production-ready, validated in manuscript
 - **Input**: Pre-computed CSVs from S3 (65 MB, uploaded July 2024)
 - **Processing**: Filtering and formatting only - NO recalculation
@@ -122,6 +128,7 @@ The repository supports **three methods** for generating virtual screen results:
 - **Code**: `haghighi_mito/data.py` (formatting only)
 
 ### Method 1: Regenerated - Notebook (Complete but Messy)
+
 - **Status**: Complete pipeline, superseded by Method 2
 - **Input**: Raw per-site profiles (2.7 GB)
 - **Processing**: Calculate slopes + stats + filter + format
@@ -132,6 +139,7 @@ The repository supports **three methods** for generating virtual screen results:
 - **Note**: Exploratory code with dead branches (`if 0:`), but functional
 
 ### Method 2: Regenerated - Clean Module (Recommended for Development)
+
 - **Status**: Complete pipeline, clean implementation
 - **Input**: Raw per-site profiles (2.7 GB)
 - **Processing**: Calculate slopes + stats + filter + format
@@ -148,6 +156,7 @@ The repository supports **three methods** for generating virtual screen results:
 **All regenerated methods (1 & 2) produce ~77% agreement with baseline due to lost July 2024 code.**
 
 Key findings:
+
 - Baseline generated with code that predates this repository (Sept 2025 creation)
 - Input data confirmed identical (`Count_Cells_avg` matches 100%)
 - 100% of large slope differences have different peak indices
@@ -155,6 +164,7 @@ Key findings:
 - Impact: Baseline trusted but opaque; regenerated methods transparent but inexact
 
 **Match rates** (taorf, n=327):
+
 - `t_target_pattern`: 37% within 10% (no peak detection, best metric)
 - `slope`: 19% within 10% (peak detection differs)
 - `t_orth`: 33% within 10% (validates processing)
