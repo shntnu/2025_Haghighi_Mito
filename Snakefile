@@ -1,118 +1,37 @@
 """Snakemake pipeline for mitochondrial morphology screen analysis.
 
-================================================================================
-PIPELINE OVERVIEW: Three Methods for Virtual Screen Results
-================================================================================
+USAGE
+=====
+Three methods for generating virtual screen results:
 
-This pipeline supports THREE methods for generating virtual screen results.
-Each method produces different outputs with different trade-offs.
+Method 0: BASELINE (Recommended for production/publication)
+  - Uses pre-computed validated results from S3
+  - Fast, no recalculation
+  - Run: just generate-baseline-all
+  - Output: data/processed/screen_results_baseline.duckdb
 
-METHOD 0: BASELINE (July 2024 - Validated, Fast)
-────────────────────────────────────────────────
-What:     Pre-computed CSVs uploaded to S3 in July 2024 (65 MB total)
-Status:   ✅ COMPLETE - Validated in published manuscript
-Use case: Production analysis, publication results
-Code:     haghighi_mito/data.py (formatting/filtering only - NO recalculation)
-Commands: just download-baseline && just run-baseline
-Output:   data/processed/screen_results_baseline.duckdb (178,826 rows)
-Speed:    ~5 minutes
+Method 1: NOTEBOOK (Legacy exploratory code)
+  - Recalculates from raw per-site profiles
+  - Messy converted Jupyter notebook
+  - Run: just generate-notebook-all
+  - Output: data/processed/screen_results_notebook.duckdb
 
-Data flow:
-  S3 CSVs (slopes already computed)
-    → Download (aws s3 cp)
-    → Filter + format to Excel/Parquet (data.py::process_single_virtual_screen_csv)
-    → Create DuckDB (data.py::create_screen_database)
+Method 2: MODULE (Recommended for development)
+  - Recalculates from raw per-site profiles
+  - Clean refactored implementation
+  - Includes diagnostic comparisons with baseline
+  - Run: just generate-module-all
+  - Output: data/processed/screen_results_module.duckdb
 
-METHOD 1: REGENERATED - Notebook (Complete but Messy)
-──────────────────────────────────────────────────────
-What:     Exploratory Jupyter notebook converted to .py script (1,433 lines)
-Status:   ✅ COMPLETE - Full pipeline works (CSV → Excel → DuckDB)
-Use case: Legacy implementation, superseded by Method 2
-Code:     notebooks/2.0-mh-virtual-screen.py + haghighi_mito/data.py
-Commands: just download-raw && just run-notebook
-Output:   data/processed/screen_results_notebook.duckdb
-Speed:    ~10 minutes per dataset
-Note:     Messy code with dead branches (if 0:), but functional
-          Can be deprecated in favor of Method 2 (clean module)
+REPRODUCIBILITY
+===============
+Methods 1 & 2 regenerate results from raw data but produce ~77% agreement with
+baseline due to differences in peak detection. Use Method 0 (baseline) for
+validated publication results. See docs/PROGRESS.md for details.
 
-Data flow:
-  Raw per-site profiles (2.7 GB, 17K rows for taorf)
-    → Download (s5cmd sync)
-    → Calculate slopes, peaks, stats (notebook 2.0)
-    → Save CSV (328 rows for taorf)
-    → Filter + format to Excel/Parquet (data.py::process_single_virtual_screen_csv)
-    → Create DuckDB (data.py::create_screen_database)
-
-METHOD 2: REGENERATED - Clean Module (Complete Pipeline)
-─────────────────────────────────────────────────────────
-What:     Professional refactor of notebook logic (448 clean lines)
-Status:   ✅ COMPLETE - Full pipeline works (CSV → Excel → DuckDB)
-Use case: Production-ready clean implementation, can replace Method 1
-Code:     haghighi_mito/virtual_screen.py + vectorized helpers + diagnostics.py + data.py
-Commands: just download-raw && just run-module
-Output:   data/processed/screen_results_module.duckdb
-Speed:    ~10 minutes per dataset
-Note:     Identical output format to Method 1, cleaner codebase (no dead branches)
-          Method 1 can now be deprecated
-
-Data flow:
-  Raw per-site profiles (2.7 GB, 17K rows for taorf)
-    → Download (s5cmd sync)
-    → Calculate slopes, peaks, stats (virtual_screen.py::run_virtual_screen)
-    → Compare to baseline (diagnostics.py::compare_with_baseline)
-    → Save CSV (328 rows for taorf)
-    → Filter + format to Excel/Parquet (data.py::process_single_virtual_screen_csv)
-    → Create DuckDB (data.py::create_screen_database)
-
-================================================================================
-THE REPRODUCIBILITY ISSUE
-================================================================================
-
-All regenerated methods produce ~77% agreement with baseline due to lost
-July 2024 code. Key findings:
-- Baseline generated with code that predates this repository (Sept 2025)
-- Input data confirmed identical (Count_Cells_avg matches 100%)
-- 100% of large slope differences have different peak indices
-- Root cause: Unknown peak detection algorithm used in July 2024
-- Impact: Baseline trusted but opaque; regenerated methods transparent but inexact
-
-Match rates (taorf, n=327):
-- t_target_pattern: 37% within 10% (no peak detection, best metric)
-- slope: 19% within 10% (peak detection differs)
-- t_orth: 33% within 10% (validates processing)
-
-See docs/PROGRESS.md for detailed investigation history (Oct 2025).
-
-================================================================================
-OUTPUT DIRECTORY STRUCTURE
-================================================================================
-
-data/
-├── external/mito_project/workspace/results/
-│   ├── virtual_screen_baseline/          # Method 0: S3 downloads (65 MB)
-│   └── virtual_screen_notebook/          # Method 1: Notebook CSVs
-│
-├── processed/
-│   ├── screen_results_baseline.duckdb    # Method 0 final database
-│   ├── screen_results_notebook.duckdb    # Method 1 final database
-│   ├── screen_results_module.duckdb      # Method 2 final database
-│   │
-│   ├── tables/
-│   │   ├── generated_from_s3_baseline/   # Method 0 Excel files
-│   │   ├── generated_from_notebook/      # Method 1 Excel files
-│   │   └── generated_from_module/        # Method 2 Excel files
-│   │
-│   ├── virtual_screen_module/            # Method 2: CSVs + comparisons
-│   │   ├── {dataset}_results_pattern_aug_070624.csv
-│   │   └── {dataset}_baseline_comparison.csv
-│   │
-│   └── figures/diagnostics/              # Method 2: Diagnostic plots
-│       └── {dataset}_comparison_metrics.png
-│
-└── interim/
-    ├── parquet_baseline/                 # Method 0 intermediate
-    ├── parquet_notebook/                 # Method 1 intermediate
-    └── parquet_module/                   # Method 2 intermediate
+CONFIGURATION
+=============
+Edit DATASETS variable below to process all 6 datasets or subset for testing.
 
 """
 
@@ -121,7 +40,8 @@ data/
 # ============================================================================
 
 # Dataset configuration
-# DATASETS = ["CDRP", "jump_compound", "jump_crispr", "jump_orf", "lincs", "taorf"]
+# All 6 datasets: ["CDRP", "jump_compound", "jump_crispr", "jump_orf", "lincs", "taorf"]
+# Currently filtered to 2 datasets for faster testing/development
 DATASETS = ["lincs", "taorf"]
 
 # S3 configuration
@@ -162,9 +82,9 @@ rule all:
 # ============================================================================
 # This pipeline uses validated CSVs from July 2024 (uploaded to S3).
 # It only performs filtering and formatting - NO slope calculation or stats.
-# Output: data/processed/screen_results_baseline.duckdb (178,826 rows)
+# Output: data/processed/screen_results_baseline.duckdb (178,826 rows for all 6 datasets)
 #
-# Commands: just download-baseline && just run-baseline
+# Commands: just generate-baseline-all
 
 ## Download Rules ##
 
@@ -229,11 +149,11 @@ rule create_baseline_database:
 # REGENERATED PIPELINES - Shared Data Downloads
 # ============================================================================
 # Both Method 1 (notebook) and Method 2 (clean module) require the same raw data:
-# - Per-site aggregated profiles (2.7 GB across 6 datasets)
+# - Per-site aggregated profiles (2.7 GB across all 6 datasets)
 # - Metadata files (~1.7 GB)
 # - Orthogonal feature lists (~10 KB)
 #
-# Commands: just download-raw
+# Data is auto-downloaded when needed by Snakemake rules
 
 rule download_orth_features:
     """Download all orthogonal feature lists (7 files, ~10 KB)."""
@@ -294,13 +214,13 @@ rule download_screening_data:
 # ============================================================================
 # METHOD 1: REGENERATED - Notebook (Complete but Messy)
 # ============================================================================
-# Uses notebooks/2.0-mh-virtual-screen.py (1,433 lines of converted Jupyter).
+# Uses notebooks/2.0-mh-virtual-screen.py (converted Jupyter notebook).
 # This is the original exploratory code with lots of dead branches (if 0:).
 #
 # STATUS: ✅ COMPLETE - Full pipeline works (CSV → Excel → DuckDB)
 #          Can be deprecated in favor of Method 2 (cleaner implementation)
 #
-# Commands: just download-raw && just run-notebook
+# Commands: just generate-notebook-all
 # Output: data/processed/screen_results_notebook.duckdb
 
 ## Notebook Execution Rules ##
@@ -386,13 +306,13 @@ rule all_notebook_csvs:
 # ============================================================================
 # METHOD 2: REGENERATED - Clean Module (Complete Pipeline)
 # ============================================================================
-# Uses haghighi_mito/virtual_screen.py (448 clean lines of documented code).
+# Uses haghighi_mito/virtual_screen.py (clean, documented implementation).
 # This is a professional refactor of the notebook logic.
 #
 # STATUS: ✅ COMPLETE - Full pipeline works (CSV → Excel → DuckDB)
 #          Cleaner implementation than Method 1, recommended for development
 #
-# Commands: just download-raw && just run-module
+# Commands: just generate-module-all
 # Output: data/processed/screen_results_module.duckdb
 
 ## Analysis Rules ##
@@ -492,7 +412,7 @@ rule all_module:
     """Target: Complete Method 2 pipeline (CSV → Excel → DuckDB).
 
     This is the Method 2 equivalent of all_notebook (Method 1).
-    Use: just run-module
+    Use: just generate-module-all
     """
     input:
         "data/processed/screen_results_module.duckdb"

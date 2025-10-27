@@ -4,8 +4,8 @@
 # See Snakefile docstring for comprehensive pipeline documentation.
 # Three methods available:
 #   Method 0: Baseline (validated, July 2024)
-#   Method 1: Notebook (complete but messy, 1433 lines)
-#   Method 2: Clean module (complete, 448 lines)
+#   Method 1: Notebook (complete but messy)
+#   Method 2: Clean module (complete, cleaner implementation)
 
 # Show available commands
 default:
