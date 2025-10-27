@@ -49,7 +49,7 @@ Added defensive improvements:
 - Plate filtering to prevent mixing control-corrected with uncorrected data
 - Documentation comments explaining implementation choices with empirical evidence
 - Pandas compatibility fix (`include_groups=True`) to silence FutureWarning
-- Testing script (`scripts/test-hypothesis.sh`) for rapid hypothesis iteration (~7 sec loop)
+- Testing script (`scripts/check-baseline-quick.sh`) for rapid baseline validation (~7 sec loop)
 
 The current notebook (2.0-mh-virtual-screen.py) uses different methods and should NOT be treated as ground truth for validation.
 

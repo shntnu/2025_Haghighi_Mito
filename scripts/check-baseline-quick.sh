@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Quick hypothesis testing loop for baseline reproduction
+# Check baseline agreement - rapid iteration loop for baseline reproduction
 #
-# Usage: scripts/test-hypothesis.sh [DATASET]
+# Usage: scripts/check-baseline-quick.sh [DATASET]
+#        just check-baseline-quick [DATASET]
 #   DATASET: Dataset to test (default: taorf)
 #
 # This script:
@@ -9,7 +10,7 @@
 # 2. Runs virtual screen generation
 # 3. Runs diagnostics and extracts correlations
 #
-# Total time: ~7 seconds for taorf
+# Total time: ~7-10 seconds for taorf
 
 set -euo pipefail
 
@@ -28,10 +29,12 @@ rm -f "data/processed/figures/diagnostics/${DATASET}_comparison_metrics.png"
 # Run the tight loop
 echo "Running virtual screen + diagnostics..."
 echo ""
+START_TIME=$(date +%s)
 
 just generate-module-csv-for "${DATASET}" && \
-    just diagnose-for "${DATASET}" 2>&1 | grep -E "^2025.*: r="
+    just diagnose-for "${DATASET}" 2>&1 | grep -E ": r="
 
+END_TIME=$(date +%s)
+ELAPSED=$((END_TIME - START_TIME))
 echo ""
-echo "Done! Check correlations above."
-echo "Key metrics: slope (main target), t_target_pattern (validates preprocessing)"
+echo "Done! Check correlations above. (${ELAPSED}s)"
