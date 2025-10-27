@@ -10,9 +10,9 @@ Method 0: BASELINE (Recommended for production/publication)
   - Run: just generate-baseline-all
   - Output: data/processed/screen_results_baseline.duckdb
 
-Method 1: NOTEBOOK (Legacy exploratory code)
+Method 1: NOTEBOOK (Original exploratory implementation)
   - Recalculates from raw per-site profiles
-  - Messy converted Jupyter notebook
+  - Converted Jupyter notebook (retained for reference)
   - Run: just generate-notebook-all
   - Output: data/processed/screen_results_notebook.duckdb
 
@@ -25,8 +25,9 @@ Method 2: MODULE (Recommended for development)
 
 REPRODUCIBILITY
 ===============
-Methods 1 & 2 regenerate results from raw data but produce ~77% agreement with
-baseline due to differences in peak detection. Use Method 0 (baseline) for
+Methods 1 & 2 regenerate results from raw data but show incomplete agreement with
+baseline (cause unknown). Method 1 is the original implementation; Method 2 is a
+refactored version with closer baseline agreement. Use Method 0 (baseline) for
 validated publication results. See docs/PROGRESS.md for details.
 
 CONFIGURATION
@@ -40,8 +41,11 @@ Edit DATASETS variable below to process all 6 datasets or subset for testing.
 # ============================================================================
 
 # Dataset configuration
-# All 6 datasets: ["CDRP", "jump_compound", "jump_crispr", "jump_orf", "lincs", "taorf"]
-# Currently filtered to 2 datasets for faster testing/development
+# All 6 datasets available in the study
+ALL_DATASETS = ["CDRP", "jump_compound", "jump_crispr", "jump_orf", "lincs", "taorf"]
+
+# Filtered subset for Methods 1 & 2 (regeneration from raw data - slower)
+# Method 0 (baseline) uses ALL_DATASETS since it only downloads pre-computed CSVs (fast)
 DATASETS = ["lincs", "taorf"]
 
 # S3 configuration
@@ -96,12 +100,6 @@ rule download_baseline_csv:
         aws s3 cp {params.s3_path} {output.csv}
         """
 
-rule download_all_baseline:
-    """Target: Download all specified baseline CSVs from S3 (65 MB total)."""
-    input:
-        expand(f"{BASELINE_DIR}/{{dataset}}_results_pattern_aug_070624.csv",
-               dataset=DATASETS)
-
 ## Processing Rules ##
 
 rule process_baseline_csv:
@@ -124,12 +122,12 @@ rule create_baseline_database:
     """Combine all baseline Parquet files into unified DuckDB database."""
     input:
         expand(f"{INTERIM_BASELINE}/{{dataset}}_unfiltered.parquet",
-               dataset=DATASETS)
+               dataset=ALL_DATASETS)
     output:
         "data/processed/screen_results_baseline.duckdb"
     params:
         output_path="data/processed/screen_results_baseline.duckdb",
-        datasets=",".join(DATASETS)
+        datasets=",".join(ALL_DATASETS)
     shell:
         """
         pixi run haghighi-mito create-database \
@@ -144,11 +142,11 @@ rule create_baseline_database:
 
 # NOTE: No default 'rule all' is defined. Users should run explicit targets via Justfile:
 #   - just generate-baseline-all  (Method 0 - validated results)
-#   - just generate-notebook-all  (Method 1 - legacy)
-#   - just generate-module-all    (Method 2 - clean regeneration)
+#   - just generate-notebook-all  (Method 1 - original implementation)
+#   - just generate-module-all    (Method 2 - refactored implementation)
 #
-# FUTURE: Once Method 2 is finalized/validated, consider adding 'rule all' that runs
-# both baseline (validated) + module (reproducible) as the recommended default workflow.
+# FUTURE: Consider adding 'rule all' that runs both baseline (validated) + module
+# (reproducible) as the recommended default workflow.
 
 rule all_baseline:
     """Target: Complete baseline pipeline (CSV → Excel → DuckDB)."""
@@ -204,32 +202,14 @@ rule download_metadata_file:
         s5cmd cp {params.s3_path} {output}
         """
 
-rule download_screening_data:
-    """Target: Download all raw data for virtual screening (2.7 GB total)."""
-    input:
-        f"{MITO_WORKSPACE_DIR}/results/target_pattern_orth_features_lists/.download_complete",
-        expand(f"{MITO_WORKSPACE_DIR}/per_site_aggregated_profiles_newpattern_2/{{dataset}}/.download_complete",
-               dataset=DATASETS),
-        f"{MITO_WORKSPACE_DIR}/metadata/CDRP_meta.csv",
-        f"{MITO_WORKSPACE_DIR}/metadata/JUMP-ORF/ORF_list.tsv",
-        f"{MITO_WORKSPACE_DIR}/metadata/JUMP/compound.csv.gz",
-        f"{MITO_WORKSPACE_DIR}/metadata/JUMP/crispr.csv.gz",
-        f"{MITO_WORKSPACE_DIR}/metadata/JUMP/orf.csv.gz",
-        f"{MITO_WORKSPACE_DIR}/metadata/JUMP/plate.csv.gz",
-        f"{MITO_WORKSPACE_DIR}/metadata/JUMP/well.csv.gz",
-        f"{MITO_WORKSPACE_DIR}/metadata/LINCS_meta.csv",
-        f"{MITO_WORKSPACE_DIR}/metadata/TA-ORF/replicate_level_cp_normalized.csv.gz",
-        f"{MITO_WORKSPACE_DIR}/metadata/lincs/DrugRepurposing_Metadata.csv"
-
-
 # ============================================================================
-# METHOD 1: REGENERATED - Notebook (Complete but Messy)
+# METHOD 1: REGENERATED - Notebook (Original Implementation)
 # ============================================================================
 # Uses notebooks/2.0-mh-virtual-screen.py (converted Jupyter notebook).
-# This is the original exploratory code with lots of dead branches (if 0:).
+# This is the original exploratory code, retained for reference.
 #
 # STATUS: ✅ COMPLETE - Full pipeline works (CSV → Excel → DuckDB)
-#          Can be deprecated in favor of Method 2 (cleaner implementation)
+#          Method 2 provides a cleaner refactored implementation
 #
 # Commands: just generate-notebook-all
 # Output: data/processed/screen_results_notebook.duckdb
@@ -315,13 +295,13 @@ rule all_notebook:
 
 
 # ============================================================================
-# METHOD 2: REGENERATED - Clean Module (Complete Pipeline)
+# METHOD 2: REGENERATED - Clean Module (Refactored Implementation)
 # ============================================================================
 # Uses haghighi_mito/virtual_screen.py (clean, documented implementation).
-# This is a professional refactor of the notebook logic.
+# This is a refactored version of the notebook logic.
 #
 # STATUS: ✅ COMPLETE - Full pipeline works (CSV → Excel → DuckDB)
-#          Cleaner implementation than Method 1, recommended for development
+#          Clean refactored implementation, recommended for development
 #
 # Commands: just generate-module-all
 # Output: data/processed/screen_results_module.duckdb
@@ -435,7 +415,8 @@ onstart:
     print("=" * 70)
     print("MITOCHONDRIAL MORPHOLOGY SCREEN PIPELINE")
     print("=" * 70)
-    print(f"Datasets: {', '.join(DATASETS)}")
+    print(f"Baseline datasets (Method 0): {', '.join(ALL_DATASETS)}")
+    print(f"Module/Notebook datasets (Methods 1 & 2): {', '.join(DATASETS)}")
     print(f"Data directory: {DATA_DIR}")
     print(f"Mito workspace: {MITO_WORKSPACE_DIR}")
     print(f"Baseline output: {PROCESSED_DATA_DIR}/screen_results_baseline.duckdb")

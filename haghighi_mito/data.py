@@ -365,14 +365,15 @@ def validate_databases(baseline_path: Path, new_path: Path) -> bool:
     """Compare two DuckDB databases for identical data.
 
     Validates that two DuckDB databases contain identical data by comparing
-    all rows and columns, accounting for NaN values properly.
+    all rows and columns, accounting for NaN values properly. Only compares
+    datasets that exist in both databases.
 
     Args:
         baseline_path: Path to baseline DuckDB file
         new_path: Path to new DuckDB file to validate
 
     Returns:
-        True if databases are identical, False otherwise
+        True if databases are identical for common datasets, False otherwise
     """
     baseline_path = Path(baseline_path)
     new_path = Path(new_path)
@@ -393,15 +394,45 @@ def validate_databases(baseline_path: Path, new_path: Path) -> bool:
     baseline = duckdb.connect(str(baseline_path), read_only=True)
     new = duckdb.connect(str(new_path), read_only=True)
 
-    # Load data sorted for consistent comparison
-    df_baseline = baseline.execute("SELECT * FROM screens ORDER BY Metadata_dataset, Metadata_pert_id").df()
-    df_new = new.execute("SELECT * FROM screens ORDER BY Metadata_dataset, Metadata_pert_id").df()
+    # Get list of datasets in each database
+    baseline_datasets = set(baseline.execute("SELECT DISTINCT Metadata_dataset FROM screens").df()["Metadata_dataset"])
+    new_datasets = set(new.execute("SELECT DISTINCT Metadata_dataset FROM screens").df()["Metadata_dataset"])
+
+    logger.info(f"Baseline datasets: {sorted(baseline_datasets)}")
+    logger.info(f"New datasets: {sorted(new_datasets)}")
+
+    # Find common datasets
+    common_datasets = baseline_datasets & new_datasets
+    baseline_only = baseline_datasets - new_datasets
+    new_only = new_datasets - baseline_datasets
+
+    if baseline_only:
+        logger.warning(f"Datasets only in baseline (will skip): {sorted(baseline_only)}")
+    if new_only:
+        logger.warning(f"Datasets only in new (will skip): {sorted(new_only)}")
+
+    if not common_datasets:
+        logger.error("No common datasets found between databases")
+        baseline.close()
+        new.close()
+        return False
+
+    logger.info(f"Comparing common datasets: {sorted(common_datasets)}")
+
+    # Load data for common datasets only, sorted for consistent comparison
+    datasets_filter = ", ".join(f"'{d}'" for d in common_datasets)
+    df_baseline = baseline.execute(
+        f"SELECT * FROM screens WHERE Metadata_dataset IN ({datasets_filter}) ORDER BY Metadata_dataset, Metadata_pert_id"
+    ).df()
+    df_new = new.execute(
+        f"SELECT * FROM screens WHERE Metadata_dataset IN ({datasets_filter}) ORDER BY Metadata_dataset, Metadata_pert_id"
+    ).df()
 
     baseline.close()
     new.close()
 
-    logger.info(f"Baseline rows: {len(df_baseline):,}")
-    logger.info(f"New rows: {len(df_new):,}")
+    logger.info(f"Baseline rows (common datasets): {len(df_baseline):,}")
+    logger.info(f"New rows (common datasets): {len(df_new):,}")
 
     # Compare DataFrames accounting for NaN values
     identical = True
@@ -431,8 +462,8 @@ def validate_databases(baseline_path: Path, new_path: Path) -> bool:
                 break
 
     if identical:
-        logger.info("✓ SUCCESS: Databases are identical")
+        logger.info("✓ SUCCESS: Databases are identical for common datasets")
     else:
-        logger.error("✗ FAILURE: Databases differ")
+        logger.error("✗ FAILURE: Databases differ for common datasets")
 
     return identical
