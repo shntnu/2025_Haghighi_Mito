@@ -47,19 +47,30 @@ DATASETS = ["lincs", "taorf"]
 # S3 configuration
 S3_BASE = "s3://imaging-platform/projects/2016_08_01_RadialMitochondriaDistribution_donna/workspace"
 
-# Local directory structure
-EXTERNAL_BASE = "data/external/mito_project/workspace"
-BASELINE_DIR = f"{EXTERNAL_BASE}/results/virtual_screen_baseline"
-NOTEBOOK_DIR = f"{EXTERNAL_BASE}/results/virtual_screen_notebook"  # Method 1 output
-MODULE_DIR = "data/processed/virtual_screen_module"  # Method 2 output
+# Base paths (aligned with haghighi_mito/config.py)
+DATA_DIR = "data"
+EXTERNAL_DATA_DIR = f"{DATA_DIR}/external"
+INTERIM_DATA_DIR = f"{DATA_DIR}/interim"
+PROCESSED_DATA_DIR = f"{DATA_DIR}/processed"
 
-# Processing output directories
-INTERIM_BASELINE = "data/interim/parquet_baseline"
-INTERIM_NOTEBOOK = "data/interim/parquet_notebook"  # Method 1 intermediate
-INTERIM_MODULE = "data/interim/parquet_module"  # Method 2 intermediate
-TABLES_BASELINE = "data/processed/tables/generated_from_s3_baseline"
-TABLES_NOTEBOOK = "data/processed/tables/generated_from_notebook"  # Method 1 tables
-TABLES_MODULE = "data/processed/tables/generated_from_module"  # Method 2 tables
+# Mito project paths (from S3 download)
+MITO_PROJECT_DIR = f"{EXTERNAL_DATA_DIR}/mito_project"
+MITO_WORKSPACE_DIR = f"{MITO_PROJECT_DIR}/workspace"
+
+# Method-specific output directories
+BASELINE_DIR = f"{MITO_WORKSPACE_DIR}/results/virtual_screen_baseline"
+NOTEBOOK_DIR = f"{MITO_WORKSPACE_DIR}/results/virtual_screen_notebook"
+MODULE_DIR = f"{PROCESSED_DATA_DIR}/virtual_screen_module"
+
+# Intermediate Parquet directories
+INTERIM_BASELINE = f"{INTERIM_DATA_DIR}/parquet_baseline"
+INTERIM_NOTEBOOK = f"{INTERIM_DATA_DIR}/parquet_notebook"
+INTERIM_MODULE = f"{INTERIM_DATA_DIR}/parquet_module"
+
+# Processed tables directories
+TABLES_BASELINE = f"{PROCESSED_DATA_DIR}/tables/generated_from_s3_baseline"
+TABLES_NOTEBOOK = f"{PROCESSED_DATA_DIR}/tables/generated_from_notebook"
+TABLES_MODULE = f"{PROCESSED_DATA_DIR}/tables/generated_from_module"
 
 
 # ============================================================================
@@ -158,10 +169,10 @@ rule create_baseline_database:
 rule download_orth_features:
     """Download all orthogonal feature lists (7 files, ~10 KB)."""
     output:
-        touch(f"{EXTERNAL_BASE}/results/target_pattern_orth_features_lists/.download_complete")
+        touch(f"{MITO_WORKSPACE_DIR}/results/target_pattern_orth_features_lists/.download_complete")
     params:
         s3_dir=f"{S3_BASE}/results/target_pattern_orth_features_lists/",
-        local_dir=f"{EXTERNAL_BASE}/results/target_pattern_orth_features_lists/"
+        local_dir=f"{MITO_WORKSPACE_DIR}/results/target_pattern_orth_features_lists/"
     shell:
         """
         mkdir -p {params.local_dir}
@@ -171,10 +182,10 @@ rule download_orth_features:
 rule download_per_site_profiles_dataset:
     """Download per-site profiles for a specific dataset (~100-2000 MB per dataset)."""
     output:
-        touch(f"{EXTERNAL_BASE}/per_site_aggregated_profiles_newpattern_2/{{dataset}}/.download_complete")
+        touch(f"{MITO_WORKSPACE_DIR}/per_site_aggregated_profiles_newpattern_2/{{dataset}}/.download_complete")
     params:
         s3_dir=lambda wildcards: f"{S3_BASE}/per_site_aggregated_profiles_newpattern_2/{wildcards.dataset}/",
-        local_dir=lambda wildcards: f"{EXTERNAL_BASE}/per_site_aggregated_profiles_newpattern_2/{wildcards.dataset}/"
+        local_dir=lambda wildcards: f"{MITO_WORKSPACE_DIR}/per_site_aggregated_profiles_newpattern_2/{wildcards.dataset}/"
     shell:
         """
         mkdir -p {params.local_dir}
@@ -184,7 +195,7 @@ rule download_per_site_profiles_dataset:
 rule download_metadata_file:
     """Download individual metadata file from S3."""
     output:
-        f"{EXTERNAL_BASE}/metadata/{{metadata_path}}"
+        f"{MITO_WORKSPACE_DIR}/metadata/{{metadata_path}}"
     params:
         s3_path=lambda wildcards: f"{S3_BASE}/metadata/{wildcards.metadata_path}"
     shell:
@@ -196,19 +207,19 @@ rule download_metadata_file:
 rule download_screening_data:
     """Target: Download all raw data for virtual screening (2.7 GB total)."""
     input:
-        f"{EXTERNAL_BASE}/results/target_pattern_orth_features_lists/.download_complete",
-        expand(f"{EXTERNAL_BASE}/per_site_aggregated_profiles_newpattern_2/{{dataset}}/.download_complete",
+        f"{MITO_WORKSPACE_DIR}/results/target_pattern_orth_features_lists/.download_complete",
+        expand(f"{MITO_WORKSPACE_DIR}/per_site_aggregated_profiles_newpattern_2/{{dataset}}/.download_complete",
                dataset=DATASETS),
-        f"{EXTERNAL_BASE}/metadata/CDRP_meta.csv",
-        f"{EXTERNAL_BASE}/metadata/JUMP-ORF/ORF_list.tsv",
-        f"{EXTERNAL_BASE}/metadata/JUMP/compound.csv.gz",
-        f"{EXTERNAL_BASE}/metadata/JUMP/crispr.csv.gz",
-        f"{EXTERNAL_BASE}/metadata/JUMP/orf.csv.gz",
-        f"{EXTERNAL_BASE}/metadata/JUMP/plate.csv.gz",
-        f"{EXTERNAL_BASE}/metadata/JUMP/well.csv.gz",
-        f"{EXTERNAL_BASE}/metadata/LINCS_meta.csv",
-        f"{EXTERNAL_BASE}/metadata/TA-ORF/replicate_level_cp_normalized.csv.gz",
-        f"{EXTERNAL_BASE}/metadata/lincs/DrugRepurposing_Metadata.csv"
+        f"{MITO_WORKSPACE_DIR}/metadata/CDRP_meta.csv",
+        f"{MITO_WORKSPACE_DIR}/metadata/JUMP-ORF/ORF_list.tsv",
+        f"{MITO_WORKSPACE_DIR}/metadata/JUMP/compound.csv.gz",
+        f"{MITO_WORKSPACE_DIR}/metadata/JUMP/crispr.csv.gz",
+        f"{MITO_WORKSPACE_DIR}/metadata/JUMP/orf.csv.gz",
+        f"{MITO_WORKSPACE_DIR}/metadata/JUMP/plate.csv.gz",
+        f"{MITO_WORKSPACE_DIR}/metadata/JUMP/well.csv.gz",
+        f"{MITO_WORKSPACE_DIR}/metadata/LINCS_meta.csv",
+        f"{MITO_WORKSPACE_DIR}/metadata/TA-ORF/replicate_level_cp_normalized.csv.gz",
+        f"{MITO_WORKSPACE_DIR}/metadata/lincs/DrugRepurposing_Metadata.csv"
 
 
 # ============================================================================
@@ -226,22 +237,22 @@ rule download_screening_data:
 ## Notebook Execution Rules ##
 
 rule run_virtual_screen_notebook:
-    """Run virtual screen using notebook 2.0 (1433 lines, recalculates slopes/stats)."""
+    """Run virtual screen using notebook 2.0 (recalculates slopes/stats)."""
     input:
         notebook="notebooks/2.0-mh-virtual-screen.py",
         # Ensure all required data is downloaded first
-        orth_features=f"{EXTERNAL_BASE}/results/target_pattern_orth_features_lists/.download_complete",
-        per_site_profiles=f"{EXTERNAL_BASE}/per_site_aggregated_profiles_newpattern_2/{{dataset}}/.download_complete",
-        metadata_cdrp=f"{EXTERNAL_BASE}/metadata/CDRP_meta.csv",
-        metadata_orf_list=f"{EXTERNAL_BASE}/metadata/JUMP-ORF/ORF_list.tsv",
-        metadata_compound=f"{EXTERNAL_BASE}/metadata/JUMP/compound.csv.gz",
-        metadata_crispr=f"{EXTERNAL_BASE}/metadata/JUMP/crispr.csv.gz",
-        metadata_orf=f"{EXTERNAL_BASE}/metadata/JUMP/orf.csv.gz",
-        metadata_plate=f"{EXTERNAL_BASE}/metadata/JUMP/plate.csv.gz",
-        metadata_well=f"{EXTERNAL_BASE}/metadata/JUMP/well.csv.gz",
-        metadata_lincs=f"{EXTERNAL_BASE}/metadata/LINCS_meta.csv",
-        metadata_taorf=f"{EXTERNAL_BASE}/metadata/TA-ORF/replicate_level_cp_normalized.csv.gz",
-        metadata_lincs_drug=f"{EXTERNAL_BASE}/metadata/lincs/DrugRepurposing_Metadata.csv"
+        orth_features=f"{MITO_WORKSPACE_DIR}/results/target_pattern_orth_features_lists/.download_complete",
+        per_site_profiles=f"{MITO_WORKSPACE_DIR}/per_site_aggregated_profiles_newpattern_2/{{dataset}}/.download_complete",
+        metadata_cdrp=f"{MITO_WORKSPACE_DIR}/metadata/CDRP_meta.csv",
+        metadata_orf_list=f"{MITO_WORKSPACE_DIR}/metadata/JUMP-ORF/ORF_list.tsv",
+        metadata_compound=f"{MITO_WORKSPACE_DIR}/metadata/JUMP/compound.csv.gz",
+        metadata_crispr=f"{MITO_WORKSPACE_DIR}/metadata/JUMP/crispr.csv.gz",
+        metadata_orf=f"{MITO_WORKSPACE_DIR}/metadata/JUMP/orf.csv.gz",
+        metadata_plate=f"{MITO_WORKSPACE_DIR}/metadata/JUMP/plate.csv.gz",
+        metadata_well=f"{MITO_WORKSPACE_DIR}/metadata/JUMP/well.csv.gz",
+        metadata_lincs=f"{MITO_WORKSPACE_DIR}/metadata/LINCS_meta.csv",
+        metadata_taorf=f"{MITO_WORKSPACE_DIR}/metadata/TA-ORF/replicate_level_cp_normalized.csv.gz",
+        metadata_lincs_drug=f"{MITO_WORKSPACE_DIR}/metadata/lincs/DrugRepurposing_Metadata.csv"
     output:
         csv=f"{NOTEBOOK_DIR}/{{dataset}}_results_pattern_aug_070624.csv"
     shell:
@@ -321,18 +332,18 @@ rule run_virtual_screen_module:
     """Run virtual screen using clean module (recalculates slopes/stats from per-site profiles)."""
     input:
         # Ensure all required data is downloaded first
-        orth_features=f"{EXTERNAL_BASE}/results/target_pattern_orth_features_lists/.download_complete",
-        per_site_profiles=f"{EXTERNAL_BASE}/per_site_aggregated_profiles_newpattern_2/{{dataset}}/.download_complete",
-        metadata_cdrp=f"{EXTERNAL_BASE}/metadata/CDRP_meta.csv",
-        metadata_orf_list=f"{EXTERNAL_BASE}/metadata/JUMP-ORF/ORF_list.tsv",
-        metadata_compound=f"{EXTERNAL_BASE}/metadata/JUMP/compound.csv.gz",
-        metadata_crispr=f"{EXTERNAL_BASE}/metadata/JUMP/crispr.csv.gz",
-        metadata_orf=f"{EXTERNAL_BASE}/metadata/JUMP/orf.csv.gz",
-        metadata_plate=f"{EXTERNAL_BASE}/metadata/JUMP/plate.csv.gz",
-        metadata_well=f"{EXTERNAL_BASE}/metadata/JUMP/well.csv.gz",
-        metadata_lincs=f"{EXTERNAL_BASE}/metadata/LINCS_meta.csv",
-        metadata_taorf=f"{EXTERNAL_BASE}/metadata/TA-ORF/replicate_level_cp_normalized.csv.gz",
-        metadata_lincs_drug=f"{EXTERNAL_BASE}/metadata/lincs/DrugRepurposing_Metadata.csv"
+        orth_features=f"{MITO_WORKSPACE_DIR}/results/target_pattern_orth_features_lists/.download_complete",
+        per_site_profiles=f"{MITO_WORKSPACE_DIR}/per_site_aggregated_profiles_newpattern_2/{{dataset}}/.download_complete",
+        metadata_cdrp=f"{MITO_WORKSPACE_DIR}/metadata/CDRP_meta.csv",
+        metadata_orf_list=f"{MITO_WORKSPACE_DIR}/metadata/JUMP-ORF/ORF_list.tsv",
+        metadata_compound=f"{MITO_WORKSPACE_DIR}/metadata/JUMP/compound.csv.gz",
+        metadata_crispr=f"{MITO_WORKSPACE_DIR}/metadata/JUMP/crispr.csv.gz",
+        metadata_orf=f"{MITO_WORKSPACE_DIR}/metadata/JUMP/orf.csv.gz",
+        metadata_plate=f"{MITO_WORKSPACE_DIR}/metadata/JUMP/plate.csv.gz",
+        metadata_well=f"{MITO_WORKSPACE_DIR}/metadata/JUMP/well.csv.gz",
+        metadata_lincs=f"{MITO_WORKSPACE_DIR}/metadata/LINCS_meta.csv",
+        metadata_taorf=f"{MITO_WORKSPACE_DIR}/metadata/TA-ORF/replicate_level_cp_normalized.csv.gz",
+        metadata_lincs_drug=f"{MITO_WORKSPACE_DIR}/metadata/lincs/DrugRepurposing_Metadata.csv"
     output:
         results_csv="data/processed/virtual_screen_module/{dataset}_results_pattern_aug_070624.csv"
     shell:
@@ -428,12 +439,9 @@ onstart:
     print("MITOCHONDRIAL MORPHOLOGY SCREEN PIPELINE")
     print("=" * 70)
     print(f"Datasets: {', '.join(DATASETS)}")
-    print(f"Baseline input:  {BASELINE_DIR}")
-    print(f"Baseline output: {TABLES_BASELINE}")
-    print(f"Baseline Parquet: {INTERIM_BASELINE}")
-    print(f"Baseline DB: data/processed/screen_results_baseline.duckdb")
-    print(f"Notebook input:  {NOTEBOOK_DIR}")
-    print(f"Notebook output: {TABLES_NOTEBOOK}")
-    print(f"Notebook Parquet: {INTERIM_NOTEBOOK}")
-    print(f"Notebook DB: data/processed/screen_results_notebook.duckdb")
+    print(f"Data directory: {DATA_DIR}")
+    print(f"Mito workspace: {MITO_WORKSPACE_DIR}")
+    print(f"Baseline output: {PROCESSED_DATA_DIR}/screen_results_baseline.duckdb")
+    print(f"Notebook output: {PROCESSED_DATA_DIR}/screen_results_notebook.duckdb")
+    print(f"Module output:   {PROCESSED_DATA_DIR}/screen_results_module.duckdb")
     print("=" * 70)
