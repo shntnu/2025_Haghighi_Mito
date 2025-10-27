@@ -310,7 +310,7 @@ def calculate_metrics(per_site_df, annot, dataset: str):
                 result[col] = 0.0
         return result
 
-    per_site_df = per_site_df.groupby("batch_plate", group_keys=False).apply(z_score_normalize)
+    per_site_df = per_site_df.groupby("batch_plate", group_keys=False).apply(z_score_normalize, include_groups=False)
     # Also update last_peak_loc alias to match
     per_site_df["last_peak_loc"] = per_site_df["last_peak_ind"]
 
