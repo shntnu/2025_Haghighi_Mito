@@ -63,7 +63,7 @@ MITO_WORKSPACE_DIR = f"{MITO_PROJECT_DIR}/workspace"
 
 # Method-specific output directories
 BASELINE_DIR = f"{MITO_WORKSPACE_DIR}/results/virtual_screen_baseline"
-NOTEBOOK_DIR = f"{MITO_WORKSPACE_DIR}/results/virtual_screen_notebook"
+NOTEBOOK_DIR = f"{PROCESSED_DATA_DIR}/virtual_screen_notebook"
 MODULE_DIR = f"{PROCESSED_DATA_DIR}/virtual_screen_module"
 
 # Intermediate Parquet directories

@@ -1070,8 +1070,9 @@ len(uncorr_feats_condese)
 logger.info("ANALYSIS SECTION: Virtual screen on per-site aggregated profiles")
 
 # Configuration: Output directory
-# Results saved to virtual_screen_notebook/ (locally-generated)
-# This is separate from virtual_screen_baseline/ (S3 downloads)
+# Results saved to data/processed/virtual_screen_notebook/ (locally-generated)
+# Follows workflows.md: processed/ is for analysis outputs
+# This is separate from virtual_screen_baseline/ (S3 downloads in external/)
 # Same filename, different directory = different provenance
 
 # %% [markdown] heading_collapsed=true
@@ -1281,10 +1282,10 @@ dataset
 
 # %%
 # import pingouin
-root_res_dir = mito_project_root_dir + "workspace/"
-# Save to virtual_screen_notebook/ (locally-generated results)
-# Separate from virtual_screen_baseline/ (S3 downloads)
-write_res_path = root_res_dir + "/results/virtual_screen_notebook/"
+# Save to data/processed/virtual_screen_notebook/ (locally-generated results)
+# Follows workflows.md: processed/ is for analysis outputs
+# Separate from virtual_screen_baseline/ (S3 downloads in external/)
+write_res_path = os.path.join(repo_root, "data/processed/virtual_screen_notebook/")
 f_substr = "MeanFrac"
 ##############################################
 from scipy.stats import norm, ttest_ind
@@ -1422,7 +1423,7 @@ for peri, pert in enumerate(perts):
 
 logger.info(f"Statistical testing complete for {len(perts)} perturbations")
 
-# Save to virtual_screen_notebook/ directory (provenance via directory, not suffix)
+# Save to data/processed/virtual_screen_notebook/ (provenance via directory, not suffix)
 output_filename = f"{dataset}_results_pattern_aug_070624.csv"
 output_path = write_res_path + "/" + output_filename
 
