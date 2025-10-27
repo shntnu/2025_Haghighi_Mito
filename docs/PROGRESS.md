@@ -1,6 +1,33 @@
 # Progress Log
 
----
+INSTRUCTIONS: Add log at the end of the file. See "Maintenance Guidelines" and "Template for Future Entries" first
+
+## Maintenance Guidelines
+
+**When to add entries:**
+
+- User explicitly asks to document progress
+- Major milestone completed (pipeline working, bug resolved)
+- Critical decision point requiring future reference
+
+**Entry format (max 20 lines):**
+
+- Brief title: what was accomplished
+- Key findings or decisions (not step-by-step debugging)
+- Blocking issues or next actions only if unresolved
+
+**Monthly rollup:**
+
+- Summarize entries older than 30 days to 1-3 lines per week
+- Keep detailed recent history for active debugging
+- Git history preserves all details if forensics needed
+
+**DO NOT include:**
+
+- Command outputs or error messages
+- Step-by-step debugging notes
+- Exploratory analysis details
+- Duplicate information in code comments
 
 ## Template for Future Entries
 
@@ -21,114 +48,8 @@
 - Additional context (max 5 lines)
 ```
 
----
-
-## 2025-10-27: Baseline Reproduction Hypothesis Testing - Module Validated
-
-### What was done
-Tested three hypotheses about why module shows 10-15% disagreement with July 2024 baseline:
-- **Hypothesis 2**: Filter plates missing controls (notebook lines 1230-1233)
-- **Hypothesis 3**: Two-stage aggregation - plate medians then cross-plate median (notebook lines 1398, 1419-1420)
-- **Hypothesis 4**: Median plate selection using percentile without abs() (notebook lines 1385-1392)
-
-### Key findings
-**Every attempt to match current notebook made baseline agreement WORSE, not better:**
-- Two-stage aggregation: r=0.849 → 0.830 (slope), r=0.862 → 0.862 (t_target_pattern)
-- Percentile selection: r=0.90 → 0.849 (slope), r=0.93 → 0.911 (t_target_pattern)
-- Filtering plates: No effect on taorf (all plates already have controls), but kept for defensive programming
-
-**Module was ALREADY correctly reproducing July 2024 baseline** (r=0.85-0.90 across metrics). The notebook has drifted from baseline between July 2024 and September 2025.
-
-### Decision
-**Keep core implementation unchanged.** Module uses:
-- Single-stage aggregation (direct perturbation median, not plate-then-perturbation)
-- abs() sorting for median plate selection
-- Per-plate z-score normalization of slopes before aggregation
-
-Added defensive improvements:
-- Plate filtering to prevent mixing control-corrected with uncorrected data
-- Documentation comments explaining implementation choices with empirical evidence
-- Pandas compatibility fix (`include_groups=True`) to silence FutureWarning
-- Testing script (`scripts/check-baseline-quick.sh`) for rapid baseline validation (~7 sec loop)
-
-The current notebook (2.0-mh-virtual-screen.py) uses different methods and should NOT be treated as ground truth for validation.
-
-### Unresolved issues
-**Remaining 10-15% disagreement with baseline is unexplained.** Possible causes include pre-standardization with `normalize_funcs.standardize_per_catX` (lines 1216-1218, 1254-1256 in notebook) or other preprocessing differences. Root cause remains to be investigated.
-
----
-
-## Maintenance Guidelines
-
-**When to add entries:**
-- User explicitly asks to document progress
-- Major milestone completed (pipeline working, bug resolved)
-- Critical decision point requiring future reference
-
-**Entry format (max 20 lines):**
-- Brief title: what was accomplished
-- Key findings or decisions (not step-by-step debugging)
-- Blocking issues or next actions only if unresolved
-
-**Monthly rollup:**
-- Summarize entries older than 30 days to 1-3 lines per week
-- Keep detailed recent history for active debugging
-- Git history preserves all details if forensics needed
-
-**DO NOT include:**
-- Command outputs or error messages
-- Step-by-step debugging notes
-- Exploratory analysis details
-- Duplicate information in code comments
-
----
-
-## 2025-10-26: Justfile Command Refactoring
-
-### What was done
-- Standardized all command naming to use consistent `generate-` prefix
-- Renamed Snakefile rules for clarity: `run_all_virtual_screen_modules` → `all_module_csvs`, `run_all_virtual_screen_notebooks` → `all_notebook_csvs`
-- Removed redundant commands: download commands (Snakemake auto-downloads), database-only commands (identical to `-all` targets), clean commands
-
-### Key decisions
-- **Naming pattern**: `generate-{method}-all` (full pipeline), `generate-{method}-csvs` (all datasets CSVs), `generate-{method}-csv-for DATASET` (single CSV)
-- Singular/plural distinction: `-csv-for` (one dataset) vs `-csvs` (all datasets)
-- Single-command workflows: `just generate-module-all` auto-downloads and processes in one step
-
-### Final command structure
-- Method 0: `generate-baseline-all`
-- Method 1: `generate-notebook-all`, `generate-notebook-csvs`, `generate-notebook-csv-for DATASET`
-- Method 2: `generate-module-all`, `generate-module-csvs`, `generate-module-csv-for DATASET`
-- Diagnostics: `compare-baseline-for`, `plot-comparison-for`, `plot-all-comparisons`
-
----
-
-## 2025-10-26: Diagnostic Workflow Simplification & Module Cleanup
-
-### What was done
-- **Moved function**: `compare_with_baseline_csv()` from `virtual_screen.py` → `diagnostics.py` (proper separation of concerns)
-- **Unified workflow**: Combined two-step diagnostic (compare → plot) into single command
-- **Removed CLI command**: `plot-baseline-comparison` (now auto-called internally)
-- **Updated Snakefile**: Merged two rules into one `diagnose_module` rule with both outputs (CSV + PNG)
-- **Fixed naming**: `diagnose_all_modules` → `all_module_diagnostics` (consistent with `all_module_csvs`)
-
-### Key decisions
-- **One command, both outputs**: `just diagnose-for taorf` now generates comparison CSV + diagnostic PNG automatically
-- **Module boundaries**: `virtual_screen.py` = pipeline (raw data → CSV), `diagnostics.py` = analysis (CSV → comparison + plots)
-- **No dead imports**: Removed unused imports from `diagnostics.py` (calculate_metrics, calculate_statistical_tests, load_dataset_data)
-
-### Final diagnostic commands
-- Single dataset: `just diagnose-for DATASET` → CSV + PNG (~1 sec)
-- All datasets: `just diagnose-all` → all diagnostics in parallel
-- Removed: `compare-baseline-for`, `plot-comparison-for`, `plot-all-comparisons` (replaced by unified commands)
-
-### Code quality
-- 7 files changed: 99 additions, 140 deletions (net -41 lines)
-- Tighter docstrings, cleaner architecture, better UX
-
----
-
 ## 2025-10-17 to 2025-10-24: Initial Data Download
+
 Downloaded S3 data (178 files, 4.6 GB) after Glacier restoration. Set up local analysis infrastructure with metadata, per-site profiles, and orthogonal features.
 
 ---
@@ -136,6 +57,7 @@ Downloaded S3 data (178 files, 4.6 GB) after Glacier restoration. Set up local a
 ## 2025-10-25: Virtual Screen Pipeline - Local Setup & Optimization
 
 ### Initial Setup & Bug Fixes
+
 - Fixed import errors and paths in notebook 2.0 for local execution
 - Fixed metadata preprocessing bugs (missing `Batch` column, control well identification)
 - Skipped per-site profile creation (pre-computed profiles already available)
@@ -143,12 +65,15 @@ Downloaded S3 data (178 files, 4.6 GB) after Glacier restoration. Set up local a
 - Fixed dataset selection bug (hardcoded override on line 1244)
 
 ### Performance Optimization
+
 **Vectorized slope calculation** (`haghighi_mito/vectorized_slope.py`):
+
 - Implemented `find_end_slope2_vectorized()` - fully vectorized version
 - Performance: ~200x speedup (0.174s → 0.0008s per 1000 rows)
 - Created comprehensive test suite (9 tests, all passing)
 
 **Vectorized statistical testing** (`haghighi_mito/vectorized_stats.py`):
+
 - Batch processing for plate statistics, Cohen's d, t-tests, Hotelling's T²
 - Performance: ~10-30x speedup from vectorization + pre-computation
 - Execution time: ~6.7 minutes for 9,394 perturbations (down from estimated hours)
@@ -156,6 +81,7 @@ Downloaded S3 data (178 files, 4.6 GB) after Glacier restoration. Set up local a
 - Created comprehensive test suite (16 tests, all passing)
 
 ### Infrastructure Migration
+
 Migrated uv → pixi package manager for better scientific computing support. All dependencies resolved via conda-forge (except git dependency).
 
 ---
@@ -163,29 +89,36 @@ Migrated uv → pixi package manager for better scientific computing support. Al
 ## 2025-10-25: Results Analysis & Divergence Discovery
 
 ### Virtual Screen Analysis Complete
+
 - Ran notebook 2.0 for LINCS (9,394 perturbations) and TAORF (323 perturbations)
 - Modified notebook 2.2 for Excel generation with three filtering levels
 - Generated multi-sheet Excel files: All results → Orth filtered → Both filtered
 
 ### Critical Discovery: 99.99% Divergence from Baseline
+
 **Problem:** Locally-regenerated CSVs differ massively from S3 baseline (July 2024):
+
 - LINCS: 9,394/9,395 rows differ in `slope`, `last_peak_ind`, `d_slope`
 - TAORF: 323/327 rows differ in slope-related values
 - Cell counts match exactly → same input data, different algorithm
 
 **Root cause identified:** Control subtraction timing in slope calculation
+
 - Baseline uses `if 0:` branch (control-subtract AFTER slope calculation)
 - Current code uses `if 1:` branch (z-score BEFORE slope calculation)
 - 35.5% of perturbations with identical radial profiles have opposite-sign slopes
 - This is NOT a numerical precision issue - it's a methodology difference
 
 **Evidence:**
+
 - Vectorization functions produce identical results (not the bug)
 - Input data is identical (Count_Cells_avg 100% match)
 - Exact divergence point: Control subtraction timing (lines 1201-1220 in notebook 2.0)
 
 ### Workflow Infrastructure Created
+
 Implemented baseline/regenerated coexistence workflow:
+
 - S3 CSVs → `*_results_pattern_aug_070624.csv` (baseline)
 - Local CSVs → `*_results_pattern_aug_070624_REGEN.csv` (regenerated)
 - Notebook 2.0: `USE_REGEN_SUFFIX` flag (default: True, preserves baseline)
@@ -196,9 +129,11 @@ Implemented baseline/regenerated coexistence workflow:
 ## 2025-10-25: Version Control & File Organization
 
 ### Excel File Provenance Traced
+
 Git history revealed curated Excel files originated from Google Sheets (manually curated, not direct pipeline outputs).
 
 ### Directory Structure Created
+
 ```
 data/processed/tables/
 ├── curated_2024-08-11/          # Original Google Sheets export (git tracked)
@@ -210,13 +145,16 @@ data/processed/tables/
 **Git strategy:** Track curated versions (manual work, irreplaceable), ignore generated versions (reproducible).
 
 ### Reproducibility Verified
+
 Compared all three versions:
+
 - `generated_from_s3_baseline` vs `curated_2024-08-11`: **PERFECT MATCH** (after removing duplicate `.1` columns)
 - Pipeline is fully deterministic and reproducible
 - All 173,806 rows match exactly across 6 datasets
 - Aug 2024 baseline represents clean computational output
 
 Differences in `curated_2025-10-25`:
+
 - Minor formatting artifacts (duplicate columns, XML encoding)
 - One manually added summary row (jump_orf)
 - Presentation-layer only, not scientific data
@@ -226,6 +164,7 @@ Differences in `curated_2025-10-25`:
 ## 2025-10-25: Pipeline Automation & Refactoring
 
 ### Snakemake + Typer CLI
+
 - Extracted CSV→Excel logic from notebook 2.2 into `haghighi_mito/data.py`
 - Created `DATASET_INFO` configuration dict in `haghighi_mito/config.py`
 - Built professional Typer CLI (`haghighi_mito/cli.py`):
@@ -236,14 +175,18 @@ Differences in `curated_2025-10-25`:
 - Added Justfile commands: `just run`, `just dry`, `just clean`, `just status`
 
 ### Parquet Integration & Parallelization
+
 - Converted CSV→Parquet for ~10x faster reads (0.8s vs 11.7s for LINCS)
 - Implemented parallel processing: 6 datasets in ~50 seconds (vs 5+ minutes sequential)
 - Created intermediate pipeline: CSVs → Parquet → Excel + DuckDB
 
 ### Data Organization Refactoring
+
 Migrated all downloads to Snakemake for reproducibility:
+
 - Eliminated `download_data.sh` script
 - Semantic directory structure:
+
   ```
   data/external/mito_project/
   ├── metadata/                     # Dataset metadata (20 files, 1.74 GB)
@@ -251,18 +194,24 @@ Migrated all downloads to Snakemake for reproducibility:
   ├── orth_features/                # Orthogonal features (8 files, 9.8 KB)
   └── results/virtual_screen_baseline/ # Pre-computed CSVs (6 files, ~90 MB)
   ```
+
 - All downloads managed via `just download-*` commands
 - Pipeline visualization: `just viz` → generates DAG diagrams in `docs/pipeline/`
 
 ### Notebook CLI Integration
+
 Converted notebook 2.0 to accept `--dataset` argument for automated execution:
+
 ```bash
 pixi run python notebooks/2.0-mh-virtual-screen.py --dataset lincs
 ```
+
 Enables Snakemake to run virtual screening in parallel across datasets.
 
 ### Full Integration Test - Success
+
 Ran "nuclear option" test (deleted all data, rebuilt from scratch):
+
 - Downloaded 178 files from S3
 - Processed 6 datasets → Parquet → Excel
 - Created DuckDB database (178,826 rows)
@@ -274,12 +223,15 @@ Ran "nuclear option" test (deleted all data, rebuilt from scratch):
 ## 2025-10-25: Deep Debugging - Baseline Code Lost
 
 ### Investigation Summary
+
 Systematic debugging to identify root cause of 99.99% divergence from baseline (TAORF dataset):
+
 - Confirmed input data identical: Count_Cells_avg matches 100% between baseline and regenerated
 - Vectorization correctness verified: `find_end_slope2_vectorized` produces identical results to row-by-row implementation
 - Neither `if 0` nor `if 1` branch matches baseline: Both produce ~77% within 10%, ~11% with opposite signs
 
 ### Root Cause Identified
+
 **100% of large slope differences have different `last_peak_ind` values** - peak-finding algorithm identifies different peaks in identical input data.
 
 **Critical finding:** Original `if 0` branch has a bug (assigns `slope` but line 1249 expects `peak_slope`) - this code path couldn't run successfully.
@@ -287,7 +239,9 @@ Systematic debugging to identify root cause of 99.99% divergence from baseline (
 **Conclusion:** Baseline was generated with code that **no longer exists** in this repository. Repository created September 2025, baseline uploaded July 2024. Original implementation lost.
 
 ### Decision Point
+
 Cannot reproduce baseline without access to July 2024 code. Three options:
+
 1. Accept baseline as-is (use S3 results, optimization work unvalidated)
 2. Commit to regenerated version (re-run all datasets, document divergence)
 3. Validate regenerated results independently (check biological plausibility with domain expert)
@@ -297,6 +251,7 @@ Cannot reproduce baseline without access to July 2024 code. Three options:
 ## Current Status
 
 ### What's Working ✅
+
 - **Baseline pipeline:** Fully validated, reproducible, safe for publication
   - S3 CSVs → Excel → DuckDB (178,826 rows)
   - Perfect match to Aug 2024 curated files
@@ -314,19 +269,23 @@ Cannot reproduce baseline without access to July 2024 code. Three options:
   - Parallel processing: 6 datasets in <1 minute
 
 ### Critical Issue ⚠️
+
 **Regenerated pipeline produces 99.99% different results from baseline**
 
 **Root cause:** Control subtraction timing difference (`if 1` vs `if 0` branch in notebook 2.0)
+
 - Cannot reproduce baseline without knowing which branch was used in July 2024
 - Vectorization is NOT the bug (functions produce identical results)
 - This is a fundamental methodological question: Should slope be calculated on control-subtracted or z-scored data?
 
 **Impact:**
+
 - Baseline pipeline validated → safe for publication
 - Regenerated pipeline functional but divergent → experimental only
 - Optimization work cannot be validated against baseline
 
 **Decision required:**
+
 - Accept baseline as-is (use S3 results, optimization unvalidated)
 - OR commit to regenerated version (document divergence from baseline)
 - OR reverse-engineer baseline methodology from results
@@ -336,18 +295,22 @@ Cannot reproduce baseline without access to July 2024 code. Three options:
 ## 2025-10-25: Minimal Virtual Screen Module - Baseline Validation
 
 ### New Infrastructure Created
+
 - Built `haghighi_mito/virtual_screen.py` - minimal from-scratch implementation
 - Added `virtual-screen` CLI command to Typer interface
 - Reads same per-site aggregated profiles as notebook 2.0 (confirmed from manuscript methods)
 - Calculates simplest metrics: Count_Cells_avg, last_peak_ind, slope
 
 ### Validation Results - Input Data Confirmed Identical
+
 Ran taorf dataset comparison with baseline:
+
 - **Count_Cells_avg:** 0.03% mean diff, 98% within 1% → **Input data is identical** ✓
 - **last_peak_ind:** 0 exact matches, mean diff 6 bins → Peak detection finds different peaks ✗
 - **slope:** 104% mean diff, 0 within 10% → Completely different slopes ✗
 
 ### Root Cause Narrowed
+
 - Input data confirmed identical (cell counts match perfectly)
 - Data aggregation level confirmed correct (per-site, not per-cell - matches manuscript methods)
 - Issue isolated to **peak detection algorithm** in `find_end_slope2_simple()`
@@ -355,6 +318,7 @@ Ran taorf dataset comparison with baseline:
 - This is not a numerical precision issue - it's algorithmic
 
 ### Next Steps
+
 Foundation established for iterative debugging of slope calculation. Can now test alternative peak detection methods and compare against baseline systematically.
 
 ---
@@ -362,6 +326,7 @@ Foundation established for iterative debugging of slope calculation. Can now tes
 ## 2025-10-25: Statistical Test Implementation & Partial Baseline Match
 
 ### Implementation Complete
+
 - Added statistical test calculations to `haghighi_mito/virtual_screen.py`
 - Implemented all 4 baseline t-values using vectorized functions:
   - `t_target_pattern`: Hotelling's T² on full radial distribution (bypasses peak detection)
@@ -371,7 +336,9 @@ Foundation established for iterative debugging of slope calculation. Can now tes
 - Fixed orthogonal feature loading (uses `fibroblast_derived.csv` for most datasets, not dataset-specific files)
 
 ### Key Finding: t_target_pattern Shows Partial Match
+
 Comparison with baseline (taorf, 327 perturbations):
+
 - **t_target_pattern:** 37% within 10%, 25% within 1% → **Partial validation achieved**
 - **t_orth:** 33% within 10%
 - **t_slope & d_slope:** <10% within 10% (confirming slope divergence)
@@ -383,6 +350,7 @@ Comparison with baseline (taorf, 327 perturbations):
 ## 2025-10-26: Edge Case Analysis Tool for Baseline Comparison
 
 ### Implementation Complete
+
 - Added edge case visualization to `haghighi_mito/virtual_screen.py`:
   - `load_perturbation_radial_data()`: Extracts per-site radial patterns for specific perturbations
   - `visualize_peak_detection()`: Plots control-subtracted patterns, smoothing, peak detection, slope calculation
@@ -391,13 +359,17 @@ Comparison with baseline (taorf, 327 perturbations):
 - Justfile command: `just analyze-edge-cases-for taorf`
 
 ### Key Finding: Even Best Matches Show Significant Divergence
+
 Sorted by absolute percentage difference (taorf, 327 perturbations):
+
 - **Best slope matches:** 38-68% difference from baseline → No subset matches well
 - **t_target_pattern sorting** (default): Bypasses peak detection, compares raw radial curve similarity
 - Confirms fundamental algorithmic difference, not numerical precision issue
 
 ### Decision: Use t_target_pattern for Edge Case Analysis
+
 Default sorting metric changed from `slope` to `t_target_pattern` because:
+
 - Tests full 12-bin radial distribution without peak detection
 - More direct measure of pattern similarity (37% within 10% vs <10% for slope)
 - Helps isolate whether similar patterns produce different slopes due to peak detection alone
@@ -407,20 +379,25 @@ Default sorting metric changed from `slope` to `t_target_pattern` because:
 ## 2025-10-26: t_target_pattern Analysis - Promising Alternative Metric
 
 ### Key Discovery: Strong Correlation Despite Systematic Scaling
+
 - **t_target_pattern (Hotelling's T² on full radial distribution) shows r=0.92 with baseline**
 - Systematic transformation: `new = 0.83 * baseline + 0.40` (R²=0.85)
 - 98.8% sign agreement (vs 75.2% for slope)
 - Bypasses peak detection entirely - tests all 12 radial bins directly
 
 ### Scatter Plot Analysis
+
 Created baseline vs regenerated plots for 4 metrics (taorf, n=327):
+
 - **t_target_pattern**: Excellent linear correlation, tight clustering around fit line
 - **slope**: Terrible - most points compressed to horizontal band, fundamentally different
 - **t_orth**: Good correlation (r=0.858), validates non-radial processing
 - **t_slope**: Moderate (r=0.779), inherits slope issues
 
 ### Root Cause: Aggregation Method Differences
+
 Per-plate analysis revealed **only 1.2% exact matches** (4/324 perturbations):
+
 - Baseline aggregated value matches ANY regenerated plate value in only 1.2% of cases
 - **Critical difference found in aggregation logic**:
   - Baseline (notebook 2.0:1383-1387): Selects plate with median `d_slope` (column 3), reports ALL stats from that plate
@@ -429,9 +406,11 @@ Per-plate analysis revealed **only 1.2% exact matches** (4/324 perturbations):
 - Cannot distinguish from per-plate calculation differences without direct plate-to-plate comparison
 
 ### Implication
+
 t_target_pattern is more robust than slope (no peak detection dependency) and shows strong baseline agreement. The 0.83x systematic scaling could come from either: (1) different plate selection methods, or (2) preprocessing differences (standardization/normalization in notebook 2.0 lines 1212, 1251). Requires testing with matched plate selection.
 
 ### Infrastructure Added
+
 - `analyze_t_target_pattern_distribution()` - correlation and transformation analysis
 - `compare_per_plate_results()` - per-plate exact match testing
 - `return_per_plate` flag in `calculate_statistical_tests()`
@@ -442,34 +421,43 @@ t_target_pattern is more robust than slope (no peak detection dependency) and sh
 ## 2025-10-26: Z-Score Normalization Discovery - Baseline Reproduction Achieved
 
 ### Root Cause Identified
+
 **Missing z-score normalization per plate** (notebook 2.0 lines 1251-1254):
+
 - Baseline workflow: calculate slopes → z-score per plate → aggregate via median
 - Regenerated workflow was missing step 2 entirely
 - This explained 100% slope mismatch and 6-bin last_peak_ind offset
 
 ### Fix Implemented
+
 Added z-score normalization to `calculate_simple_metrics()` in `virtual_screen.py`:
+
 ```python
 per_site_df = per_site_df.groupby("batch_plate").apply(z_score_normalize)
 ```
 
 ### Validation Results (taorf, n=327)
+
 **Before fix:**
+
 - slope: 0/327 within 10%, mean diff 104%
 - last_peak_ind: 0 exact matches, mean diff 6.0 bins
 
 **After fix:**
+
 - slope: 63/327 within 10% (19%), correlation r=0.849
 - last_peak_ind: mean diff 0.23 bins (26x better)
 - 71/327 perturbations match well in both metrics (<25%)
 
 ### Code Refactoring
+
 - Separated diagnostic functions from core pipeline
 - Created `haghighi_mito/diagnostics.py` (539 lines)
 - Reduced `virtual_screen.py` from 990 to 466 lines (53% smaller)
 - Updated module docstrings, removed one-off diagnostic script
 
 ### Conclusion
+
 Baseline is now reproducible at 20-70% level (vs 0% before). Remaining differences likely due to minor implementation details (aggregation methods, outlier handling). Core methodology now matches baseline.
 
 ---
@@ -477,6 +465,7 @@ Baseline is now reproducible at 20-70% level (vs 0% before). Remaining differenc
 ## 2025-10-26: CLI Command Rename for Clarity
 
 ### Refactoring
+
 - Renamed `analyze-t-target-pattern` command to `compare-baseline-metrics`
 - Updated docstring to clarify it compares all 4 statistical metrics, not just t_target_pattern:
   - t_target_pattern (Hotelling's T² on radial distribution)
@@ -486,6 +475,7 @@ Baseline is now reproducible at 20-70% level (vs 0% before). Remaining differenc
 - Previous name was misleading - implied single-metric analysis when it actually performs comprehensive baseline comparison
 
 ### Command Usage
+
 ```bash
 pixi run haghighi-mito compare-baseline-metrics --dataset taorf
 ```
@@ -495,26 +485,32 @@ pixi run haghighi-mito compare-baseline-metrics --dataset taorf
 ## 2025-10-26: Slope Calculation Method Testing - Endpoint Not Root Cause
 
 ### Investigation
+
 Tested two slope calculation methods found in codebase to determine which baseline used:
+
 - **Method A** (current): Average of last two points: `endpoint = (smoothed[-1] + smoothed[-2]) / 2`
 - **Method B** (alternative): Last point only: `endpoint = smoothed[-1]`
 
 Implemented toggle via `use_last_two_average` parameter in `find_end_slope2_simple()`, threaded through pipeline.
 
 ### Results (taorf, n=327)
+
 - **Method A**: 63/327 (19.3%) within 10%, mean % diff 184.75%
 - **Method B**: 56/327 (17.1%) within 10%, mean % diff 156.70%
 - **Difference**: Only 2% improvement with Method A
 
 ### Key Finding
+
 **Slope endpoint calculation is NOT the root cause of 81% mismatch with baseline.**
 
 The remaining divergence must come from:
+
 1. Peak detection differences (both methods show same 0.23 bin offset in `last_peak_ind`)
 2. Other algorithmic differences not yet identified
 3. Baseline generated with fundamentally different code (July 2024, repository created Sept 2025)
 
 ### Decision
+
 Implementation stashed - no value in maintaining alternative method when difference is negligible. Current Method A (average of last two) performs slightly better and remains default.
 
 ---
@@ -522,14 +518,18 @@ Implementation stashed - no value in maintaining alternative method when differe
 ## 2025-10-26: Diagnostic Code Cleanup - Removed Completed Investigations
 
 ### Code Removal
+
 Removed diagnostic functions that served their purpose:
+
 - `compare_per_plate_results()` - found 1.2% per-plate match rate, investigation complete
 - `return_per_plate` parameter from `calculate_statistical_tests()`
 - `compare-per-plate` CLI command
 - `analyze-edge-cases-for` from Justfile (dead command)
 
 ### Function Simplification
+
 Streamlined `analyze_t_target_pattern_distribution()`:
+
 - **Renamed**: `plot_baseline_comparison()` - name now matches what it does
 - **Reduced**: 330 lines → 120 lines (64% smaller)
 - **Removed**: All verbose statistical analysis (8 sections)
@@ -537,10 +537,12 @@ Streamlined `analyze_t_target_pattern_distribution()`:
 - **CLI command**: `compare-baseline-metrics` → `plot-baseline-comparison`
 
 ### Module Size Reduction
+
 - `diagnostics.py`: 539 lines → 250 lines (54% smaller)
 - Justfile updated with `plot-baseline-comparison-for DATASET`
 
 ### Greppable Output Format
+
 ```
 t_target_pattern: r=0.923, within_10%=120/327 (36.7%)
 slope: r=0.849, within_10%=63/327 (19.3%)
@@ -551,24 +553,28 @@ slope: r=0.849, within_10%=63/327 (19.3%)
 ## 2025-10-26: Performance Optimization Experiments - Mixed Results
 
 ### Vectorized Slope Calculation - Success
+
 - Implemented vectorized slope calculation in `calculate_simple_metrics()` (lines 182-202)
 - Replaced `for idx, row in per_site_df.iterrows()` with NumPy matrix operations
 - Uses existing `find_end_slope2_vectorized()` from `vectorized_slope.py`
 - Performance: 167ms for 16,301 observations (~200x faster than iterrows)
 
 ### Parallel Statistical Tests - Limited Success
+
 - Attempted joblib parallelization for statistical test calculations
 - Created `_process_single_perturbation()` worker function
 - Used `Parallel(n_jobs=-1)` to distribute 324 perturbations across 192 cores
 - Result: Only 1.3x speedup (4.5s sequential → 3.5s parallel)
 
 ### Root Cause: Task Overhead Dominates
+
 - Each perturbation is a tiny task (~14ms of actual computation)
 - 324 independent tasks means high serialization/deserialization overhead
 - Joblib loky backend uses memory mapping for shared data, but per-task overhead still significant
 - Task overhead > computation time for small datasets
 
 ### Decision
+
 - Kept vectorized slopes (clear win, no complexity cost)
 - Reverted parallelization code to sequential loop (minimal benefit, added complexity)
 - Future optimization would require batching (process chunks of perturbations per worker)
@@ -579,6 +585,7 @@ slope: r=0.849, within_10%=63/327 (19.3%)
 ## 2025-10-26: Pipeline Documentation & Naming Standardization
 
 ### Comprehensive Documentation Added
+
 - Rewrote Snakefile docstring (120 lines) documenting all three methods:
   - Method 0: Baseline (validated S3 CSVs, production)
   - Method 1: Notebook (complete pipeline, 1433 lines)
@@ -587,6 +594,7 @@ slope: r=0.849, within_10%=63/327 (19.3%)
 - Clear status indicators (✅ Complete, ⚠️ Incomplete)
 
 ### Naming Collision Fixed
+
 - Removed generic "regenerated" term (was Method 1 specific, sounded generic)
 - Renamed all rules/variables to method-specific naming:
   - `all_regenerated` → `all_notebook` (Method 1) / `all_module` (Method 2, TODO)
@@ -596,12 +604,14 @@ slope: r=0.849, within_10%=63/327 (19.3%)
 - Added `clean-notebook` and `clean-module` commands
 
 ### TODO Section Standardized
+
 - Rewrote Method 2 completion rules to mirror Method 1 pattern
 - Consistent naming: `process_module_csv`, `create_module_database`, `all_module`
 - Added new variables: `MODULE_DIR`, `INTERIM_MODULE`, `TABLES_MODULE`
 - Updated output paths: `screen_results_module.duckdb`
 
 ### Validation
+
 - Tested Method 2 commands: `just run-module-for taorf` + `just plot-comparison-for taorf`
 - Confirmed pipeline works (5s execution, generates CSV + comparison + plots)
 - All syntax validated, commands working as documented
@@ -611,24 +621,30 @@ slope: r=0.849, within_10%=63/327 (19.3%)
 ## 2025-10-26: Naming Refactoring - Eliminated Semantic Inconsistencies
 
 ### Problem Identified
+
 Inconsistent naming across the three pipeline methods:
+
 - Method 1 used "regenerated" in some places, "local" in others
 - Method 2 used "module" in some places, "simple" in others
 - Created confusion about what "regenerated" meant (both methods regenerate from raw data)
 
 ### Changes Implemented
+
 **Filesystem renames (no backward compatibility):**
+
 - `virtual_screen_regenerated/` → `virtual_screen_notebook/`
 - `virtual_screen_simple/` → `virtual_screen_module/`
 - `parquet_regenerated/` → `parquet_notebook/`
 - `generated_from_local/` → `generated_from_notebook/`
 
 **Code updates:**
+
 - Snakefile: 17 locations (variables, documentation, rules, onstart display)
 - Justfile: 6 locations (commands, clean targets)
 - Command rename: `run-notebook-csv-for` → `run-notebook-for` (cleaner parallel with `run-module-for`)
 
 ### New Consistent Pattern
+
 ```
 Method 0: baseline    baseline    baseline    s3_baseline
 Method 1: notebook    notebook    notebook    notebook
@@ -644,22 +660,28 @@ Each method now uses ONE name consistently across all directory paths, variables
 ## 2025-10-26: Method 2 Self-Contained - Metadata Preprocessing
 
 ### Problem Identified
+
 Module (`virtual_screen.py`) failed with missing file error:
+
 - Expected preprocessed metadata: `workspace/metadata/preprocessed/annot_{dataset}.csv`
 - Files exist on S3 from July 2024, but not part of Method 2 download dependencies
 - Method 1 (notebook) has built-in preprocessing that creates these files as side effect
 
 ### Solution: In-Memory Preprocessing
+
 Added `preprocess_metadata()` function to `virtual_screen.py` (lines 84-176):
+
 - Loads raw metadata for each dataset (LINCS_meta.csv, TA-ORF/replicate_level_cp_normalized.csv.gz, etc.)
 - Adds standardized columns: Batch, batch_plate, ctrl_well, Metadata_pert_type
 - Filters to necessary columns (critical for taorf - prevents merge conflicts)
 - Preprocesses in-memory, nothing written to disk
 
 ### Key Design Decision
+
 **Rejected downloading preprocessed files from S3** - Would create hidden dependency and violate "regenerated from scratch" philosophy. Method 2 now truly self-contained.
 
 ### Validation
+
 - Tested taorf: 324 perturbations processed successfully
 - Module no longer depends on notebook preprocessing or S3 preprocessed files
 - Snakefile rule renamed: `run_virtual_screen_analysis` → `run_virtual_screen_module`
@@ -669,18 +691,21 @@ Added `preprocess_metadata()` function to `virtual_screen.py` (lines 84-176):
 ## 2025-10-26: Dataset Filtering & Diagnostic Naming Cleanup
 
 ### Dataset Filtering Feature
+
 - Added `--datasets` parameter to `create-database` CLI command
 - Allows selective database creation (e.g., `--datasets lincs,taorf` instead of all 6 datasets)
 - Updated Snakefile rules to pass dataset list from `DATASETS` variable
 - Supports both lowercase (lincs, taorf) and uppercase (LINCS, TA_ORF) naming
 
 ### Diagnostic Output Renaming
+
 - Renamed legacy directory: `t_target_pattern_analysis/` → `diagnostics/`
 - Renamed plot files: `baseline_vs_regenerated.png` → `comparison_metrics.png`
 - Old naming was a relic from single-metric analysis; new naming reflects multi-metric comparison (t_target_pattern, slope, t_orth, t_slope)
 - Updated across: diagnostics.py, Snakefile, Justfile
 
 ### Validation Tests
+
 - Baseline database creation: 9,717 rows (LINCS + TA_ORF) ✓
 - Diagnostic plots: Valid PNG files with correct naming ✓
 - Module pipeline end-to-end: taorf dataset processed successfully ✓
@@ -691,17 +716,22 @@ Added `preprocess_metadata()` function to `virtual_screen.py` (lines 84-176):
 ## 2025-10-26: Method 2 CSV Output Fixed - Matches Baseline Format
 
 ### Problem Identified
+
 Module CSV had only 8 columns (vs 17 in baseline/notebook):
+
 - Missing: 3 metadata columns (Metadata_gene_name, Metadata_pert_name, Metadata_moa)
 - Missing: 6 p-value columns (p_target_pattern, p_orth, p_slope, p_slope_std, p_pattern_std, p_orth_std)
 - Wrong column order
 
 ### Root Cause
+
 `calculate_simple_metrics()` started with aggregated perturbation data only, not full metadata table.
 `calculate_statistical_tests()` only returned t-values, not p-values.
 
 ### Solution Implemented
+
 **virtual_screen.py changes:**
+
 - Renamed `calculate_simple_metrics()` → `calculate_metrics()` (clearer purpose)
 - Modified to accept `annot` parameter and start with `annot[meta_cols].drop_duplicates()`
 - Added all 6 p-value extractions from `batch_results["pvals"]` in `calculate_statistical_tests()`
@@ -709,7 +739,9 @@ Module CSV had only 8 columns (vs 17 in baseline/notebook):
 - Added column reordering in `run_virtual_screen()` to match baseline exactly
 
 ### Validation Results
+
 **taorf dataset (327 perturbations):**
+
 - ✅ Column count: 8 → 17 (matches baseline/notebook)
 - ✅ Column order: Exact match to baseline
 - ✅ Row count: 328 (1 header + 327 data rows, matches baseline)
@@ -717,6 +749,7 @@ Module CSV had only 8 columns (vs 17 in baseline/notebook):
 - ✅ Format verified across different datasets (taorf has 4 meta cols, lincs has 10)
 
 **Column order (correct):**
+
 ```
 Metadata_gene_name, Metadata_pert_name, Metadata_broad_sample, Metadata_moa,
 Count_Cells_avg,
@@ -726,6 +759,7 @@ last_peak_ind, slope
 ```
 
 ### Impact
+
 Method 2 (module) CSV output now has identical format to Method 0 (baseline) and Method 1 (notebook). Ready for next step: Add Excel/Parquet/DuckDB processing to complete Method 2 pipeline.
 
 ---
@@ -733,7 +767,9 @@ Method 2 (module) CSV output now has identical format to Method 0 (baseline) and
 ## 2025-10-26: Method 2 Pipeline Complete - Full CSV → Excel → DuckDB
 
 ### Changes Implemented
+
 **Snakefile:**
+
 - Uncommented `process_module_csv` rule (lines 463-477)
 - Uncommented `create_module_database` rule (lines 479-497)
 - Uncommented `all_module` target rule (lines 501-508)
@@ -742,11 +778,14 @@ Method 2 (module) CSV output now has identical format to Method 0 (baseline) and
 - Updated Method 1 note: "superseded by Method 2" (can be deprecated)
 
 **Justfile:**
+
 - Uncommented `run-module` command
 - Updated header: "Complete Pipeline" (was "Incomplete - Stops at CSV")
 
 ### Pipeline Validation
+
 **End-to-end test (lincs + taorf):**
+
 - ✅ CSV inputs: `virtual_screen_module/*.csv` (both datasets)
 - ✅ Excel outputs: `tables/generated_from_module/*.xlsx` (1.5 MB + 44 KB)
 - ✅ Parquet outputs: `parquet_module/*.parquet` (657 KB + 27 KB)
@@ -755,6 +794,7 @@ Method 2 (module) CSV output now has identical format to Method 0 (baseline) and
   - TA_ORF: 327 rows
 
 ### Commands
+
 ```bash
 # Full pipeline (all datasets)
 just run-module
@@ -767,6 +807,7 @@ just clean-module
 ```
 
 ### Method 2 Status: Production Ready
+
 - ✅ CSV generation with all 17 columns (matching baseline/notebook)
 - ✅ Excel generation with 3-sheet filtering (All/Target/Both)
 - ✅ Parquet intermediate files
@@ -781,10 +822,12 @@ just clean-module
 ## 2025-10-26: Separated Baseline Comparison from Virtual Screen
 
 ### Problem
+
 Baseline comparison was tied to `virtual-screen` command via `--compare-baseline` flag.
 This meant re-running comparison (1 sec) required regenerating entire screen (~5-10 min).
 
 ### Solution Implemented
+
 Split into 3 independent commands:
 
 1. **`virtual-screen`** - Generate CSV from per-site profiles (~5-10 min)
@@ -792,6 +835,7 @@ Split into 3 independent commands:
 3. **`plot-baseline-comparison`** - Generate plots from comparison CSV (~1 sec)
 
 **Changes:**
+
 - `virtual_screen.py`: Removed `compare_baseline` parameter from `run_virtual_screen()`
 - `virtual_screen.py`: Created new `compare_with_baseline_csv()` function
 - `cli.py`: Removed `--compare-baseline` flag from `virtual-screen` command
@@ -802,11 +846,13 @@ Split into 3 independent commands:
 - `Justfile`: Added `compare-baseline-for DATASET` command
 
 **Benefits:**
+
 - Can re-run comparison without regenerating CSV (1000x faster!)
 - Cleaner separation of concerns
 - More flexible workflow
 
 **New workflow:**
+
 ```bash
 # Generate CSV once (slow)
 just run-module-for taorf
@@ -818,4 +864,93 @@ just compare-baseline-for taorf
 just plot-comparison-for taorf
 ```
 
+## 2025-10-26: Justfile Command Refactoring
+
+### What was done
+
+- Standardized all command naming to use consistent `generate-` prefix
+- Renamed Snakefile rules for clarity: `run_all_virtual_screen_modules` → `all_module_csvs`, `run_all_virtual_screen_notebooks` → `all_notebook_csvs`
+- Removed redundant commands: download commands (Snakemake auto-downloads), database-only commands (identical to `-all` targets), clean commands
+
+### Key decisions
+
+- **Naming pattern**: `generate-{method}-all` (full pipeline), `generate-{method}-csvs` (all datasets CSVs), `generate-{method}-csv-for DATASET` (single CSV)
+- Singular/plural distinction: `-csv-for` (one dataset) vs `-csvs` (all datasets)
+- Single-command workflows: `just generate-module-all` auto-downloads and processes in one step
+
+### Final command structure
+
+- Method 0: `generate-baseline-all`
+- Method 1: `generate-notebook-all`, `generate-notebook-csvs`, `generate-notebook-csv-for DATASET`
+- Method 2: `generate-module-all`, `generate-module-csvs`, `generate-module-csv-for DATASET`
+- Diagnostics: `compare-baseline-for`, `plot-comparison-for`, `plot-all-comparisons`
+
 ---
+
+## 2025-10-26: Diagnostic Workflow Simplification & Module Cleanup
+
+### What was done
+
+- **Moved function**: `compare_with_baseline_csv()` from `virtual_screen.py` → `diagnostics.py` (proper separation of concerns)
+- **Unified workflow**: Combined two-step diagnostic (compare → plot) into single command
+- **Removed CLI command**: `plot-baseline-comparison` (now auto-called internally)
+- **Updated Snakefile**: Merged two rules into one `diagnose_module` rule with both outputs (CSV + PNG)
+- **Fixed naming**: `diagnose_all_modules` → `all_module_diagnostics` (consistent with `all_module_csvs`)
+
+### Key decisions
+
+- **One command, both outputs**: `just diagnose-for taorf` now generates comparison CSV + diagnostic PNG automatically
+- **Module boundaries**: `virtual_screen.py` = pipeline (raw data → CSV), `diagnostics.py` = analysis (CSV → comparison + plots)
+- **No dead imports**: Removed unused imports from `diagnostics.py` (calculate_metrics, calculate_statistical_tests, load_dataset_data)
+
+### Final diagnostic commands
+
+- Single dataset: `just diagnose-for DATASET` → CSV + PNG (~1 sec)
+- All datasets: `just diagnose-all` → all diagnostics in parallel
+- Removed: `compare-baseline-for`, `plot-comparison-for`, `plot-all-comparisons` (replaced by unified commands)
+
+### Code quality
+
+- 7 files changed: 99 additions, 140 deletions (net -41 lines)
+- Tighter docstrings, cleaner architecture, better UX
+
+## 2025-10-27: Baseline Reproduction Hypothesis Testing - Module Validated
+
+### What was done
+
+Tested three hypotheses about why module shows 10-15% disagreement with July 2024 baseline:
+
+- **Hypothesis 2**: Filter plates missing controls (notebook lines 1230-1233)
+- **Hypothesis 3**: Two-stage aggregation - plate medians then cross-plate median (notebook lines 1398, 1419-1420)
+- **Hypothesis 4**: Median plate selection using percentile without abs() (notebook lines 1385-1392)
+
+### Key findings
+
+**Every attempt to match current notebook made baseline agreement WORSE, not better:**
+
+- Two-stage aggregation: r=0.849 → 0.830 (slope), r=0.862 → 0.862 (t_target_pattern)
+- Percentile selection: r=0.90 → 0.849 (slope), r=0.93 → 0.911 (t_target_pattern)
+- Filtering plates: No effect on taorf (all plates already have controls), but kept for defensive programming
+
+**Module was ALREADY correctly reproducing July 2024 baseline** (r=0.85-0.90 across metrics). The notebook has drifted from baseline between July 2024 and September 2025.
+
+### Decision
+
+**Keep core implementation unchanged.** Module uses:
+
+- Single-stage aggregation (direct perturbation median, not plate-then-perturbation)
+- abs() sorting for median plate selection
+- Per-plate z-score normalization of slopes before aggregation
+
+Added defensive improvements:
+
+- Plate filtering to prevent mixing control-corrected with uncorrected data
+- Documentation comments explaining implementation choices with empirical evidence
+- Pandas compatibility fix (`include_groups=True`) to silence FutureWarning
+- Testing script (`scripts/check-baseline-quick.sh`) for rapid baseline validation (~7 sec loop)
+
+The current notebook (2.0-mh-virtual-screen.py) uses different methods and should NOT be treated as ground truth for validation.
+
+### Unresolved issues
+
+**Remaining 10-15% disagreement with baseline is unexplained.** Possible causes include pre-standardization with `normalize_funcs.standardize_per_catX` (lines 1216-1218, 1254-1256 in notebook) or other preprocessing differences. Root cause remains to be investigated.
