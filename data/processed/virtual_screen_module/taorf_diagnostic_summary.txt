@@ -11,3 +11,11 @@ t_slope                   0.840        10.0%           0.923  ⚠⚠
 d_slope                   0.835        15.0%           0.257  ⚠⚠
 ================================================================================
 ⚠ = <50% within 10%, ⚠⚠ = <20% within 10%
+
+PROVENANCE METADATA (regenerated data only)
+--------------------------------------------------------------------------------
+Sites per perturbation:  median=45, range=34-1746
+  ⚠ 0 perturbations (0.0%) have <10 sites
+Plates per perturbation: median=5, range=4-5
+  ⚠ 0 perturbations (0.0%) have only 1 plate
+Slope variability:       median=0.827, range=0.426-3.169

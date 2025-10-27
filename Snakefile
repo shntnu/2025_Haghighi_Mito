@@ -338,7 +338,7 @@ rule diagnose_module:
         baseline_csv=f"{BASELINE_DIR}/{{dataset}}_results_pattern_aug_070624.csv"
     output:
         comparison_csv="data/processed/virtual_screen_module/{dataset}_baseline_comparison.csv",
-        plot="data/processed/figures/diagnostics/{dataset}_comparison_metrics.png"
+        plot="data/processed/virtual_screen_module/{dataset}_comparison_metrics.png"
     shell:
         """
         pixi run haghighi-mito compare-baseline --dataset {wildcards.dataset}
@@ -393,7 +393,7 @@ rule all_module_csvs:
 rule all_module_diagnose:
     """Target: Run diagnostics (comparison CSV + plots) for all datasets."""
     input:
-        expand("data/processed/figures/diagnostics/{dataset}_comparison_metrics.png",
+        expand("data/processed/virtual_screen_module/{dataset}_comparison_metrics.png",
                dataset=DATASETS)
 
 rule all_module:

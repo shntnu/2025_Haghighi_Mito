@@ -954,3 +954,35 @@ The current notebook (2.0-mh-virtual-screen.py) uses different methods and shoul
 ### Unresolved issues
 
 **Remaining 10-15% disagreement with baseline is unexplained.** Possible causes include pre-standardization with `normalize_funcs.standardize_per_catX` (lines 1216-1218, 1254-1256 in notebook) or other preprocessing differences. Root cause remains to be investigated.
+
+---
+
+## 2025-10-27: Provenance Tracking & Enhanced Diagnostics
+
+### What was done
+
+- **Added 6 provenance columns** to `virtual_screen.py` output for reproducibility debugging:
+  - `n_sites`, `n_plates`, `n_wells`: Sample size metadata
+  - `Count_Cells_std`, `slope_std`: Variability metrics
+  - `median_plate_id`: Which plate was selected for aggregation
+- **Enhanced `diagnostics.py`** with provenance analysis:
+  - Added `_compute_provenance_summary()` for metadata statistics
+  - Created `export_examples()` to export best + worst slope matches with provenance
+  - Added 6 decimal precision to all numeric outputs for readability
+  - Fixed sorting bug (was using signed values instead of absolute for "best" matches)
+- **Fixed path inconsistencies**: Updated Snakefile/Justfile to use consolidated `virtual_screen_module/` directory for all diagnostic outputs
+
+### Key findings
+
+**Provenance analysis confirms reproducibility issue is algorithmic, not data-related:**
+
+- Both best matches (0.3%-1.4% error) and worst matches (900%-14,000% error) have identical sample sizes (45 sites, 5 plates)
+- No correlation between sample size and reproducibility
+- All examples have `n_wells=1` (single well position per perturbation across plates)
+- Conclusion: 10-15% baseline disagreement stems from calculation/aggregation differences, NOT missing data or low sample sizes
+
+### Notes
+
+- Database creation/validation still works (provenance columns silently dropped as expected)
+- New outputs: `*_slope_examples.csv` with top 10 best/worst matches per dataset
+- Diagnostic summaries now include provenance section with warnings for low sample sizes
