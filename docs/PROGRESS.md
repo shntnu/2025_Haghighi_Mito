@@ -23,6 +23,40 @@
 
 ---
 
+## 2025-10-27: Baseline Reproduction Hypothesis Testing - Module Validated
+
+### What was done
+Tested three hypotheses about why module shows 10-15% disagreement with July 2024 baseline:
+- **Hypothesis 2**: Filter plates missing controls (notebook lines 1230-1233)
+- **Hypothesis 3**: Two-stage aggregation - plate medians then cross-plate median (notebook lines 1398, 1419-1420)
+- **Hypothesis 4**: Median plate selection using percentile without abs() (notebook lines 1385-1392)
+
+### Key findings
+**Every attempt to match current notebook made baseline agreement WORSE, not better:**
+- Two-stage aggregation: r=0.849 → 0.830 (slope), r=0.862 → 0.862 (t_target_pattern)
+- Percentile selection: r=0.90 → 0.849 (slope), r=0.93 → 0.911 (t_target_pattern)
+- Filtering plates: No effect on taorf (all plates already have controls), but kept for defensive programming
+
+**Module was ALREADY correctly reproducing July 2024 baseline** (r=0.85-0.90 across metrics). The notebook has drifted from baseline between July 2024 and September 2025.
+
+### Decision
+**Keep core implementation unchanged.** Module uses:
+- Single-stage aggregation (direct perturbation median, not plate-then-perturbation)
+- abs() sorting for median plate selection
+- Per-plate z-score normalization of slopes before aggregation
+
+Added defensive improvements:
+- Plate filtering to prevent mixing control-corrected with uncorrected data
+- Documentation comments explaining implementation choices with empirical evidence
+- Pandas compatibility fix (`include_groups=True`) to silence FutureWarning
+
+The current notebook (2.0-mh-virtual-screen.py) uses different methods and should NOT be treated as ground truth for validation.
+
+### Unresolved issues
+**Remaining 10-15% disagreement with baseline is unexplained.** Possible causes include pre-standardization with `normalize_funcs.standardize_per_catX` (lines 1216-1218, 1254-1256 in notebook) or other preprocessing differences. Root cause remains to be investigated.
+
+---
+
 ## Maintenance Guidelines
 
 **When to add entries:**
