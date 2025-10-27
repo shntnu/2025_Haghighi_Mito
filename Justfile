@@ -15,12 +15,12 @@ default:
 # METHOD 0: BASELINE PIPELINE (Recommended for Production)
 # ============================================================================
 
-# Generate complete baseline pipeline (downloads from S3 if needed, then processes → Excel + DuckDB, ~5 min)
+# Generate complete baseline pipeline (downloads from S3 if needed, then CSV → Excel + DuckDB, ~5 min)
 generate-baseline-all:
     pixi run snakemake all_baseline --cores 4 --printshellcmds
 
 # ============================================================================
-# METHOD 1: REGENERATED - Notebook (Complete Pipeline)
+# METHOD 1: REGENERATED - Notebook (Complete but Messy)
 # ============================================================================
 
 # [Method 1] Generate complete notebook pipeline for all datasets (downloads raw data if needed, then CSV → Excel → DuckDB, ~10 min/dataset)
@@ -57,7 +57,7 @@ generate-module-csvs:
 
 # [Method 2] Run diagnostics for all datasets (comparison CSV + plots)
 diagnose-all:
-    pixi run snakemake all_module_diagnostics --cores 4 --printshellcmds
+    pixi run snakemake all_module_diagnose --cores 4 --printshellcmds
 
 # [Method 2] Check baseline agreement - regenerate CSV + diagnostics, show correlations (~7 sec)
 check-baseline-quick DATASET="taorf":
@@ -68,7 +68,7 @@ check-baseline-quick DATASET="taorf":
 # ============================================================================
 
 # Generate DAG visualizations (simplified rules + full jobs for both pipelines)
-viz:
+generate-dag:
     ./scripts/generate-dag.sh
 
 # Preview what will run (dry run)

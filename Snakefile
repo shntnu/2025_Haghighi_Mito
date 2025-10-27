@@ -74,21 +74,6 @@ TABLES_MODULE = f"{PROCESSED_DATA_DIR}/tables/generated_from_module"
 
 
 # ============================================================================
-# Default Targets
-# ============================================================================
-
-# Default rule - runs baseline pipeline (Method 0)
-rule all_baseline:
-    input:
-        "data/processed/screen_results_baseline.duckdb"
-
-# Alias for default target
-rule all:
-    input:
-        rules.all_baseline.input
-
-
-# ============================================================================
 # METHOD 0: BASELINE PIPELINE - Download + Process Pre-Computed Results
 # ============================================================================
 # This pipeline uses validated CSVs from July 2024 (uploaded to S3).
@@ -154,6 +139,21 @@ rule create_baseline_database:
             --datasets {params.datasets} \
             --overwrite
         """
+
+## Target Rules ##
+
+# NOTE: No default 'rule all' is defined. Users should run explicit targets via Justfile:
+#   - just generate-baseline-all  (Method 0 - validated results)
+#   - just generate-notebook-all  (Method 1 - legacy)
+#   - just generate-module-all    (Method 2 - clean regeneration)
+#
+# FUTURE: Once Method 2 is finalized/validated, consider adding 'rule all' that runs
+# both baseline (validated) + module (reproducible) as the recommended default workflow.
+
+rule all_baseline:
+    """Target: Complete baseline pipeline (CSV → Excel → DuckDB)."""
+    input:
+        "data/processed/screen_results_baseline.duckdb"
 
 
 # ============================================================================
@@ -302,16 +302,16 @@ rule create_notebook_database:
 
 ## Target Rules ##
 
-rule all_notebook:
-    """Target: Complete Method 1 pipeline (notebook → CSV → Excel → DuckDB)."""
-    input:
-        "data/processed/screen_results_notebook.duckdb"
-
 rule all_notebook_csvs:
     """Target: Generate results CSVs for all datasets (notebook analysis only, no Excel/DuckDB)."""
     input:
         expand(f"{NOTEBOOK_DIR}/{{dataset}}_results_pattern_aug_070624.csv",
                dataset=DATASETS)
+
+rule all_notebook:
+    """Target: Complete Method 1 pipeline (notebook → CSV → Excel → DuckDB)."""
+    input:
+        "data/processed/screen_results_notebook.duckdb"
 
 
 # ============================================================================
@@ -364,22 +364,7 @@ rule diagnose_module:
         pixi run haghighi-mito compare-baseline --dataset {wildcards.dataset}
         """
 
-
-## Target Rules ##
-
-rule all_module_csvs:
-    """Target: Generate results CSVs for all datasets (virtual screen analysis only, no Excel/DuckDB)."""
-    input:
-        expand("data/processed/virtual_screen_module/{dataset}_results_pattern_aug_070624.csv",
-               dataset=DATASETS)
-
-rule all_module_diagnostics:
-    """Target: Run diagnostics (comparison CSV + plots) for all datasets."""
-    input:
-        expand("data/processed/figures/diagnostics/{dataset}_comparison_metrics.png",
-               dataset=DATASETS)
-
-## Processing Rules for Method 2 ##
+## Processing Rules ##
 
 rule process_module_csv:
     """Process module-generated CSV to Excel + Parquet (Method 2)."""
@@ -418,6 +403,18 @@ rule create_module_database:
         """
 
 ## Target Rules ##
+
+rule all_module_csvs:
+    """Target: Generate results CSVs for all datasets (virtual screen analysis only, no Excel/DuckDB)."""
+    input:
+        expand("data/processed/virtual_screen_module/{dataset}_results_pattern_aug_070624.csv",
+               dataset=DATASETS)
+
+rule all_module_diagnose:
+    """Target: Run diagnostics (comparison CSV + plots) for all datasets."""
+    input:
+        expand("data/processed/figures/diagnostics/{dataset}_comparison_metrics.png",
+               dataset=DATASETS)
 
 rule all_module:
     """Target: Complete Method 2 pipeline (CSV → Excel → DuckDB).
