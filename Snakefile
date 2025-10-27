@@ -72,7 +72,7 @@ INTERIM_NOTEBOOK = f"{INTERIM_DATA_DIR}/parquet_notebook"
 INTERIM_MODULE = f"{INTERIM_DATA_DIR}/parquet_module"
 
 # Processed tables directories
-TABLES_BASELINE = f"{PROCESSED_DATA_DIR}/tables/generated_from_s3_baseline"
+TABLES_BASELINE = f"{PROCESSED_DATA_DIR}/tables/generated_from_baseline"
 TABLES_NOTEBOOK = f"{PROCESSED_DATA_DIR}/tables/generated_from_notebook"
 TABLES_MODULE = f"{PROCESSED_DATA_DIR}/tables/generated_from_module"
 

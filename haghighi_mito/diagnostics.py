@@ -63,56 +63,6 @@ def compare_with_baseline(results, dataset: str):
             comparison[f"{col}_diff"] = comparison[f"{col}_new"] - comparison[f"{col}_baseline"]
             comparison[f"{col}_pct_diff"] = 100 * comparison[f"{col}_diff"] / comparison[f"{col}_baseline"].abs()
 
-    # Summary statistics
-    logger.info("\n" + "=" * 70)
-    logger.info("COMPARISON WITH BASELINE")
-    logger.info("=" * 70)
-
-    logger.info("\nCount_Cells_avg:")
-    logger.info(f"  Mean absolute diff: {comparison['Count_Cells_diff'].abs().mean():.4f}")
-    logger.info(f"  Mean % diff: {comparison['Count_Cells_pct_diff'].abs().mean():.2f}%")
-    logger.info(f"  Max % diff: {comparison['Count_Cells_pct_diff'].abs().max():.2f}%")
-    logger.info(f"  Within 1%: {(comparison['Count_Cells_pct_diff'].abs() < 1).sum()}/{len(comparison)}")
-
-    logger.info("\nlast_peak_ind:")
-    logger.info(f"  Exact matches: {(comparison['last_peak_ind_diff'] == 0).sum()}/{len(comparison)}")
-    logger.info(f"  Mean absolute diff: {comparison['last_peak_ind_diff'].abs().mean():.4f}")
-    logger.info(f"  Max absolute diff: {comparison['last_peak_ind_diff'].abs().max():.0f}")
-
-    logger.info("\nslope:")
-    logger.info(f"  Mean absolute diff: {comparison['slope_diff'].abs().mean():.6f}")
-    logger.info(f"  Mean % diff: {comparison['slope_pct_diff'].abs().mean():.2f}%")
-    logger.info(f"  Max % diff: {comparison['slope_pct_diff'].abs().max():.2f}%")
-    logger.info(f"  Within 10%: {(comparison['slope_pct_diff'].abs() < 10).sum()}/{len(comparison)}")
-    logger.info(f"  Within 1%: {(comparison['slope_pct_diff'].abs() < 1).sum()}/{len(comparison)}")
-
-    # T-value statistics if present
-    if "t_target_pattern_new" in comparison.columns:
-        logger.info("\nt_target_pattern:")
-        logger.info(f"  Mean absolute diff: {comparison['t_target_pattern_diff'].abs().mean():.6f}")
-        logger.info(f"  Mean % diff: {comparison['t_target_pattern_pct_diff'].abs().mean():.2f}%")
-        logger.info(f"  Within 10%: {(comparison['t_target_pattern_pct_diff'].abs() < 10).sum()}/{len(comparison)}")
-        logger.info(f"  Within 1%: {(comparison['t_target_pattern_pct_diff'].abs() < 1).sum()}/{len(comparison)}")
-
-        logger.info("\nt_orth:")
-        logger.info(f"  Mean absolute diff: {comparison['t_orth_diff'].abs().mean():.6f}")
-        logger.info(f"  Mean % diff: {comparison['t_orth_pct_diff'].abs().mean():.2f}%")
-        logger.info(f"  Within 10%: {(comparison['t_orth_pct_diff'].abs() < 10).sum()}/{len(comparison)}")
-        logger.info(f"  Within 1%: {(comparison['t_orth_pct_diff'].abs() < 1).sum()}/{len(comparison)}")
-
-        logger.info("\nt_slope:")
-        logger.info(f"  Mean absolute diff: {comparison['t_slope_diff'].abs().mean():.6f}")
-        logger.info(f"  Mean % diff: {comparison['t_slope_pct_diff'].abs().mean():.2f}%")
-        logger.info(f"  Within 10%: {(comparison['t_slope_pct_diff'].abs() < 10).sum()}/{len(comparison)}")
-        logger.info(f"  Within 1%: {(comparison['t_slope_pct_diff'].abs() < 1).sum()}/{len(comparison)}")
-
-        logger.info("\nd_slope:")
-        logger.info(f"  Mean absolute diff: {comparison['d_slope_diff'].abs().mean():.6f}")
-        logger.info(f"  Mean % diff: {comparison['d_slope_pct_diff'].abs().mean():.2f}%")
-        logger.info(f"  Within 10%: {(comparison['d_slope_pct_diff'].abs() < 10).sum()}/{len(comparison)}")
-        logger.info(f"  Within 1%: {(comparison['d_slope_pct_diff'].abs() < 1).sum()}/{len(comparison)}")
-
-    logger.info("=" * 70)
 
     return comparison
 
@@ -167,7 +117,7 @@ def plot_baseline_comparison(dataset: str):
                         metrics.append((metric, corr, within_10, pct_within_10))
 
     # Create scatter plots
-    output_dir = PROCESSED_DATA_DIR / "figures" / "diagnostics"
+    output_dir = PROCESSED_DATA_DIR / "virtual_screen_module"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 12))
@@ -219,11 +169,106 @@ def plot_baseline_comparison(dataset: str):
     return comparison
 
 
+def _compute_summary(comparison: pd.DataFrame) -> pd.DataFrame:
+    """Compute summary statistics for each metric."""
+    metrics = ["Count_Cells_avg", "slope", "last_peak_ind"]
+    if "t_target_pattern_new" in comparison.columns:
+        metrics.extend(["t_target_pattern", "t_orth", "t_slope", "d_slope"])
+
+    rows = []
+    for metric in metrics:
+        col_new = f"{metric}_new"
+        col_baseline = f"{metric}_baseline"
+
+        if col_new not in comparison.columns or col_baseline not in comparison.columns:
+            continue
+
+        valid_mask = np.isfinite(comparison[col_new]) & np.isfinite(comparison[col_baseline])
+        n_valid = valid_mask.sum()
+
+        if n_valid < 2:
+            continue
+
+        # Correlations
+        pearson_r, _ = pearsonr(comparison.loc[valid_mask, col_baseline], comparison.loc[valid_mask, col_new])
+        spearman_r, _ = spearmanr(comparison.loc[valid_mask, col_baseline], comparison.loc[valid_mask, col_new])
+
+        # Differences (handle special case for Count_Cells_avg)
+        if metric == "Count_Cells_avg":
+            diff_col = "Count_Cells_diff"
+            pct_diff_col = "Count_Cells_pct_diff"
+        else:
+            diff_col = f"{metric}_diff"
+            pct_diff_col = f"{metric}_pct_diff"
+
+        # Use absolute differences from the _diff column
+        if diff_col in comparison.columns:
+            mean_abs_diff = comparison[diff_col].abs().mean()
+            median_abs_diff = comparison[diff_col].abs().median()
+            max_abs_diff = comparison[diff_col].abs().max()
+        else:
+            mean_abs_diff = median_abs_diff = max_abs_diff = np.nan
+
+        # Within thresholds (for pct_diff where applicable)
+        if pct_diff_col in comparison.columns:
+            within_1pct = (comparison[pct_diff_col].abs() < 1).sum()
+            within_10pct = (comparison[pct_diff_col].abs() < 10).sum()
+            pct_within_10pct = 100 * within_10pct / len(comparison)
+        else:
+            within_1pct = within_10pct = pct_within_10pct = np.nan
+
+        rows.append({
+            "metric": metric,
+            "n_samples": len(comparison),
+            "pearson_r": pearson_r,
+            "spearman_r": spearman_r,
+            "mean_abs_diff": mean_abs_diff,
+            "median_abs_diff": median_abs_diff,
+            "max_abs_diff": max_abs_diff,
+            "within_1pct": within_1pct,
+            "within_10pct": within_10pct,
+            "pct_within_10pct": pct_within_10pct,
+        })
+
+    return pd.DataFrame(rows)
+
+
+def _format_summary(summary: pd.DataFrame, dataset: str) -> str:
+    """Format summary statistics as a readable table."""
+    lines = []
+    lines.append(f"{dataset.upper()}: Baseline Comparison Summary (n={summary['n_samples'].iloc[0] if len(summary) > 0 else 0})")
+    lines.append("=" * 80)
+    lines.append(f"{'Metric':<20} {'Pearson r':>10} {'Within 10%':>12} {'Mean Abs Diff':>15}")
+    lines.append("-" * 80)
+
+    for _, row in summary.iterrows():
+        metric = row["metric"]
+        r = row["pearson_r"]
+        within_10 = row["pct_within_10pct"]
+        mean_diff = row["mean_abs_diff"]
+
+        # Add warning indicators
+        warn = ""
+        if pd.notna(within_10):
+            if within_10 < 20:
+                warn = "  ⚠⚠"
+            elif within_10 < 50:
+                warn = "  ⚠"
+
+        within_str = f"{within_10:.1f}%" if pd.notna(within_10) else "N/A"
+        lines.append(f"{metric:<20} {r:>10.3f} {within_str:>12} {mean_diff:>15.3f}{warn}")
+
+    lines.append("=" * 80)
+    lines.append("⚠ = <50% within 10%, ⚠⚠ = <20% within 10%")
+
+    return "\n".join(lines)
+
+
 def compare_with_baseline_csv(dataset: str):
     """Load module + baseline CSVs, compute diffs, save comparison CSV + plots.
 
     Fast (<1 sec) - generates both CSV and 2x2 scatter plot PNG automatically.
-    Prints summary stats, top 5 mismatches, and correlation metrics.
+    Saves diagnostic summary (CSV + TXT) and correlation plots.
     Raises FileNotFoundError if module CSV missing (run virtual-screen first).
     """
     if dataset not in DATASET_INFO:
@@ -247,21 +292,22 @@ def compare_with_baseline_csv(dataset: str):
     # Save comparison
     comparison_path = module_dir / f"{dataset}_baseline_comparison.csv"
     comparison.to_csv(comparison_path, index=False)
-    logger.info(f"\nSaved comparison to {comparison_path}")
+    logger.info(f"Saved comparison to {comparison_path}")
 
-    # Show some examples of large differences
-    has_stats = "t_target_pattern_pct_diff" in comparison.columns
-    if has_stats:
-        logger.info("\nTop 5 largest t_target_pattern % differences:")
-        pert_col = DATASET_INFO[dataset]["pert_col"]
-        top_diffs = comparison.nlargest(5, "t_target_pattern_pct_diff")[[pert_col, "t_target_pattern_new", "t_target_pattern_baseline", "t_target_pattern_pct_diff"]]
-        print(top_diffs.to_string(index=False))
-    else:
-        logger.info("\nTop 5 largest slope % differences:")
-        pert_col = DATASET_INFO[dataset]["pert_col"]
-        top_diffs = comparison.nlargest(5, "slope_pct_diff")[[pert_col, "slope_new", "slope_baseline", "slope_pct_diff"]]
-        print(top_diffs.to_string(index=False))
+    # Generate summary statistics
+    summary = _compute_summary(comparison)
+    summary_csv_path = module_dir / f"{dataset}_diagnostic_summary.csv"
+    summary_txt_path = module_dir / f"{dataset}_diagnostic_summary.txt"
 
-    # Generate diagnostic plots (auto-run)
-    logger.info("\nGenerating diagnostic plots...")
+    summary.to_csv(summary_csv_path, index=False)
+    summary_txt = _format_summary(summary, dataset)
+    summary_txt_path.write_text(summary_txt)
+
+    logger.info(f"Saved diagnostic summary to {summary_csv_path}")
+    logger.info(f"Saved formatted summary to {summary_txt_path}")
+
+    # Generate diagnostic plots
     plot_baseline_comparison(dataset)
+
+    # Print summary to console
+    print("\n" + summary_txt)

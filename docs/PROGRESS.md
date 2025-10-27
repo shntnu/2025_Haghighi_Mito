@@ -138,7 +138,7 @@ Git history revealed curated Excel files originated from Google Sheets (manually
 data/processed/tables/
 ├── curated_2024-08-11/          # Original Google Sheets export (git tracked)
 ├── curated_2025-10-25/          # Current curated version (git tracked)
-├── generated_from_s3_baseline/  # From S3 CSVs via notebook 2.2 (gitignored)
+├── generated_from_baseline/  # From baseline CSVs via notebook 2.2 (gitignored)
 └── generated_from_local/        # From regenerated CSVs (gitignored)
 ```
 
@@ -148,7 +148,7 @@ data/processed/tables/
 
 Compared all three versions:
 
-- `generated_from_s3_baseline` vs `curated_2024-08-11`: **PERFECT MATCH** (after removing duplicate `.1` columns)
+- `generated_from_baseline` vs `curated_2024-08-11`: **PERFECT MATCH** (after removing duplicate `.1` columns)
 - Pipeline is fully deterministic and reproducible
 - All 173,806 rows match exactly across 6 datasets
 - Aug 2024 baseline represents clean computational output
@@ -646,7 +646,7 @@ Inconsistent naming across the three pipeline methods:
 ### New Consistent Pattern
 
 ```
-Method 0: baseline    baseline    baseline    s3_baseline
+Method 0: baseline    baseline    baseline    baseline
 Method 1: notebook    notebook    notebook    notebook
 Method 2: module      module      module      module
           ↓           ↓           ↓           ↓
