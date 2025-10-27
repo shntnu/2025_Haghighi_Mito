@@ -18,7 +18,7 @@ haghighi-mito = "haghighi_mito.cli:main"
 # Pixi configuration
 [tool.pixi.workspace]
 channels = ["conda-forge", "bioconda"]
-platforms = ["linux-64"]
+platforms = ["linux-64", "osx-arm64"]
 
 [tool.pixi.dependencies]
 # Core Python environment
