@@ -127,49 +127,49 @@ The repository supports **three methods** for generating virtual screen results:
 - **Commands**: `just generate-baseline-all` (auto-downloads from S3 if needed)
 - **Code**: `haghighi_mito/data.py` (formatting only)
 
-### Method 1: Regenerated - Notebook (Complete but Messy)
+### Method 1: Regenerated - Notebook (Original Implementation)
 
-- **Status**: Complete pipeline, superseded by Method 2
+- **Status**: Complete pipeline, original exploratory implementation
 - **Input**: Raw per-site profiles (2.7 GB)
 - **Processing**: Calculate slopes + stats + filter + format
 - **Output**: `data/processed/screen_results_notebook.duckdb`
 - **Speed**: ~10 minutes per dataset
 - **Commands**: `just generate-notebook-all` (auto-downloads raw data if needed)
 - **Code**: `notebooks/2.0-mh-virtual-screen.py` (1433 lines) + `data.py`
-- **Note**: Exploratory code with dead branches (`if 0:`), but functional
+- **Note**: Converted Jupyter notebook, retained for reference
 
-### Method 2: Regenerated - Clean Module (Recommended for Development)
+### Method 2: Regenerated - Module (Refactored Implementation)
 
-- **Status**: Complete pipeline, clean implementation
+- **Status**: Complete pipeline, clean refactored implementation
 - **Input**: Raw per-site profiles (2.7 GB)
 - **Processing**: Calculate slopes + stats + filter + format
 - **Output**: `data/processed/screen_results_module.duckdb`
 - **Speed**: ~10 minutes per dataset
 - **Commands**: `just generate-module-all` (auto-downloads raw data if needed)
 - **Code**: `haghighi_mito/virtual_screen.py` (448 lines) + `diagnostics.py` + `data.py`
-- **Note**: Professional refactor, identical output to Method 1, cleaner codebase
+- **Note**: Refactored from Method 1 notebook, recommended for development
 
 **See the Snakefile docstring for comprehensive pipeline documentation.**
 
 ## Critical Reproducibility Issue
 
-**All regenerated methods (1 & 2) produce ~77% agreement with baseline due to lost July 2024 code.**
+**Both regenerated methods show incomplete agreement with the validated baseline. Method 2 achieves closer agreement than Method 1.**
 
 Key findings:
 
 - Baseline generated with code that predates this repository (Sept 2025 creation)
 - Input data confirmed identical (`Count_Cells_avg` matches 100%)
-- 100% of large slope differences have different peak indices
-- Root cause: Unknown peak detection algorithm used in July 2024
+- Method 2 (module) produces closer agreement with baseline than Method 1 (notebook)
+- Root cause of remaining discrepancies unknown
 - Impact: Baseline trusted but opaque; regenerated methods transparent but inexact
 
-**Match rates** (taorf, n=327):
+**Example match rates** (Method 1, taorf, n=327):
 
-- `t_target_pattern`: 37% within 10% (no peak detection, best metric)
-- `slope`: 19% within 10% (peak detection differs)
-- `t_orth`: 33% within 10% (validates processing)
+- `t_target_pattern`: 37% within 10%
+- `slope`: 19% within 10%
+- `t_orth`: 33% within 10%
 
-**Recommendation**: Always use `just generate-baseline-all` for validated/publication results. Use Methods 1/2 for development and future improvements.
+**Recommendation**: Use `just generate-baseline-all` for validated/publication results. Use Method 2 for development (cleaner code + better baseline agreement).
 
 See `docs/PROGRESS.md` for detailed investigation history.
 

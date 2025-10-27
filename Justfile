@@ -4,8 +4,8 @@
 # See Snakefile docstring for comprehensive pipeline documentation.
 # Three methods available:
 #   Method 0: Baseline (validated, July 2024)
-#   Method 1: Notebook (complete but messy)
-#   Method 2: Clean module (complete, cleaner implementation)
+#   Method 1: Notebook (original exploratory implementation)
+#   Method 2: Module (clean refactored implementation)
 
 # Show available commands
 default:
@@ -20,7 +20,7 @@ generate-baseline-all:
     pixi run snakemake all_baseline --cores 4 --printshellcmds
 
 # ============================================================================
-# METHOD 1: REGENERATED - Notebook (Complete but Messy)
+# METHOD 1: REGENERATED - Notebook (Original Implementation)
 # ============================================================================
 
 # [Method 1] Generate complete notebook pipeline for all datasets (downloads raw data if needed, then CSV → Excel → DuckDB, ~10 min/dataset)
@@ -36,7 +36,7 @@ generate-notebook-csvs:
     pixi run snakemake all_notebook_csvs --cores 4 --printshellcmds
 
 # ============================================================================
-# METHOD 2: REGENERATED - Clean Module (Complete Pipeline)
+# METHOD 2: REGENERATED - Module (Refactored Implementation)
 # ============================================================================
 
 # [Method 2] Generate complete module pipeline for all datasets (downloads raw data if needed, then CSV → Excel → DuckDB)
