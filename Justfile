@@ -29,7 +29,7 @@ generate-notebook-all:
 
 # [Method 1] Generate results CSV for a specific dataset (CSV only, use generate-notebook-all for full pipeline)
 generate-notebook-csv-for DATASET:
-    pixi run snakemake data/external/mito_project/workspace/results/virtual_screen_notebook/{{DATASET}}_results_pattern_aug_070624.csv --cores 1 --printshellcmds
+    pixi run snakemake data/processed/virtual_screen_notebook/{{DATASET}}_results_pattern_aug_070624.csv --cores 1 --printshellcmds
 
 # [Method 1] Generate results CSVs for all datasets (notebook analysis only, ⚠️ no Excel/DuckDB)
 generate-notebook-csvs:
