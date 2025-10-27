@@ -986,3 +986,40 @@ The current notebook (2.0-mh-virtual-screen.py) uses different methods and shoul
 - Database creation/validation still works (provenance columns silently dropped as expected)
 - New outputs: `*_slope_examples.csv` with top 10 best/worst matches per dataset
 - Diagnostic summaries now include provenance section with warnings for low sample sizes
+
+---
+
+## 2025-10-27: Virtual Screen Implementation Deep Dive - Consistency Analysis
+
+### What was done
+
+- Comprehensive review of `haghighi_mito/virtual_screen.py` implementation against docstring and manuscript
+- Cross-checked code logic in `calculate_metrics()`, `calculate_statistical_tests()`, and helper modules
+- Analyzed consistency between patient fibroblast MITO-SLOPE algorithm (manuscript lines 173-218) and virtual screen slope calculation
+
+### Key findings (observations requiring verification)
+
+**✅ Docstring vs Code: CONSISTENT** - All 5 pipeline steps match implementation exactly
+
+**✅ Code Logic: SOUND** - Control normalization, z-score per-plate normalization, vectorized slope calculation, and statistical testing all follow standard practices
+
+**⚠️ Manuscript Documentation Gaps** (Methods section doesn't explicitly describe):
+- Z-score normalization per plate before aggregation (mentioned in Results but not Methods)
+- Single-stage median aggregation strategy (vs two-stage)
+- Control subtraction before slope calculation
+- Different MITO-SLOPE algorithms for patient analysis vs virtual screen (detailed vs simplified)
+
+**⚠️ Empirical Optimization Evidence**: Code comments (lines 348-350, 491-493) reveal implementation was tuned to match baseline (r=0.90), suggesting baseline was generated with THIS implementation. Circular dependency: code optimized to match baseline, baseline used as ground truth.
+
+### Observations needing verification
+
+1. **Methods section completeness**: Verify manuscript Methods accurately describes all preprocessing steps
+2. **Algorithm variant documentation**: Confirm manuscript distinguishes patient MITO-SLOPE (detailed, lines 173-218) from virtual screen slope (simplified)
+3. **Empirical tuning**: Validate that implementation choices (single-stage aggregation, abs() median plate selection) represent July 2024 baseline methodology vs notebook drift
+
+### Next steps for future investigation
+
+- Consider updating Methods section with explicit z-score normalization and aggregation description
+- Test whether two-stage aggregation (notebook 2.0 current implementation) improves or degrades biological interpretability
+- Document rationale for implementation choices in supplementary methods
+- Investigate why current notebook differs from baseline if module better matches July 2024 results
