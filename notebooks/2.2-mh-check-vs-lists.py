@@ -141,7 +141,7 @@ if ANALYSIS_MODE == "regenerated":
     print()
 elif ANALYSIS_MODE == "baseline":
     RESULTS_SUFFIX = ""
-    OUTPUT_DIR = os.path.join(repo_root, "data/processed/tables/generated_from_s3_baseline")
+    OUTPUT_DIR = os.path.join(repo_root, "data/processed/tables/generated_from_baseline")
     print("=" * 70)
     print("ANALYZING S3 BASELINE RESULTS (July 2024)")
     print(f"Input CSVs: *.csv from virtual_screen/")
@@ -481,7 +481,7 @@ for dataset, dataset_meta_hue in zip(  # noqa: B007
 
     if 1:
         # Write to appropriate subdirectory based on analysis mode
-        # OUTPUT_DIR set at top: generated_from_s3_baseline/ or generated_from_notebook/
+        # OUTPUT_DIR set at top: generated_from_baseline/ or generated_from_notebook/
         output_path = os.path.join(OUTPUT_DIR, f"{dataset}_screen_results.xlsx")
         saveAsNewSheetToExistingFile(
             output_path,
