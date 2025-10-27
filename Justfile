@@ -49,7 +49,7 @@ generate-module-csv-for DATASET:
 
 # [Method 2] Run diagnostics: compare with baseline + generate plots (FAST - ~1 sec)
 diagnose-for DATASET:
-    pixi run snakemake data/processed/figures/diagnostics/{{DATASET}}_comparison_metrics.png --cores 1 --printshellcmds
+    pixi run snakemake data/processed/virtual_screen_module/{{DATASET}}_comparison_metrics.png --cores 1 --printshellcmds
 
 # [Method 2] Generate results CSVs for all datasets (virtual screen analysis only, ⚠️ no Excel/DuckDB)
 generate-module-csvs:

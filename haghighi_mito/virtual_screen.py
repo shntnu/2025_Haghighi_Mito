@@ -352,15 +352,35 @@ def calculate_metrics(per_site_df, annot, dataset: str):
         pert_df.groupby(pert_col)
         .agg(
             {
-                "Count_Cells": "mean",  # Average cell count
+                "Count_Cells": ["mean", "std", "count"],  # Average, variability, and count
                 "last_peak_ind": "median",  # Median peak index
-                "slope": "median",  # Median slope
+                "slope": ["median", "std"],  # Median slope + variability
+                "batch_plate": "nunique",  # Number of unique plates
+                "Metadata_Well": "nunique",  # Number of unique wells
             }
         )
         .reset_index()
     )
 
-    numeric_aggs.rename(columns={"Count_Cells": "Count_Cells_avg"}, inplace=True)
+    # Flatten multi-level column names
+    numeric_aggs.columns = [
+        f"{col[0]}_{col[1]}" if col[1] else col[0] for col in numeric_aggs.columns
+    ]
+
+    # Rename to match expected output format
+    numeric_aggs.rename(
+        columns={
+            "Count_Cells_mean": "Count_Cells_avg",
+            "Count_Cells_std": "Count_Cells_std",
+            "Count_Cells_count": "n_sites",  # Number of site observations
+            "last_peak_ind_median": "last_peak_ind",  # Remove _median suffix
+            "slope_median": "slope",
+            "slope_std": "slope_std",
+            "batch_plate_nunique": "n_plates",
+            "Metadata_Well_nunique": "n_wells",
+        },
+        inplace=True,
+    )
 
     # Merge numeric results into metadata results
     results = pd.merge(results, numeric_aggs, on=pert_col, how="left")
@@ -471,6 +491,7 @@ def calculate_statistical_tests(per_site_df, dataset: str):
         # NOTE: This differs from notebook (which uses percentile without abs())
         # but empirically matches baseline better (r=0.90 vs 0.85)
         median_plate_idx = np.argsort(np.abs(tvals[:, 3]))[len(tvals) // 2]
+        median_plate_id = plates[median_plate_idx]
 
         # Get t-values from median plate
         t_target_pattern = tvals[median_plate_idx, 0]
@@ -499,6 +520,7 @@ def calculate_statistical_tests(per_site_df, dataset: str):
                 "t_orth": t_orth,
                 "t_slope": t_slope,
                 "d_slope": d_slope,
+                "median_plate_id": median_plate_id,  # Track which plate was selected
             }
         )
 
@@ -537,12 +559,23 @@ def run_virtual_screen(dataset: str, calculate_stats: bool = True):
         results = pd.merge(results, stats_results, on=pert_col, how="left")
 
     # Reorder columns to match baseline/notebook format:
-    # Metadata cols, Count_Cells_avg, p-values, t-values, last_peak_ind, slope
+    # Metadata cols, Count_Cells_avg, provenance metadata, p-values, t-values, last_peak_ind, slope
     meta_cols = DATASET_INFO[dataset]["meta_cols"]
 
     # Build column order
     column_order = meta_cols.copy()
     column_order.append("Count_Cells_avg")
+
+    # Add provenance metadata (NEW - helps debug reproducibility issues)
+    column_order.extend(
+        [
+            "n_sites",  # Number of site observations per perturbation
+            "n_plates",  # Number of unique plates per perturbation
+            "n_wells",  # Number of unique wells per perturbation
+            "Count_Cells_std",  # Variability in cell counts across sites
+            "slope_std",  # Variability in slope across sites
+        ]
+    )
 
     if calculate_stats:
         # Add p-value columns
@@ -563,6 +596,7 @@ def run_virtual_screen(dataset: str, calculate_stats: bool = True):
                 "t_orth",
                 "t_slope",
                 "d_slope",
+                "median_plate_id",  # Which plate was selected for t-values
             ]
         )
 

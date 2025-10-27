@@ -12,7 +12,7 @@ Files:
     Input:  virtual_screen_module/{dataset}_results_pattern_aug_070624.csv (module)
             virtual_screen_baseline/{dataset}_results_pattern_aug_070624.csv (S3)
     Output: virtual_screen_module/{dataset}_baseline_comparison.csv (comparison)
-            figures/diagnostics/{dataset}_comparison_metrics.png (plots)
+            virtual_screen_module/{dataset}_comparison_metrics.png (plots)
 """
 
 from pathlib import Path
@@ -30,7 +30,7 @@ def compare_with_baseline(results, dataset: str):
     """Load baseline CSV, merge with results, calculate diffs (internal helper).
 
     Returns DataFrame with columns: *_new, *_baseline, *_diff, *_pct_diff
-    Prints summary statistics to logger.
+    Also preserves provenance metadata (n_sites, n_plates, etc.) from regenerated data.
     """
     baseline_path = EXTERNAL_DATA_DIR / "mito_project/workspace/results/virtual_screen_baseline" / f"{dataset}_results_pattern_aug_070624.csv"
 
@@ -44,6 +44,8 @@ def compare_with_baseline(results, dataset: str):
     if "t_target_pattern" in results.columns:
         baseline_cols.extend(["t_target_pattern", "t_orth", "t_slope", "d_slope"])
 
+    # Note: Provenance columns (n_sites, n_plates, etc.) are NOT in baseline
+    # They will be kept from the 'results' dataframe (regenerated data) with no suffix
     comparison = pd.merge(results, baseline[baseline_cols], on=pert_col, suffixes=("_new", "_baseline"))
 
     logger.info(f"Matched {len(comparison)} perturbations between new and baseline")
@@ -170,7 +172,10 @@ def plot_baseline_comparison(dataset: str):
 
 
 def _compute_summary(comparison: pd.DataFrame) -> pd.DataFrame:
-    """Compute summary statistics for each metric."""
+    """Compute summary statistics for each metric.
+
+    Also computes provenance summary if available (n_sites, n_plates, etc.).
+    """
     metrics = ["Count_Cells_avg", "slope", "last_peak_ind"]
     if "t_target_pattern_new" in comparison.columns:
         metrics.extend(["t_target_pattern", "t_orth", "t_slope", "d_slope"])
@@ -233,8 +238,50 @@ def _compute_summary(comparison: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _format_summary(summary: pd.DataFrame, dataset: str) -> str:
-    """Format summary statistics as a readable table."""
+def _compute_provenance_summary(comparison: pd.DataFrame) -> dict:
+    """Compute summary statistics for provenance metadata.
+
+    Returns dict with summary stats for n_sites, n_plates, n_wells, etc.
+    Returns empty dict if provenance columns not available.
+    """
+    provenance_cols = ["n_sites", "n_plates", "n_wells", "Count_Cells_std", "slope_std"]
+
+    # Check if any provenance columns exist
+    available_cols = [col for col in provenance_cols if col in comparison.columns]
+
+    if not available_cols:
+        return {}
+
+    summary = {}
+    for col in available_cols:
+        if col in comparison.columns:
+            summary[f"{col}_mean"] = comparison[col].mean()
+            summary[f"{col}_median"] = comparison[col].median()
+            summary[f"{col}_min"] = comparison[col].min()
+            summary[f"{col}_max"] = comparison[col].max()
+
+    # Compute low sample size warnings
+    if "n_sites" in comparison.columns:
+        n_low_sites = (comparison["n_sites"] < 10).sum()
+        summary["n_low_sites_count"] = n_low_sites
+        summary["n_low_sites_pct"] = 100 * n_low_sites / len(comparison)
+
+    if "n_plates" in comparison.columns:
+        n_single_plate = (comparison["n_plates"] == 1).sum()
+        summary["n_single_plate_count"] = n_single_plate
+        summary["n_single_plate_pct"] = 100 * n_single_plate / len(comparison)
+
+    return summary
+
+
+def _format_summary(summary: pd.DataFrame, dataset: str, provenance: dict = None) -> str:
+    """Format summary statistics as a readable table.
+
+    Args:
+        summary: Metric comparison statistics DataFrame
+        dataset: Dataset name
+        provenance: Optional dict with provenance summary stats
+    """
     lines = []
     lines.append(f"{dataset.upper()}: Baseline Comparison Summary (n={summary['n_samples'].iloc[0] if len(summary) > 0 else 0})")
     lines.append("=" * 80)
@@ -261,7 +308,109 @@ def _format_summary(summary: pd.DataFrame, dataset: str) -> str:
     lines.append("=" * 80)
     lines.append("⚠ = <50% within 10%, ⚠⚠ = <20% within 10%")
 
+    # Add provenance section if available
+    if provenance and len(provenance) > 0:
+        lines.append("")
+        lines.append("PROVENANCE METADATA (regenerated data only)")
+        lines.append("-" * 80)
+
+        if "n_sites_median" in provenance:
+            lines.append(f"Sites per perturbation:  median={provenance['n_sites_median']:.0f}, "
+                        f"range={provenance['n_sites_min']:.0f}-{provenance['n_sites_max']:.0f}")
+            if "n_low_sites_count" in provenance:
+                lines.append(f"  ⚠ {provenance['n_low_sites_count']:.0f} perturbations ({provenance['n_low_sites_pct']:.1f}%) have <10 sites")
+
+        if "n_plates_median" in provenance:
+            lines.append(f"Plates per perturbation: median={provenance['n_plates_median']:.0f}, "
+                        f"range={provenance['n_plates_min']:.0f}-{provenance['n_plates_max']:.0f}")
+            if "n_single_plate_count" in provenance:
+                lines.append(f"  ⚠ {provenance['n_single_plate_count']:.0f} perturbations ({provenance['n_single_plate_pct']:.1f}%) have only 1 plate")
+
+        if "slope_std_median" in provenance:
+            lines.append(f"Slope variability:       median={provenance['slope_std_median']:.3f}, "
+                        f"range={provenance['slope_std_min']:.3f}-{provenance['slope_std_max']:.3f}")
+
     return "\n".join(lines)
+
+
+def export_examples(comparison: pd.DataFrame, dataset: str, metric: str = "slope", n_per_tail: int = 10):
+    """Export best and worst matches (extremes) with provenance for comparison.
+
+    Exports both tails of the distribution:
+    - Top n_per_tail worst matches (largest absolute % difference)
+    - Top n_per_tail best matches (smallest absolute % difference)
+
+    This allows comparing what distinguishes good vs poor reproducibility.
+
+    Args:
+        comparison: Comparison DataFrame with *_new, *_baseline, *_diff columns
+        dataset: Dataset name
+        metric: Which metric to analyze (default: slope, the most important)
+        n_per_tail: Number of examples per tail to export (default: 10)
+
+    Saves: {dataset}_{metric}_examples.csv with best/worst matches + provenance
+    """
+    module_dir = PROCESSED_DATA_DIR / "virtual_screen_module"
+
+    # Get columns for this metric
+    new_col = f"{metric}_new"
+    baseline_col = f"{metric}_baseline"
+    diff_col = f"{metric}_diff"
+    pct_diff_col = f"{metric}_pct_diff"
+
+    # Check columns exist
+    if new_col not in comparison.columns or baseline_col not in comparison.columns:
+        logger.warning(f"Cannot export examples: {new_col} or {baseline_col} not in comparison")
+        return
+
+    # Calculate absolute percentage difference and add as temporary column
+    if pct_diff_col in comparison.columns:
+        comparison["_abs_pct_diff"] = comparison[pct_diff_col].abs()
+        sort_col = "_abs_pct_diff"
+    else:
+        comparison["_abs_diff"] = comparison[diff_col].abs()
+        sort_col = "_abs_diff"
+
+    # Get worst matches (largest absolute % difference)
+    worst = comparison.nlargest(n_per_tail, sort_col).copy()
+    worst["match_quality"] = "worst"
+
+    # Get best matches (smallest absolute % difference)
+    best = comparison.nsmallest(n_per_tail, sort_col).copy()
+    best["match_quality"] = "best"
+
+    # Remove temporary column
+    comparison.drop(columns=[sort_col], inplace=True)
+
+    # Combine and sort by match quality, then by difference
+    examples = pd.concat([worst, best], ignore_index=True)
+
+    # Select relevant columns for output
+    meta_cols = DATASET_INFO[dataset]["meta_cols"][:2]  # Just first 2 metadata cols (gene_name, pert_name)
+
+    output_cols = ["match_quality"] + meta_cols.copy()
+    output_cols.extend([baseline_col, new_col, diff_col])
+
+    if pct_diff_col in comparison.columns:
+        output_cols.append(pct_diff_col)
+
+    # Add provenance columns if available
+    provenance_cols = ["n_sites", "n_plates", "n_wells", "Count_Cells_std", "slope_std", "median_plate_id"]
+    for col in provenance_cols:
+        if col in examples.columns:
+            output_cols.append(col)
+
+    # Filter to existing columns and export
+    output_cols = [col for col in output_cols if col in examples.columns]
+    examples_export = examples[output_cols].copy()
+
+    # Round numeric columns to 6 decimal places for readability
+    numeric_cols = examples_export.select_dtypes(include=[np.number]).columns
+    examples_export[numeric_cols] = examples_export[numeric_cols].round(6)
+
+    output_path = module_dir / f"{dataset}_{metric}_examples.csv"
+    examples_export.to_csv(output_path, index=False)
+    logger.info(f"Exported {n_per_tail} best + {n_per_tail} worst {metric} matches to {output_path}")
 
 
 def compare_with_baseline_csv(dataset: str):
@@ -296,11 +445,16 @@ def compare_with_baseline_csv(dataset: str):
 
     # Generate summary statistics
     summary = _compute_summary(comparison)
+    provenance_summary = _compute_provenance_summary(comparison)
+
     summary_csv_path = module_dir / f"{dataset}_diagnostic_summary.csv"
     summary_txt_path = module_dir / f"{dataset}_diagnostic_summary.txt"
 
-    summary.to_csv(summary_csv_path, index=False)
-    summary_txt = _format_summary(summary, dataset)
+    # Round numeric columns to 6 decimal places for readability
+    summary_rounded = summary.round(6)
+    summary_rounded.to_csv(summary_csv_path, index=False)
+
+    summary_txt = _format_summary(summary, dataset, provenance_summary)
     summary_txt_path.write_text(summary_txt)
 
     logger.info(f"Saved diagnostic summary to {summary_csv_path}")
@@ -308,6 +462,9 @@ def compare_with_baseline_csv(dataset: str):
 
     # Generate diagnostic plots
     plot_baseline_comparison(dataset)
+
+    # Export examples (best + worst matches) for slope analysis
+    export_examples(comparison, dataset, metric="slope", n_per_tail=10)
 
     # Print summary to console
     print("\n" + summary_txt)
