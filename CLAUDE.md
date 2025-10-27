@@ -64,6 +64,11 @@ just diagnose-for taorf    # Compare CSV + generate plots in one command (~1 sec
 just diagnose-all          # Run diagnostics for all datasets
 ```
 
+**Test hypotheses (tight iteration loop for baseline reproduction):**
+```bash
+scripts/test-hypothesis.sh taorf  # Remove CSV → regenerate → diagnose → show correlations (~7 sec)
+```
+
 ### Python CLI Commands
 
 The `haghighi-mito` CLI provides lower-level control:
