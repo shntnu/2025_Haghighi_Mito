@@ -304,20 +304,12 @@ def calculate_metrics(per_site_df, annot, dataset: str):
     # This matches notebook 2.0 line 1251-1254: standardize_per_catX normalizes per batch_plate
     logger.info("Z-score normalizing slope and last_peak_ind per plate...")
 
-    def z_score_normalize(group):
-        """Z-score normalize columns within a group."""
-        for col in ["slope", "last_peak_ind"]:
-            mean_val = group[col].mean()
-            std_val = group[col].std()
-            if std_val > 0:  # Avoid division by zero
-                group[col] = (group[col] - mean_val) / std_val
-            else:
-                group[col] = 0.0
-        return group
-
-    # include_groups=True keeps batch_plate column in output (needed for downstream groupby in calculate_statistical_tests)
-    # Explicitly setting this silences FutureWarning and prevents breakage when pandas changes default behavior
-    per_site_df = per_site_df.groupby("batch_plate", group_keys=False).apply(z_score_normalize, include_groups=True)
+    # Use transform instead of apply to avoid FutureWarning about operating on grouping columns
+    # transform is designed for per-group operations and automatically preserves all columns
+    for col in ["slope", "last_peak_ind"]:
+        per_site_df[col] = per_site_df.groupby("batch_plate")[col].transform(
+            lambda x: (x - x.mean()) / x.std() if x.std() > 0 else 0.0
+        )
     # Also update last_peak_loc alias to match
     per_site_df["last_peak_loc"] = per_site_df["last_peak_ind"]
 
