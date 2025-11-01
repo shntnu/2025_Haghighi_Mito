@@ -169,9 +169,26 @@ def main():
     baseline = pd.read_csv(baseline_file)
     print(f"\nLoaded baseline: {len(baseline)} perturbations")
 
+    # Drop duplicates in Metadata_broad_sample to avoid Cartesian product during merge
+    # (e.g., DMSO controls with multiple gene names)
+    baseline_dedup = baseline[["Metadata_broad_sample", "Metadata_gene_name", "slope", "last_peak_ind"]].drop_duplicates(
+        subset="Metadata_broad_sample", keep="first"
+    )
+    current_dedup = current[["Metadata_broad_sample", "Metadata_gene_name", "slope", "last_peak_ind"]].drop_duplicates(
+        subset="Metadata_broad_sample", keep="first"
+    )
+
+    n_baseline_dropped = len(baseline) - len(baseline_dedup)
+    n_current_dropped = len(current) - len(current_dedup)
+
+    if n_baseline_dropped > 0:
+        print(f"Dropped {n_baseline_dropped} duplicate Metadata_broad_sample from baseline ({len(baseline_dedup)} remaining)")
+    if n_current_dropped > 0:
+        print(f"Dropped {n_current_dropped} duplicate Metadata_broad_sample from current ({len(current_dedup)} remaining)")
+
     # Merge
-    comparison = baseline[["Metadata_broad_sample", "Metadata_gene_name", "slope", "last_peak_ind"]].merge(
-        current[["Metadata_broad_sample", "slope", "last_peak_ind"]],
+    comparison = baseline_dedup.merge(
+        current_dedup[["Metadata_broad_sample", "slope", "last_peak_ind"]],
         on="Metadata_broad_sample",
         suffixes=("_baseline", "_current"),
         how="inner"

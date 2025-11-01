@@ -44,9 +44,22 @@ def compare_with_baseline(results, dataset: str):
     if "t_target_pattern" in results.columns:
         baseline_cols.extend(["t_target_pattern", "t_orth", "t_slope", "d_slope"])
 
+    # Drop duplicates in pert_col to avoid Cartesian product during merge
+    # (e.g., DMSO controls with multiple gene names in taorf)
+    results_dedup = results.drop_duplicates(subset=pert_col, keep="first")
+    baseline_dedup = baseline[baseline_cols].drop_duplicates(subset=pert_col, keep="first")
+
+    n_results_dropped = len(results) - len(results_dedup)
+    n_baseline_dropped = len(baseline) - len(baseline_dedup)
+
+    if n_results_dropped > 0:
+        logger.warning(f"Dropped {n_results_dropped} duplicate {pert_col} from results ({len(results_dedup)} remaining)")
+    if n_baseline_dropped > 0:
+        logger.warning(f"Dropped {n_baseline_dropped} duplicate {pert_col} from baseline ({len(baseline_dedup)} remaining)")
+
     # Note: Provenance columns (n_sites, n_plates, etc.) are NOT in baseline
     # They will be kept from the 'results' dataframe (regenerated data) with no suffix
-    comparison = pd.merge(results, baseline[baseline_cols], on=pert_col, suffixes=("_new", "_baseline"))
+    comparison = pd.merge(results_dedup, baseline_dedup, on=pert_col, suffixes=("_new", "_baseline"))
 
     logger.info(f"Matched {len(comparison)} perturbations between new and baseline")
 
