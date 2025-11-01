@@ -10,6 +10,6 @@ Supporting repository for:
 - **`notebooks/`** - Jupyter notebooks for analysis
 - **`pipelines/`** - CellProfiler image analysis pipelines
 - **`protocols/`** - Experimental protocols
-- **`manuscript.md`** - Full manuscript text
+- **`docs/`** - Documentation, including `MANUSCRIPT.md` (Full manuscript text)
 
 See [CLAUDE.md](CLAUDE.md) for detailed documentation.
