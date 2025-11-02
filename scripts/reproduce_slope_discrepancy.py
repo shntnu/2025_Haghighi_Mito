@@ -41,11 +41,6 @@ Output:
   - data/processed/virtual_screen_module/taorf_slope_discrepancy.png
   - data/processed/virtual_screen_module/taorf_slope_comparison.csv
 
-MODULES CALLED:
-  - haghighi_mito.virtual_screen.preprocess_metadata() - standardizes metadata columns
-  - haghighi_mito.virtual_screen.load_dataset_data() - loads per-site profiles, merges with metadata
-  - haghighi_mito.virtual_screen.calculate_metrics() - calculates slopes (vectorized implementation)
-
 EXPECTED RESULTS:
     Slope correlation: r = 0.849
     Peak index correlation: r = 0.516
@@ -57,7 +52,7 @@ Pipeline Steps:
 2. Filter plates: Keep only plates with control wells
 3. Control subtraction: Subtract mean control profile per plate
 4. Slope calculation:
-   - Smooth 12-bin radial distribution (moving average, window=3)
+   - Smooth 12-bin radial distribution (Savitzky-Golay filter, window_length=5, polyorder=3)
    - Find peaks: argmax and argmin of smoothed profile
    - Select last peak: max(argmax, argmin) excluding last 2 bins
    - Calculate slope: (mean(last 2 bins) - peak_value) / distance
@@ -75,21 +70,27 @@ QUESTIONS FOR ORIGINAL AUTHOR:
 Given slope correlation r=0.849 and peak correlation r=0.516:
 
 1. Is there additional preprocessing BEFORE control subtraction?
-   - Current: z-score per plate on radial + orthogonal features
+   - Code: haghighi_mito.virtual_screen.calculate_metrics()
+   - Current: None (raw features used directly for control subtraction)
+   - Note: Z-score normalization only applied to derived metrics (slope, last_peak_ind) AFTER calculation
    - Missing steps?
 
 2. Is the smoothing window correct?
-   - Current: moving average, window size = 3
+   - Code: haghighi_mito.vectorized_slope.find_end_slope2_vectorized()
+   - Current: Savitzky-Golay filter, window_length=5, polyorder=3
 
 3. Is the peak detection correct?
+   - Code: haghighi_mito.vectorized_slope.find_end_slope2_vectorized()
    - Current: max(argmax(data), argmin(data)) excluding last 2 bins
    - Should this be different?
 
 4. Is the slope endpoint calculation correct?
+   - Code: haghighi_mito.vectorized_slope.find_end_slope2_vectorized()
    - Current: (mean(last 2 bins) - peak_value) / distance
    - Alternative: use only last bin?
 
 5. Is the aggregation method correct?
+   - Code: haghighi_mito.virtual_screen.calculate_metrics()
    - Current: median of ALL per-site slopes
    - Alternative: median of per-plate medians (two-stage)?
 
