@@ -1004,6 +1004,7 @@ The current notebook (2.0-mh-virtual-screen.py) uses different methods and shoul
 **✅ Code Logic: SOUND** - Control normalization, z-score per-plate normalization, vectorized slope calculation, and statistical testing all follow standard practices
 
 **⚠️ Manuscript Documentation Gaps** (Methods section doesn't explicitly describe):
+
 - Z-score normalization per plate before aggregation (mentioned in Results but not Methods)
 - Single-stage median aggregation strategy (vs two-stage)
 - Control subtraction before slope calculation
@@ -1088,11 +1089,13 @@ The current notebook (2.0-mh-virtual-screen.py) uses different methods and shoul
 ### Key findings
 
 **jump_compound now processes successfully:**
+
 - 115,729 perturbations (vs 0 before)
 - slope r=0.779 with baseline (good correlation, similar to jump_orf r=0.788)
 - last_peak_ind r=0.515 (consistent with other JUMP datasets)
 
 **All six datasets now working:**
+
 1. taorf: r=0.849 (327 perturbations)
 2. lincs: not tested yet
 3. CDRP: not tested yet
@@ -1105,3 +1108,37 @@ The current notebook (2.0-mh-virtual-screen.py) uses different methods and shoul
 - Previous issue: compound metadata lacks `Metadata_control_type` column (unlike orf/crispr)
 - Solution: Use specific JCP2022 identifier for DMSO control instead of generic column
 - Reproduction script now complete for all JUMP datasets
+
+---
+
+## 2025-11-02: Peak Index as Primary Diagnostic Target
+
+### What was discovered
+
+**Pipeline dependency confirmed:**
+
+- Peak index calculated before slope in `vectorized_slope.py::find_end_slope2_vectorized()` (lines 91-108)
+- Slope depends on peak index: `slopes = (endpoint - peak_values) / (n_cols - last_peak_ind - 1)` (line 118)
+- Peak index has worse baseline agreement (r=0.516) than slope (r=0.849)
+
+**Key insight: Lower peak correlation is expected**
+
+- Peak index is discrete (bins 0-11) - off-by-1 error is large in relative terms
+- Radial distributions are smooth functions - adjacent bins have similar values
+- Slope depends on peak VALUE (height) not just INDEX (position)
+- Result: Large index errors can produce small slope errors if profiles are similar
+
+**Peak index advantages as diagnostic target:**
+
+- Calculated early in pipeline (fewer dependencies than t-values)
+- Faster to compute (no statistical testing or control comparisons)
+- More isolated from downstream processing
+- Still necessary to understand regardless of correlation pattern
+
+### Limitation
+
+Baseline CSVs only contain final aggregated z-scored values. Cannot isolate error source (smoothing, peak detection, z-scoring, aggregation) without baseline intermediate values.
+
+### Next steps
+
+Peak index investigation necessary but constrained by data availability. Pattern analysis (distributions, confusion matrices) may reveal systematic biases even without intermediate baseline values.
