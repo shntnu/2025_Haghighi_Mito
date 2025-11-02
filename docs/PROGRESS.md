@@ -1023,3 +1023,28 @@ The current notebook (2.0-mh-virtual-screen.py) uses different methods and shoul
 - Test whether two-stage aggregation (notebook 2.0 current implementation) improves or degrades biological interpretability
 - Document rationale for implementation choices in supplementary methods
 - Investigate why current notebook differs from baseline if module better matches July 2024 results
+
+---
+
+## 2025-11-01 to 2025-11-02: Minimal Reproduction Script & Documentation
+
+### What was done
+
+- Created standalone reproduction script (`scripts/reproduce_slope_discrepancy.py`) demonstrating baseline mismatch (slope r=0.849, peak r=0.516) for sharing with original author
+- Fixed pandas FutureWarning: replaced `groupby().apply()` with `transform()` for z-score normalization
+- Fixed Cartesian product bug in taorf comparisons (duplicate perturbation IDs causing inflated match counts)
+- Added file provenance tracing with audit hooks (logs all 4 input/output files accessed)
+- Enhanced script documentation: added FILES ACCESSED, MODULES CALLED sections, and function references for each author question
+- Fixed technical inaccuracies in docstring (smoothing: Savitzky-Golay not moving average; preprocessing: clarified z-scoring happens after slope calculation)
+- Converted notebook 2.0 to reference baseline Python script (`2.0-mh-virtual-screen-original.py`, 1192 lines)
+
+### Key findings
+
+- Reproduction script confirms r=0.849 slope correlation, sufficient for author consultation
+- Script includes 5 focused questions mapping to specific implementation functions (calculate_metrics, find_end_slope2_vectorized)
+- Notebook conversion preserves original state (1192 lines) vs current evolved version (1438 lines, +246 lines)
+
+### Notes
+
+- Script uses loguru logger for consistency with codebase (colored output, automatic timestamps)
+- All outputs in `data/processed/virtual_screen_module/` for diagnostic workflow integration
