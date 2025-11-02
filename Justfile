@@ -51,24 +51,20 @@ generate-module-csvs:
 generate-module-csv-for DATASET:
     pixi run snakemake data/processed/virtual_screen_module/{{DATASET}}_results_pattern_aug_070624.csv --cores 1 --printshellcmds
 
-# [Method 2] Compare with baseline (all datasets)
+# ============================================================================
+# DIAGNOSTICS & DEBUGGING
+# ============================================================================
+
+# Compare module results with baseline (all datasets, fast)
 diagnose-all:
     pixi run snakemake all_module_diagnose --cores 4 --printshellcmds
 
-# [Method 2] Compare with baseline (single dataset)
+# Compare module results with baseline (single dataset, fast)
 diagnose-for DATASET:
     pixi run snakemake data/processed/virtual_screen_module/{{DATASET}}_comparison_metrics.png --cores 1 --printshellcmds
 
-# [Method 2] Quick baseline agreement check
-check-baseline-quick DATASET="taorf":
-    scripts/check-baseline-quick.sh {{DATASET}}
-
-# ============================================================================
-# UTILITIES
-# ============================================================================
-
-# Reproduce slope discrepancy (download data if needed, then run comparison)
-reproduce DATASET="taorf":
+# Recalculate slopes from raw data (slow, educational alternative to diagnose-for)
+reproduce-for DATASET="taorf":
     @echo "Downloading baseline and per-site data for {{DATASET}} if needed..."
     pixi run snakemake \
         data/external/mito_project/workspace/results/virtual_screen_baseline/{{DATASET}}_results_pattern_aug_070624.csv \
@@ -76,6 +72,10 @@ reproduce DATASET="taorf":
         --cores 1 --printshellcmds
     @echo "Running slope discrepancy analysis..."
     pixi run python scripts/reproduce_slope_discrepancy.py {{DATASET}}
+
+# ============================================================================
+# UTILITIES
+# ============================================================================
 
 # Generate DAG visualizations
 viz:
