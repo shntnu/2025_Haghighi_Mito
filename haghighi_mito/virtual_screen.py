@@ -124,33 +124,45 @@ def preprocess_metadata(dataset: str, mito_project_root: Path) -> pd.DataFrame:
         wells = pd.read_csv(mito_project_root / "workspace/metadata/JUMP/well.csv.gz")
         orf = pd.read_csv(mito_project_root / "workspace/metadata/JUMP/orf.csv.gz")
 
-        annot = wells.merge(plates, on="Metadata_PlateID", how="left")
-        annot = annot.merge(orf, on="Metadata_JCP2022", how="left")
+        annot = wells.merge(orf, on="Metadata_JCP2022", how="left")
+        annot = annot.merge(plates, on=["Metadata_Plate", "Metadata_Source"], how="left")
         annot["batch_plate"] = annot["Metadata_Batch"] + "-" + annot["Metadata_Plate"]
-        annot["ctrl_well"] = annot["Metadata_control_type"].notna()
-        annot["Metadata_pert_type"] = annot["Metadata_control_type"].fillna("trt")
+        annot["ctrl_well"] = annot["Metadata_Symbol"].isin(["LacZ", "BFP", "HcRed", "LUCIFERASE"])
+        annot["Metadata_pert_type"] = annot.apply(
+            lambda row: row["Metadata_control_type"] if pd.notna(row.get("Metadata_control_type")) else "trt",
+            axis=1
+        )
 
     elif dataset == "jump_crispr":
         plates = pd.read_csv(mito_project_root / "workspace/metadata/JUMP/plate.csv.gz")
         wells = pd.read_csv(mito_project_root / "workspace/metadata/JUMP/well.csv.gz")
         crispr = pd.read_csv(mito_project_root / "workspace/metadata/JUMP/crispr.csv.gz")
 
-        annot = wells.merge(plates, on="Metadata_PlateID", how="left")
-        annot = annot.merge(crispr, on="Metadata_JCP2022", how="left")
+        annot = wells.merge(crispr, on="Metadata_JCP2022", how="left")
+        annot = annot.merge(plates, on=["Metadata_Plate", "Metadata_Source"], how="left")
         annot["batch_plate"] = annot["Metadata_Batch"] + "-" + annot["Metadata_Plate"]
-        annot["ctrl_well"] = annot["Metadata_control_type"].notna()
-        annot["Metadata_pert_type"] = annot["Metadata_control_type"].fillna("trt")
+        annot["ctrl_well"] = annot["Metadata_Symbol"].isin(["non-targeting"])
+        annot["Metadata_pert_type"] = annot.apply(
+            lambda row: row["Metadata_control_type"] if pd.notna(row.get("Metadata_control_type")) else "trt",
+            axis=1
+        )
 
     elif dataset == "jump_compound":
         plates = pd.read_csv(mito_project_root / "workspace/metadata/JUMP/plate.csv.gz")
         wells = pd.read_csv(mito_project_root / "workspace/metadata/JUMP/well.csv.gz")
         compound = pd.read_csv(mito_project_root / "workspace/metadata/JUMP/compound.csv.gz")
 
-        annot = wells.merge(plates, on="Metadata_PlateID", how="left")
-        annot = annot.merge(compound, on="Metadata_JCP2022", how="left")
+        # Filter to compound plates only (as in original notebook line 151)
+        compound_plates = plates[plates["Metadata_PlateType"] == "COMPOUND"].reset_index(drop=True)
+
+        annot = wells.merge(compound, on="Metadata_JCP2022", how="left")
+        annot = annot.merge(compound_plates, on=["Metadata_Plate", "Metadata_Source"], how="left")
         annot["batch_plate"] = annot["Metadata_Batch"] + "-" + annot["Metadata_Plate"]
-        annot["ctrl_well"] = annot["Metadata_control_type"].notna()
-        annot["Metadata_pert_type"] = annot["Metadata_control_type"].fillna("trt")
+        annot["ctrl_well"] = annot.get("Metadata_control_type", pd.Series()).notna()
+        annot["Metadata_pert_type"] = annot.apply(
+            lambda row: row["Metadata_control_type"] if pd.notna(row.get("Metadata_control_type")) else "trt",
+            axis=1
+        )
 
     else:
         raise ValueError(f"Unknown dataset: {dataset}")
