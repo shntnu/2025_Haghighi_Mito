@@ -302,7 +302,9 @@ def main(
     ax.scatter(comparison["last_peak_ind_baseline"], comparison["last_peak_ind_current"],
                alpha=0.5, s=30)
 
-    peak_range = [0, 12]
+    # Calculate dynamic range for z-scored peak indices (not raw bins!)
+    all_peaks = pd.concat([comparison["last_peak_ind_baseline"], comparison["last_peak_ind_current"]])
+    peak_range = [all_peaks.min(), all_peaks.max()]
     ax.plot(peak_range, peak_range, 'r--', alpha=0.5, label="y=x")
 
     ax.set_xlabel("Baseline peak index")
