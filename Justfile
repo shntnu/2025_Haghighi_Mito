@@ -65,10 +65,20 @@ diagnose-for DATASET:
 
 # Recalculate slopes from raw data (slow, educational alternative to diagnose-for)
 reproduce-for DATASET="taorf":
-    @echo "Downloading baseline and per-site data for {{DATASET}} if needed..."
+    @echo "Downloading baseline, per-site data, and metadata for {{DATASET}} if needed..."
     pixi run snakemake \
         data/external/mito_project/workspace/results/virtual_screen_baseline/{{DATASET}}_results_pattern_aug_070624.csv \
         data/external/mito_project/workspace/per_site_aggregated_profiles_newpattern_2/{{DATASET}}/.download_complete \
+        data/external/mito_project/workspace/metadata/CDRP_meta.csv \
+        data/external/mito_project/workspace/metadata/JUMP-ORF/ORF_list.tsv \
+        data/external/mito_project/workspace/metadata/JUMP/compound.csv.gz \
+        data/external/mito_project/workspace/metadata/JUMP/crispr.csv.gz \
+        data/external/mito_project/workspace/metadata/JUMP/orf.csv.gz \
+        data/external/mito_project/workspace/metadata/JUMP/plate.csv.gz \
+        data/external/mito_project/workspace/metadata/JUMP/well.csv.gz \
+        data/external/mito_project/workspace/metadata/LINCS_meta.csv \
+        data/external/mito_project/workspace/metadata/TA-ORF/replicate_level_cp_normalized.csv.gz \
+        data/external/mito_project/workspace/metadata/lincs/DrugRepurposing_Metadata.csv \
         --cores 1 --printshellcmds
     @echo "Running slope discrepancy analysis..."
     pixi run python scripts/reproduce_slope_discrepancy.py {{DATASET}}
