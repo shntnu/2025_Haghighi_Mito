@@ -100,6 +100,22 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from loguru import logger
+
+# Install audit hook to trace file reads
+files_read = []
+
+def audit_hook(event, args):
+    """Trace file open operations."""
+    if event == 'open':
+        filename = str(args[0])
+        mode = args[1] if len(args) > 1 else ''
+        # Only log data files
+        if any(ext in filename for ext in ['.csv', '.parquet', '.xlsx', '.db']):
+            files_read.append(filename)
+            logger.info(f"Reading: {filename}")
+
+sys.addaudithook(audit_hook)
 
 # Add project root to path to import modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -112,11 +128,11 @@ from haghighi_mito.virtual_screen import (
 
 def main():
     """Main execution."""
-    print("\n" + "=" * 80)
-    print("MINIMAL SLOPE DISCREPANCY REPRODUCTION SCRIPT")
-    print("=" * 80)
-    print("\nThis script runs our current slope calculation implementation")
-    print("and compares with the July 2024 baseline to identify discrepancies.\n")
+    logger.info("=" * 80)
+    logger.info("MINIMAL SLOPE DISCREPANCY REPRODUCTION SCRIPT")
+    logger.info("=" * 80)
+    logger.info("This script runs our current slope calculation implementation")
+    logger.info("and compares with the July 2024 baseline to identify discrepancies.")
 
     dataset = "taorf"
 
@@ -126,48 +142,48 @@ def main():
     baseline_file = data_dir / "results/virtual_screen_baseline/taorf_results_pattern_aug_070624.csv"
 
     if not baseline_file.exists():
-        print("ERROR: Baseline data not found!")
-        print(f"Expected: {baseline_file}")
-        print("\nPlease run first: just generate-baseline-all")
+        logger.error("Baseline data not found!")
+        logger.error(f"Expected: {baseline_file}")
+        logger.error("Please run first: just generate-baseline-all")
         sys.exit(1)
 
-    print("=" * 80)
-    print("STEP 1: LOAD DATA")
-    print("=" * 80)
+    logger.info("=" * 80)
+    logger.info("STEP 1: LOAD DATA")
+    logger.info("=" * 80)
 
     # Load data using module functions (which internally calls preprocess_metadata)
     per_site_df, annot = load_dataset_data(dataset)
 
-    print(f"\nLoaded data:")
-    print(f"  - Per-site profiles: {len(per_site_df)} rows")
-    print(f"  - Metadata: {len(annot)} perturbations")
-    print(f"  - Unique perturbations: {per_site_df['Metadata_broad_sample'].nunique()}")
+    logger.info(f"Loaded data:")
+    logger.info(f"  - Per-site profiles: {len(per_site_df)} rows")
+    logger.info(f"  - Metadata: {len(annot)} perturbations")
+    logger.info(f"  - Unique perturbations: {per_site_df['Metadata_broad_sample'].nunique()}")
 
-    print("\n" + "=" * 80)
-    print("STEP 2: CALCULATE SLOPES (Our Implementation)")
-    print("=" * 80)
-    print("\nPipeline steps:")
-    print("  1. Filter to plates with controls")
-    print("  2. Subtract control mean per plate from radial distribution")
-    print("  3. Calculate slopes on control-subtracted profiles (vectorized)")
-    print("  4. Z-score normalize slopes per plate")
-    print("  5. Aggregate via median across plates per perturbation\n")
+    logger.info("=" * 80)
+    logger.info("STEP 2: CALCULATE SLOPES (Our Implementation)")
+    logger.info("=" * 80)
+    logger.info("Pipeline steps:")
+    logger.info("  1. Filter to plates with controls")
+    logger.info("  2. Subtract control mean per plate from radial distribution")
+    logger.info("  3. Calculate slopes on control-subtracted profiles (vectorized)")
+    logger.info("  4. Z-score normalize slopes per plate")
+    logger.info("  5. Aggregate via median across plates per perturbation")
 
     # Calculate slopes using module function
     results, per_site_df_with_slopes = calculate_metrics(per_site_df, annot, dataset)
 
-    print(f"\nCalculated slopes for {len(results)} perturbations")
+    logger.info(f"Calculated slopes for {len(results)} perturbations")
 
     # Keep only the columns we need for comparison
     current = results[["Metadata_broad_sample", "Metadata_gene_name", "slope", "last_peak_ind"]].copy()
 
-    print("\n" + "=" * 80)
-    print("STEP 3: COMPARE WITH BASELINE")
-    print("=" * 80)
+    logger.info("=" * 80)
+    logger.info("STEP 3: COMPARE WITH BASELINE")
+    logger.info("=" * 80)
 
     # Load baseline
     baseline = pd.read_csv(baseline_file)
-    print(f"\nLoaded baseline: {len(baseline)} perturbations")
+    logger.info(f"Loaded baseline: {len(baseline)} perturbations")
 
     # Drop duplicates in Metadata_broad_sample to avoid Cartesian product during merge
     # (e.g., DMSO controls with multiple gene names)
@@ -182,9 +198,9 @@ def main():
     n_current_dropped = len(current) - len(current_dedup)
 
     if n_baseline_dropped > 0:
-        print(f"Dropped {n_baseline_dropped} duplicate Metadata_broad_sample from baseline ({len(baseline_dedup)} remaining)")
+        logger.warning(f"Dropped {n_baseline_dropped} duplicate Metadata_broad_sample from baseline ({len(baseline_dedup)} remaining)")
     if n_current_dropped > 0:
-        print(f"Dropped {n_current_dropped} duplicate Metadata_broad_sample from current ({len(current_dedup)} remaining)")
+        logger.warning(f"Dropped {n_current_dropped} duplicate Metadata_broad_sample from current ({len(current_dedup)} remaining)")
 
     # Merge
     comparison = baseline_dedup.merge(
@@ -194,7 +210,7 @@ def main():
         how="inner"
     )
 
-    print(f"Matched: {len(comparison)} perturbations")
+    logger.info(f"Matched: {len(comparison)} perturbations")
 
     # Calculate metrics
     corr_slope = comparison[["slope_baseline", "slope_current"]].corr().iloc[0, 1]
@@ -209,17 +225,17 @@ def main():
         comparison["last_peak_ind_current"] - comparison["last_peak_ind_baseline"]
     )
 
-    print(f"\n{'=' * 80}")
-    print("RESULTS SUMMARY")
-    print(f"{'=' * 80}")
-    print(f"  Slope correlation: r = {corr_slope:.3f}")
-    print(f"  Peak index correlation: r = {corr_peak:.3f}")
-    print(f"\nDetailed comparison saved to CSV for inspection.")
+    logger.info("=" * 80)
+    logger.info("RESULTS SUMMARY")
+    logger.info("=" * 80)
+    logger.info(f"  Slope correlation: r = {corr_slope:.3f}")
+    logger.info(f"  Peak index correlation: r = {corr_peak:.3f}")
+    logger.info("Detailed comparison saved to CSV for inspection.")
 
     # Generate plots
-    print(f"\n{'=' * 80}")
-    print("GENERATING PLOTS")
-    print(f"{'=' * 80}")
+    logger.info("=" * 80)
+    logger.info("GENERATING PLOTS")
+    logger.info("=" * 80)
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
@@ -259,26 +275,35 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
     plot_file = output_dir / f"{dataset}_slope_discrepancy.png"
     plt.savefig(plot_file, dpi=150)
-    print(f"\n✓ Saved plot: {plot_file}")
+    logger.success(f"Saved plot: {plot_file}")
 
     # Save comparison CSV
     csv_file = output_dir / f"{dataset}_slope_comparison.csv"
     comparison.to_csv(csv_file, index=False)
-    print(f"✓ Saved detailed comparison: {csv_file}")
+    logger.success(f"Saved detailed comparison: {csv_file}")
 
     # Summary
-    print("\n" + "=" * 80)
-    print("NOTES")
-    print("=" * 80)
-    print("For implementation details and questions for the original author,")
-    print("see the docstring at the top of this file:")
-    print("  python -c \"import scripts.reproduce_slope_discrepancy; help(scripts.reproduce_slope_discrepancy)\"")
-    print("\nOr just read the docstring in the source code.")
+    logger.info("=" * 80)
+    logger.info("NOTES")
+    logger.info("=" * 80)
+    logger.info("For implementation details and questions for the original author,")
+    logger.info("see the docstring at the top of this file:")
+    logger.info("  python -c \"import scripts.reproduce_slope_discrepancy; help(scripts.reproduce_slope_discrepancy)\"")
+    logger.info("Or just read the docstring in the source code.")
 
-    print("=" * 80)
-    print("SCRIPT COMPLETE")
-    print("=" * 80)
-    print(f"\nOutputs saved to: {output_dir}/")
+    # Print file trace summary
+    logger.info("=" * 80)
+    logger.info("FILE TRACE SUMMARY")
+    logger.info("=" * 80)
+    logger.info(f"Total files accessed: {len(files_read)}")
+    logger.info(f"Unique files: {len(set(files_read))}")
+    for f in sorted(set(files_read)):
+        logger.info(f"  - {f}")
+
+    logger.info("=" * 80)
+    logger.info("SCRIPT COMPLETE")
+    logger.info("=" * 80)
+    logger.info(f"Outputs saved to: {output_dir}/")
 
 
 if __name__ == "__main__":
