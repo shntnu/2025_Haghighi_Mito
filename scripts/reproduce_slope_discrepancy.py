@@ -32,6 +32,20 @@ WHAT IT DOES:
    - CSV with detailed comparison
    - Summary statistics
 
+FILES ACCESSED (for taorf dataset):
+Input:
+  - data/external/mito_project/workspace/metadata/TA-ORF/replicate_level_cp_normalized.csv.gz
+  - data/external/mito_project/workspace/per_site_aggregated_profiles_newpattern_2/taorf/2013_10_11_SIGMA2_Pilot_site_agg_profiles.csv.gz
+  - data/external/mito_project/workspace/results/virtual_screen_baseline/taorf_results_pattern_aug_070624.csv
+Output:
+  - data/processed/virtual_screen_module/taorf_slope_discrepancy.png
+  - data/processed/virtual_screen_module/taorf_slope_comparison.csv
+
+MODULES CALLED:
+  - haghighi_mito.virtual_screen.preprocess_metadata() - standardizes metadata columns
+  - haghighi_mito.virtual_screen.load_dataset_data() - loads per-site profiles, merges with metadata
+  - haghighi_mito.virtual_screen.calculate_metrics() - calculates slopes (vectorized implementation)
+
 EXPECTED RESULTS:
     Slope correlation: r = 0.849
     Peak index correlation: r = 0.516
