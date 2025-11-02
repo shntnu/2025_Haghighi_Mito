@@ -1135,9 +1135,30 @@ The current notebook (2.0-mh-virtual-screen.py) uses different methods and shoul
 - More isolated from downstream processing
 - Still necessary to understand regardless of correlation pattern
 
+### Pipeline stages producing final baseline peak index values
+
+The final `last_peak_ind` values in baseline CSVs are produced through these sequential stages:
+
+1. **Load per-site radial distributions** (12 bins, radial distribution features 5-16)
+2. **Control subtraction** - Subtract per-plate control means from radial patterns
+3. **Smoothing** - Apply Savitzky-Golay filter (window_length=5, polyorder=3)
+4. **Peak detection** - Find argmax and argmin, select last valid peak (not in last 2 bins)
+5. **Z-score normalization** - Normalize peak indices per plate
+6. **Aggregation** - Median across all per-site observations per perturbation
+
+Differences between baseline and current implementation could occur at any of these 6 stages.
+
+**Key diagnostic insight:** Stages affecting different metric subsets:
+
+- Stage 2 (control subtraction) affects ALL metrics - both radial and orthogonal features
+- Stages 3-4 (smoothing, peak detection) only affect radial distribution metrics (last_peak_ind, slope, t_target_pattern)
+- Stages 5-6 (z-scoring, aggregation) affect ALL metrics
+
+**Observed:** t_orth (orthogonal features) also shows discrepancies with baseline, suggesting errors may exist in global stages (control subtraction, z-scoring, aggregation) that affect all metrics. However, current investigation focuses on peak index as primary diagnostic target - understanding peak index discrepancies may explain a bulk of issues across all metrics if root cause is in shared processing stages.
+
 ### Limitation
 
-Baseline CSVs only contain final aggregated z-scored values. Cannot isolate error source (smoothing, peak detection, z-scoring, aggregation) without baseline intermediate values.
+Baseline CSVs only contain final aggregated z-scored values. Cannot isolate which specific stage causes discrepancy without baseline intermediate values (per-site peaks, smoothed profiles, control means, pre-z-scored peaks).
 
 ### Next steps
 
