@@ -158,11 +158,9 @@ def preprocess_metadata(dataset: str, mito_project_root: Path) -> pd.DataFrame:
         annot = wells.merge(compound, on="Metadata_JCP2022", how="left")
         annot = annot.merge(compound_plates, on=["Metadata_Plate", "Metadata_Source"], how="left")
         annot["batch_plate"] = annot["Metadata_Batch"] + "-" + annot["Metadata_Plate"]
-        annot["ctrl_well"] = annot.get("Metadata_control_type", pd.Series()).notna()
-        annot["Metadata_pert_type"] = annot.apply(
-            lambda row: row["Metadata_control_type"] if pd.notna(row.get("Metadata_control_type")) else "trt",
-            axis=1
-        )
+        # Control is DMSO (negcon): JCP2022_033924
+        annot["ctrl_well"] = annot["Metadata_JCP2022"].isin(["JCP2022_033924"])
+        annot["Metadata_pert_type"] = annot["ctrl_well"].apply(lambda x: "control" if x else "trt")
 
     else:
         raise ValueError(f"Unknown dataset: {dataset}")
