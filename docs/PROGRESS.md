@@ -1048,3 +1048,32 @@ The current notebook (2.0-mh-virtual-screen.py) uses different methods and shoul
 
 - Script uses loguru logger for consistency with codebase (colored output, automatic timestamps)
 - All outputs in `data/processed/virtual_screen_module/` for diagnostic workflow integration
+
+---
+
+## 2025-11-02: Reproduce Script Enhancement - Dataset Agnostic Support
+
+### What was done
+
+- Made `scripts/reproduce_slope_discrepancy.py` dataset-agnostic with Typer CLI support
+- Fixed critical bugs in `haghighi_mito/virtual_screen.py` for JUMP datasets (jump_orf, jump_crispr, jump_compound)
+- Added `just reproduce [DATASET]` command with auto-download via Snakemake
+- Fixed metadata merge bugs: replaced non-existent `Metadata_PlateID` with `["Metadata_Plate", "Metadata_Source"]`
+- Fixed control well definitions for each JUMP dataset
+
+### Key findings
+
+**Baseline correlation results for available datasets:**
+
+- taorf: slope r=0.849, peak r=0.516 (327 perturbations)
+- jump_orf: slope r=0.788, peak r=0.509 (14,792 perturbations)
+- jump_crispr: slope r=0.519, peak r=0.370 (7,985 perturbations)
+
+**Known issue - jump_compound:** No control well information in compound.csv.gz metadata. All 5.7M per-site rows filtered out due to null `ctrl_well`, resulting in 0 slope values. Baseline comparison shows NaN correlations (115,731 perturbations matched but all current values null). Issue deferred for future investigation.
+
+### Notes
+
+- Lower correlations for JUMP datasets suggest different preprocessing in original baseline
+- Original notebook (line 172) has commented-out `ctrl_well` definition for jump_compound
+- Compound metadata lacks both `Metadata_control_type` and perturbation type indicators
+- Script now works for all datasets with available baseline data

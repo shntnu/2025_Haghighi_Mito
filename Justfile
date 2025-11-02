@@ -67,6 +67,16 @@ check-baseline-quick DATASET="taorf":
 # UTILITIES
 # ============================================================================
 
+# Reproduce slope discrepancy (download data if needed, then run comparison)
+reproduce DATASET="taorf":
+    @echo "Downloading baseline and per-site data for {{DATASET}} if needed..."
+    pixi run snakemake \
+        data/external/mito_project/workspace/results/virtual_screen_baseline/{{DATASET}}_results_pattern_aug_070624.csv \
+        data/external/mito_project/workspace/per_site_aggregated_profiles_newpattern_2/{{DATASET}}/.download_complete \
+        --cores 1 --printshellcmds
+    @echo "Running slope discrepancy analysis..."
+    pixi run python scripts/reproduce_slope_discrepancy.py {{DATASET}}
+
 # Generate DAG visualizations
 viz:
     ./scripts/generate-dag.sh

@@ -115,6 +115,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import typer
 from loguru import logger
 
 # Install audit hook to trace file reads
@@ -135,26 +136,37 @@ sys.addaudithook(audit_hook)
 # Add project root to path to import modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from haghighi_mito.config import DATASET_INFO
 from haghighi_mito.virtual_screen import (
     calculate_metrics,
     load_dataset_data,
 )
 
 
-def main():
+def main(
+    dataset: str = typer.Argument(
+        "taorf",
+        help="Dataset to analyze (taorf, lincs, CDRP, jump_orf, jump_crispr, jump_compound)"
+    )
+):
     """Main execution."""
     logger.info("=" * 80)
     logger.info("MINIMAL SLOPE DISCREPANCY REPRODUCTION SCRIPT")
     logger.info("=" * 80)
     logger.info("This script runs our current slope calculation implementation")
     logger.info("and compares with the July 2024 baseline to identify discrepancies.")
+    logger.info(f"Dataset: {dataset}")
 
-    dataset = "taorf"
+    # Validate dataset
+    if dataset not in DATASET_INFO:
+        logger.error(f"Unknown dataset: {dataset}")
+        logger.error(f"Valid datasets: {', '.join(DATASET_INFO.keys())}")
+        sys.exit(1)
 
     # Check that data exists
     mito_project_root = Path("data/external/mito_project")
     data_dir = mito_project_root / "workspace"
-    baseline_file = data_dir / "results/virtual_screen_baseline/taorf_results_pattern_aug_070624.csv"
+    baseline_file = data_dir / f"results/virtual_screen_baseline/{dataset}_results_pattern_aug_070624.csv"
 
     if not baseline_file.exists():
         logger.error("Baseline data not found!")
@@ -169,10 +181,13 @@ def main():
     # Load data using module functions (which internally calls preprocess_metadata)
     per_site_df, annot = load_dataset_data(dataset)
 
+    # Get dataset-specific configuration (early, for logging)
+    pert_col = DATASET_INFO[dataset]["pert_col"]
+
     logger.info(f"Loaded data:")
     logger.info(f"  - Per-site profiles: {len(per_site_df)} rows")
     logger.info(f"  - Metadata: {len(annot)} perturbations")
-    logger.info(f"  - Unique perturbations: {per_site_df['Metadata_broad_sample'].nunique()}")
+    logger.info(f"  - Unique perturbations: {per_site_df[pert_col].nunique()}")
 
     logger.info("=" * 80)
     logger.info("STEP 2: CALCULATE SLOPES (Our Implementation)")
@@ -189,8 +204,12 @@ def main():
 
     logger.info(f"Calculated slopes for {len(results)} perturbations")
 
+    # Get dataset-specific metadata columns
+    meta_cols = DATASET_INFO[dataset]["meta_cols"]
+
     # Keep only the columns we need for comparison
-    current = results[["Metadata_broad_sample", "Metadata_gene_name", "slope", "last_peak_ind"]].copy()
+    comparison_cols = meta_cols + ["slope", "last_peak_ind"]
+    current = results[comparison_cols].copy()
 
     logger.info("=" * 80)
     logger.info("STEP 3: COMPARE WITH BASELINE")
@@ -200,27 +219,35 @@ def main():
     baseline = pd.read_csv(baseline_file)
     logger.info(f"Loaded baseline: {len(baseline)} perturbations")
 
-    # Drop duplicates in Metadata_broad_sample to avoid Cartesian product during merge
-    # (e.g., DMSO controls with multiple gene names)
-    baseline_dedup = baseline[["Metadata_broad_sample", "Metadata_gene_name", "slope", "last_peak_ind"]].drop_duplicates(
-        subset="Metadata_broad_sample", keep="first"
+    # Check that required columns exist in baseline
+    missing_cols = [col for col in comparison_cols if col not in baseline.columns]
+    if missing_cols:
+        logger.error(f"Baseline file missing required columns: {missing_cols}")
+        logger.error(f"Available columns: {list(baseline.columns)}")
+        sys.exit(1)
+
+    # Drop duplicates in pert_col to avoid Cartesian product during merge
+    # (e.g., DMSO controls with multiple metadata values)
+    baseline_dedup = baseline[comparison_cols].drop_duplicates(
+        subset=pert_col, keep="first"
     )
-    current_dedup = current[["Metadata_broad_sample", "Metadata_gene_name", "slope", "last_peak_ind"]].drop_duplicates(
-        subset="Metadata_broad_sample", keep="first"
+    current_dedup = current[comparison_cols].drop_duplicates(
+        subset=pert_col, keep="first"
     )
 
     n_baseline_dropped = len(baseline) - len(baseline_dedup)
     n_current_dropped = len(current) - len(current_dedup)
 
     if n_baseline_dropped > 0:
-        logger.warning(f"Dropped {n_baseline_dropped} duplicate Metadata_broad_sample from baseline ({len(baseline_dedup)} remaining)")
+        logger.warning(f"Dropped {n_baseline_dropped} duplicate {pert_col} from baseline ({len(baseline_dedup)} remaining)")
     if n_current_dropped > 0:
-        logger.warning(f"Dropped {n_current_dropped} duplicate Metadata_broad_sample from current ({len(current_dedup)} remaining)")
+        logger.warning(f"Dropped {n_current_dropped} duplicate {pert_col} from current ({len(current_dedup)} remaining)")
 
-    # Merge
+    # Merge on the perturbation column
+    merge_cols = [pert_col, "slope", "last_peak_ind"]
     comparison = baseline_dedup.merge(
-        current_dedup[["Metadata_broad_sample", "slope", "last_peak_ind"]],
-        on="Metadata_broad_sample",
+        current_dedup[merge_cols],
+        on=pert_col,
         suffixes=("_baseline", "_current"),
         how="inner"
     )
@@ -252,7 +279,7 @@ def main():
     logger.info("GENERATING PLOTS")
     logger.info("=" * 80)
 
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    _fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
     # Slope comparison
     ax = axes[0]
@@ -322,4 +349,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)
