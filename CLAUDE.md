@@ -40,138 +40,65 @@ This repository follows the [Carpenter-Singh lab workflow conventions](protocols
 
 ## Common Commands
 
-### Running the Pipeline
-
-View available commands:
-
 ```bash
-just --list
+just --list                          # View all available commands
 ```
 
-**Recommended: Process validated baseline data (July 2024):**
+**Quick workflows:**
 
 ```bash
-just generate-baseline-all         # Download from S3 if needed, then process → Excel + DuckDB (~5 min)
+# Baseline (validated, fast ~5 min)
+just generate-baseline-all           # Download from S3 → Excel → DuckDB
+
+# Regenerate from raw data (~10 min/dataset)
+just generate-module-all             # Full pipeline: profiles → CSV → Excel → DuckDB
+just generate-module-csv-for taorf   # Single dataset CSV only
+
+# Diagnostics (~1 sec)
+just diagnose-for taorf              # Compare with baseline + plots
+just diagnose-all                    # All datasets
 ```
 
-**Alternative: Regenerate from raw data (Method 2 - clean module):**
+**Python CLI (for advanced control):**
 
 ```bash
-just generate-module-all           # Download raw data if needed, then run full pipeline → CSV → Excel → DuckDB (~10 min/dataset)
-just generate-module-csv-for taorf # Generate single dataset CSV
-```
-
-**Diagnose regenerated results (compare with baseline + plots):**
-
-```bash
-just diagnose-for taorf    # Compare CSV + generate plots in one command (~1 sec)
-just diagnose-all          # Run diagnostics for all datasets
-```
-
-**Check baseline agreement (tight iteration loop for rapid validation):**
-
-```bash
-just check-baseline-quick taorf        # Same via Justfile
-```
-
-### Python CLI Commands
-
-The `haghighi-mito` CLI provides lower-level control:
-
-```bash
-pixi run haghighi-mito --help                    # View all commands
-
-# Run virtual screen from per-site profiles
+pixi run haghighi-mito --help
 pixi run haghighi-mito virtual-screen --dataset taorf
-
-# Compare with baseline + generate plots (fast, no regeneration)
 pixi run haghighi-mito compare-baseline --dataset taorf
-
-# Process CSV to Excel + Parquet
-pixi run haghighi-mito process-csv-single \
-    --dataset taorf \
-    --csv-path data/processed/virtual_screen_module/taorf_results_pattern_aug_070624.csv \
-    --output-dir data/processed/tables/generated_from_module \
-    --parquet-output-dir data/interim/parquet_module
-
-# Create DuckDB from Parquet files
-pixi run haghighi-mito create-database \
-    --output-path data/processed/screen_results_module.duckdb \
-    --use-parquet \
-    --parquet-dir data/interim/parquet_module \
-    --datasets lincs,taorf \
-    --overwrite
 ```
 
-### Development
+**Development:**
 
 ```bash
-pixi run python           # Use this instead of bare 'python'
-pixi run jupyter lab      # Launch Jupyter
-pixi run pytest           # Run tests
-pixi run ruff check .     # Lint
-pixi run ruff format .    # Format
+pixi run python / jupyter lab / pytest / ruff check .
 ```
 
 ## Pipeline Architecture
 
-The repository supports **three methods** for generating virtual screen results:
+Three methods for generating virtual screen results:
 
-### Method 0: Baseline (Validated, July 2024)
+| Method | Input | Processing | Speed | Command | Use Case |
+|--------|-------|------------|-------|---------|----------|
+| **0: Baseline** | Pre-computed CSVs (65 MB) | Filtering only | ~5 min | `just generate-baseline-all` | **Production** (validated) |
+| **1: Notebook** | Raw profiles (2.7 GB) | Full recalculation | ~10 min/dataset | `just generate-notebook-all` | Reference (original code) |
+| **2: Module** | Raw profiles (2.7 GB) | Full recalculation | ~10 min/dataset | `just generate-module-all` | **Development** (clean code) |
 
-- **Status**: Production-ready, validated in manuscript
-- **Input**: Pre-computed CSVs from S3 (65 MB, uploaded July 2024)
-- **Processing**: Filtering and formatting only - NO recalculation
-- **Output**: `data/processed/screen_results_baseline.duckdb` (178,826 rows)
-- **Speed**: ~5 minutes total
-- **Commands**: `just generate-baseline-all` (auto-downloads from S3 if needed)
-- **Code**: `haghighi_mito/data.py` (formatting only)
+- **Method 0** outputs: `screen_results_baseline.duckdb` (178,826 rows), uses `haghighi_mito/data.py`
+- **Method 1** outputs: `screen_results_notebook.duckdb`, uses `notebooks/2.0-mh-virtual-screen.py` (1433 lines)
+- **Method 2** outputs: `screen_results_module.duckdb`, uses `haghighi_mito/virtual_screen.py` (448 lines) + `diagnostics.py`
 
-### Method 1: Regenerated - Notebook (Original Implementation)
+See Snakefile docstring for full pipeline documentation.
 
-- **Status**: Complete pipeline, original exploratory implementation
-- **Input**: Raw per-site profiles (2.7 GB)
-- **Processing**: Calculate slopes + stats + filter + format
-- **Output**: `data/processed/screen_results_notebook.duckdb`
-- **Speed**: ~10 minutes per dataset
-- **Commands**: `just generate-notebook-all` (auto-downloads raw data if needed)
-- **Code**: `notebooks/2.0-mh-virtual-screen.py` (1433 lines) + `data.py`
-- **Note**: Converted Jupyter notebook, retained for reference
+## Reproducibility Status
 
-### Method 2: Regenerated - Module (Refactored Implementation)
+⚠️ **Regenerated methods (1 & 2) show incomplete agreement with validated baseline.**
 
-- **Status**: Complete pipeline, clean refactored implementation
-- **Input**: Raw per-site profiles (2.7 GB)
-- **Processing**: Calculate slopes + stats + filter + format
-- **Output**: `data/processed/screen_results_module.duckdb`
-- **Speed**: ~10 minutes per dataset
-- **Commands**: `just generate-module-all` (auto-downloads raw data if needed)
-- **Code**: `haghighi_mito/virtual_screen.py` (448 lines) + `diagnostics.py` + `data.py`
-- **Note**: Refactored from Method 1 notebook, recommended for development
+- **Root cause**: Baseline generated with pre-repository code (Sept 2025 repo creation)
+- **Input data**: Confirmed identical (100% match on `Count_Cells_avg`)
+- **Agreement**: Method 2 closer to baseline than Method 1, but discrepancies remain unexplained
+- **Recommendation**: Use Method 0 for publication; Method 2 for development
 
-**See the Snakefile docstring for comprehensive pipeline documentation.**
-
-## Critical Reproducibility Issue
-
-**Both regenerated methods show incomplete agreement with the validated baseline. Method 2 achieves closer agreement than Method 1.**
-
-Key findings:
-
-- Baseline generated with code that predates this repository (Sept 2025 creation)
-- Input data confirmed identical (`Count_Cells_avg` matches 100%)
-- Method 2 (module) produces closer agreement with baseline than Method 1 (notebook)
-- Root cause of remaining discrepancies unknown
-- Impact: Baseline trusted but opaque; regenerated methods transparent but inexact
-
-**Example match rates** (Method 1, taorf, n=327):
-
-- `t_target_pattern`: 37% within 10%
-- `slope`: 19% within 10%
-- `t_orth`: 33% within 10%
-
-**Recommendation**: Use `just generate-baseline-all` for validated/publication results. Use Method 2 for development (cleaner code + better baseline agreement).
-
-See `docs/PROGRESS.md` for detailed investigation history.
+See `docs/PROGRESS.md` for detailed diagnostics and investigation history.
 
 ## Dataset Configuration
 
