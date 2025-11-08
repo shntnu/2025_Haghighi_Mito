@@ -208,7 +208,7 @@ def main(
     meta_cols = DATASET_INFO[dataset]["meta_cols"]
 
     # Keep only the columns we need for comparison
-    comparison_cols = meta_cols + ["slope", "last_peak_ind"]
+    comparison_cols = meta_cols + ["Count_Cells_avg", "slope", "last_peak_ind"]
     current = results[comparison_cols].copy()
 
     logger.info("=" * 80)
@@ -244,7 +244,7 @@ def main(
         logger.warning(f"Dropped {n_current_dropped} duplicate {pert_col} from current ({len(current_dedup)} remaining)")
 
     # Merge on the perturbation column
-    merge_cols = [pert_col, "slope", "last_peak_ind"]
+    merge_cols = [pert_col, "Count_Cells_avg", "slope", "last_peak_ind"]
     comparison = baseline_dedup.merge(
         current_dedup[merge_cols],
         on=pert_col,
@@ -255,6 +255,7 @@ def main(
     logger.info(f"Matched: {len(comparison)} perturbations")
 
     # Calculate metrics
+    corr_cells = comparison[["Count_Cells_avg_baseline", "Count_Cells_avg_current"]].corr().iloc[0, 1]
     corr_slope = comparison[["slope_baseline", "slope_current"]].corr().iloc[0, 1]
     corr_peak = comparison[["last_peak_ind_baseline", "last_peak_ind_current"]].corr().iloc[0, 1]
 
@@ -270,6 +271,7 @@ def main(
     logger.info("=" * 80)
     logger.info("RESULTS SUMMARY")
     logger.info("=" * 80)
+    logger.info(f"  Cell count correlation: r = {corr_cells:.3f}")
     logger.info(f"  Slope correlation: r = {corr_slope:.3f}")
     logger.info(f"  Peak index correlation: r = {corr_peak:.3f}")
     logger.info("Detailed comparison saved to CSV for inspection.")
@@ -279,17 +281,32 @@ def main(
     logger.info("GENERATING PLOTS")
     logger.info("=" * 80)
 
-    _fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    _fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+
+    # Cell count comparison
+    ax = axes[0]
+    ax.scatter(comparison["Count_Cells_avg_baseline"], comparison["Count_Cells_avg_current"],
+               alpha=0.5, s=30)
+
+    all_cells = pd.concat([comparison["Count_Cells_avg_baseline"], comparison["Count_Cells_avg_current"]])
+    cells_range = [all_cells.min(), all_cells.max()]
+    ax.plot(cells_range, cells_range, 'r--', alpha=0.5, label="y=x")
+
+    ax.set_xlabel("Baseline cell count")
+    ax.set_ylabel("Current implementation cell count")
+    ax.set_title(f"Cell Count Comparison (r={corr_cells:.3f})")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
 
     # Slope comparison
-    ax = axes[0]
+    ax = axes[1]
     ax.scatter(comparison["slope_baseline"], comparison["slope_current"],
                alpha=0.5, s=30)
 
     # Add diagonal line (perfect agreement)
     all_slopes = pd.concat([comparison["slope_baseline"], comparison["slope_current"]])
     slope_range = [all_slopes.min(), all_slopes.max()]
-    ax.plot(slope_range, slope_range, 'r--', alpha=0.5, label="Perfect agreement")
+    ax.plot(slope_range, slope_range, 'r--', alpha=0.5, label="y=x")
 
     ax.set_xlabel("Baseline slope (July 2024)")
     ax.set_ylabel("Current implementation slope")
@@ -298,7 +315,7 @@ def main(
     ax.grid(True, alpha=0.3)
 
     # Peak comparison
-    ax = axes[1]
+    ax = axes[2]
     ax.scatter(comparison["last_peak_ind_baseline"], comparison["last_peak_ind_current"],
                alpha=0.5, s=30)
 
