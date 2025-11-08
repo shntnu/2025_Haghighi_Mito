@@ -1163,3 +1163,30 @@ Baseline CSVs only contain final aggregated z-scored values. Cannot isolate whic
 ### Next steps
 
 Peak index investigation necessary but constrained by data availability. Pattern analysis (distributions, confusion matrices) may reveal systematic biases even without intermediate baseline values.
+
+---
+
+## 2025-11-08: Two-Stage Aggregation Confirmed as Baseline Methodology
+
+### What was done
+
+- Diagnosed cell count discrepancies between baseline and regenerated results (e.g., XIAP: 62.01 vs 64.28)
+- Tested two-stage aggregation (plate-level → cross-plate) vs single-stage (direct cross-site)
+- Implemented two-stage aggregation for all metrics (Count_Cells, slope, last_peak_ind)
+
+### Key findings
+
+**Two-stage aggregation exactly matches baseline methodology** (notebook lines 1100-1175):
+- Stage 1: Aggregate per plate (mean for Count_Cells, median for slope/peak)
+- Stage 2: Aggregate across plates (mean of plate-means, median of plate-medians)
+
+**Correlation results (taorf, n=324):**
+- Count_Cells_avg: r=1.000 (perfect match with two-stage)
+- Slope: r=0.830 (two-stage) vs r=0.849 (single-stage) - **slightly worse but correct methodology**
+- Peak: r=0.533 (two-stage) vs r=0.516 (single-stage) - slightly better
+
+**Previous PROGRESS.md note (2025-10-26) stating "two-stage made slope worse" was CORRECT.** Trade-off accepted: two-stage aggregation slightly reduces slope correlation but matches the validated baseline methodology exactly.
+
+### Resolution
+
+Module now uses two-stage aggregation consistently, matching original notebook implementation. This is the correct approach even though single-stage aggregation empirically achieved higher slope correlation (r=0.849 vs 0.830). Methodological fidelity to baseline takes precedence over metric optimization.

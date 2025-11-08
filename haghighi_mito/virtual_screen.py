@@ -346,40 +346,57 @@ def calculate_metrics(per_site_df, annot, dataset: str):
     results = annot[meta_cols].drop_duplicates().reset_index(drop=True)
     logger.info(f"Starting with {len(results)} unique perturbations from metadata")
 
-    # SINGLE-STAGE AGGREGATION
-    # NOTE: This differs from the current notebook (which uses two-stage aggregation),
-    # but empirically matches the July 2024 baseline better (r=0.90 vs 0.83 for slope).
-    # The baseline appears to have been generated with single-stage aggregation.
-    numeric_aggs = (
-        pert_df.groupby(pert_col)
+    # TWO-STAGE AGGREGATION (matches original notebook lines 1100-1175)
+    # Stage 1: Aggregate per plate (mean for Count_Cells, median for slope/peak)
+    # Stage 2: Aggregate across plates (mean of means/medians)
+
+    plate_aggs = (
+        pert_df.groupby([pert_col, 'batch_plate'])
         .agg(
             {
-                "Count_Cells": ["mean", "std", "count"],  # Average, variability, and count
-                "last_peak_ind": "median",  # Median peak index
-                "slope": ["median", "std"],  # Median slope + variability
-                "batch_plate": "nunique",  # Number of unique plates
-                "Metadata_Well": "nunique",  # Number of unique wells
+                "Count_Cells": "mean",  # Mean per plate
+                "last_peak_ind": "median",  # Median per plate
+                "slope": "median",  # Median per plate
+                "Metadata_Well": "nunique",  # Wells per plate
             }
         )
         .reset_index()
     )
 
-    # Flatten multi-level column names
+    # Stage 2: Aggregate across plates
+    numeric_aggs = (
+        plate_aggs.groupby(pert_col)
+        .agg(
+            {
+                "Count_Cells": ["mean", "std"],  # Mean of plate means
+                "last_peak_ind": "median",  # Median of plate medians
+                "slope": ["median", "std"],  # Median of plate medians
+                "batch_plate": "nunique",  # Number of unique plates
+                "Metadata_Well": "sum",  # Total unique wells across plates
+            }
+        )
+        .reset_index()
+    )
+
+    # Flatten multi-level column names FIRST
     numeric_aggs.columns = [
         f"{col[0]}_{col[1]}" if col[1] else col[0] for col in numeric_aggs.columns
     ]
+
+    # Add total site count from original data
+    site_counts = pert_df.groupby(pert_col).size().reset_index(name='n_sites')
+    numeric_aggs = pd.merge(numeric_aggs, site_counts, on=pert_col, how='left')
 
     # Rename to match expected output format
     numeric_aggs.rename(
         columns={
             "Count_Cells_mean": "Count_Cells_avg",
             "Count_Cells_std": "Count_Cells_std",
-            "Count_Cells_count": "n_sites",  # Number of site observations
             "last_peak_ind_median": "last_peak_ind",  # Remove _median suffix
             "slope_median": "slope",
             "slope_std": "slope_std",
             "batch_plate_nunique": "n_plates",
-            "Metadata_Well_nunique": "n_wells",
+            "Metadata_Well_sum": "n_wells",
         },
         inplace=True,
     )
