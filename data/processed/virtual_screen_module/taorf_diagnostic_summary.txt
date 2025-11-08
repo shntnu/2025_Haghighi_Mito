@@ -2,9 +2,9 @@ TAORF: Baseline Comparison Summary (n=324)
 ================================================================================
 Metric                Pearson r   Within 10%   Mean Abs Diff
 --------------------------------------------------------------------------------
-Count_Cells_avg           1.000        99.7%           0.019
-slope                     0.849        19.4%           0.215  ⚠⚠
-last_peak_ind             0.516          N/A           0.231
+Count_Cells_avg           1.000        99.7%           0.000
+slope                     0.830        17.6%           0.228  ⚠⚠
+last_peak_ind             0.533          N/A           0.237
 t_target_pattern          0.862        42.0%           0.608  ⚠
 t_orth                    0.882        39.8%           0.841  ⚠
 t_slope                   0.840        10.5%           0.923  ⚠⚠
@@ -18,4 +18,4 @@ Sites per perturbation:  median=45, range=34-1746
   ⚠ 0 perturbations (0.0%) have <10 sites
 Plates per perturbation: median=5, range=4-5
   ⚠ 0 perturbations (0.0%) have only 1 plate
-Slope variability:       median=0.820, range=0.426-3.169
+Slope variability:       median=0.405, range=0.044-1.921
