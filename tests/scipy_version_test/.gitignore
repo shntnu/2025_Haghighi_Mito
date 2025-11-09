@@ -1,0 +1,7 @@
+# Pixi artifacts
+.pixi/
+pixi.lock
+
+# Python
+__pycache__/
+*.pyc
