@@ -12,6 +12,10 @@
 #     name: gan
 # ---
 
+# ruff: noqa
+# type: ignore
+# pyright: basic
+
 # %% [markdown]
 # ## Pipeline to screen phenotype strength of a target feature in various datasets
 # * this pipeline is for screening per site values of the target feature versus control wells for a given dataset
@@ -33,8 +37,9 @@ from datetime import date
 today = date.today()
 
 import sys
-# sys.path.insert(0, '/home/ubuntu/workspace_SingleCell/SingleCell_Morphological_Analysis/') 
-sys.path.insert(0, '/home/jupyter-mhaghigh@broadinst-ee45a/workspace_SingleCell/SingleCell_Morphological_Analysis/') 
+# sys.path.insert(0, '/home/ubuntu/workspace_SingleCell/SingleCell_Morphological_Analysis/')
+# sys.path.insert(0, '/home/jupyter-mhaghigh@broadinst-ee45a/workspace_SingleCell/SingleCell_Morphological_Analysis/')
+# NOTE: singlecell package now installed via pixi, no manual path needed
 from singlecell.read import read_single_cell_sql
 from singlecell.preprocess import handle_nans, extract_cpfeature_names,find_highly_correlated_features
 from singlecell.visualize import visualize_n_SingleCell
@@ -90,19 +95,26 @@ target_features_list_lincs=['slope']
 # target_features_list_lincs=['Cells_RadialDistribution_MeanFrac_mito_tubeness_16of16']
 
 ########################## Project root directory and path to results ########################
-# home_path="/home/ubuntu/" # ec2
-home_path="/home/jupyter-mhaghigh@broadinst-ee45a/" #dgx
-mito_project_root_dir=home_path+"bucket/projects/2016_08_01_RadialMitochondriaDistribution_donna/"
-save_results_dir=mito_project_root_dir+"/workspace/results/"
+# Refactored for local execution
+import os
+repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+mito_project_root_dir = os.path.join(repo_root, "data/external/mito_project") + "/"
+save_results_dir = mito_project_root_dir + "workspace/results/"
 
 # %%
 # python3 ~/imaging-backup-scripts/restore_intelligent.py
 
 # %%
-https://imaging-platform.s3.amazonaws.com/projects/2018_04_20_Rosetta/workspace/preprocessed_data
+# https://imaging-platform.s3.amazonaws.com/projects/2018_04_20_Rosetta/workspace/preprocessed_data
 
 # %% [markdown]
 # #### Preprocess datasets metadata into a unified format to read
+
+"""
+################################################################################
+# SKIPPED SECTION: Metadata preprocessing (lines ~107-233)
+# Already have annot_taorf.csv from previous runs - skip this entire section
+################################################################################
 
 # %%
 # ########## jump_orf
@@ -230,6 +242,10 @@ annot_taorf.Metadata_ASSAY_WELL_ROLE.unique()
 # ls /home/ubuntu/gallery/cpg0017-rohban-pathways/broad/workspace/backend/2013_10_11_SIGMA2_Pilot/
 
 # %%
+
+################################################################################
+# END SKIPPED SECTION: Metadata preprocessing
+"""
 
 # %% [markdown]
 # ### Set dataset specific parameters
@@ -669,6 +685,12 @@ annot[(annot["Metadata_Symbol"].isnull())].Metadata_broad_sample.unique()
 # %%
 # df_sag.columns[df_sag.columns.str.contains('Cyto.*MeanFrac')]
 
+"""
+################################################################################
+# SKIPPED SECTION: Orthogonal features + per-site profile creation (lines ~680-891)
+# Already have orthogonal feature lists and per-site aggregated profiles
+################################################################################
+
 # %% [markdown] heading_collapsed=true
 # ## 1- form a list of orthogonal features based on per well aggregated profiles
 # - jump-orf: 40  orth features saved!
@@ -882,6 +904,10 @@ len(uncorr_feats_condese)
 # %% hidden=true
 # ls /home/ubuntu/bucket/projects/2016_08_01_RadialMitochondriaDistribution_donna/workspace/per_site_aggregated_profiles/jump_crispr
 
+################################################################################
+# END SKIPPED SECTION: Orthogonal features + profile creation
+"""
+
 # %% [markdown] heading_collapsed=true
 # ## 3. Load per_site aggregated data and control target feature for cell counts
 #   - Read the saved aggregated per site level data
@@ -897,12 +923,12 @@ import gc
 f_substr='MeanFrac'
 target_columns=["Cells_RadialDistribution_"+f_substr+"_mito_tubeness_"+str(i)+"of16" for i in range(5,17)]
 
-dataset='CDRP'
-dataset="jump_orf"
+# dataset='CDRP'
+# dataset="jump_orf"
 # dataset="lincs"
-dataset="jump_crispr"
+# dataset="jump_crispr"
 dataset='taorf'
-dataset="jump_compound"
+# dataset="jump_compound"
 
 per_site_profiles_path=mito_project_root_dir+"/workspace/per_site_aggregated_profiles_newpattern_2/"
 # feature_list=['Cells_RadialDistribution_MeanFrac_mito_tubeness_16of16',\
@@ -1037,18 +1063,18 @@ dataset
 batches_df
 
 # %% [markdown]
-# ## 4. find PER PLATE diff and T2test between the target pattern for each pert versus controls 
+# ## 4. find PER PLATE diff and T2test between the target pattern for each pert versus controls
 # - And the same for orth features
 # - We calculate test stats per plate and average values across plates
 
 # %%
-dataset="jump_compound"
+# dataset="jump_compound"  # COMMENTED - using taorf set above
 
 # %%
 # import pingouin
-root_res_dir=mito_project_root_dir+\
-"workspace/"
-write_res_path=root_res_dir+'/results/virtual_screen/'
+# Output to processed/virtual_screen_original/ to distinguish from baseline/module methods
+write_res_path = os.path.join(repo_root, "data/processed/virtual_screen_original/")
+os.makedirs(write_res_path, exist_ok=True)
 f_substr='MeanFrac'
 ##############################################
 from scipy.stats import ttest_ind, norm
