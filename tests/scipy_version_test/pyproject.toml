@@ -1,0 +1,26 @@
+[project]
+name = "scipy-version-test"
+version = "0.1.0"
+description = "Isolated test to verify scipy.signal.savgol_filter behavior across versions"
+requires-python = ">= 3.8"
+
+# Pixi configuration
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64"]  # x86_64 only (runs via Rosetta on ARM Macs)
+
+# No base dependencies - each environment is completely isolated
+
+[tool.pixi.feature.scipy14.dependencies]
+python = "3.8.*"
+numpy = "1.17.*"
+scipy = "1.4.1"
+
+[tool.pixi.feature.scipy116.dependencies]
+python = "3.12.*"
+numpy = ">=2.3"
+scipy = ">=1.16"
+
+[tool.pixi.environments]
+scipy14 = { features = ["scipy14"], solve-group = "scipy14", no-default-feature = true }
+scipy116 = { features = ["scipy116"], solve-group = "scipy116", no-default-feature = true }
