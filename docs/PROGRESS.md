@@ -1190,3 +1190,58 @@ Peak index investigation necessary but constrained by data availability. Pattern
 ### Resolution
 
 Module now uses two-stage aggregation consistently, matching original notebook implementation. This is the correct approach even though single-stage aggregation empirically achieved higher slope correlation (r=0.849 vs 0.830). Methodological fidelity to baseline takes precedence over metric optimization.
+
+---
+
+## 2025-11-09: "Original" Notebook Validation - Module is Closer to Baseline
+
+### What was done
+
+- Created minimal reproduction notebook from `2.0-mh-virtual-screen-original.py` (labeled "original")
+- Applied surgical edits to run taorf dataset only (7 minimal changes)
+- Compared output with baseline using diagnostic tools (hack: copied file to module directory)
+
+### Key findings
+
+**Observed baseline agreement:**
+
+| Method | slope r | t_target_pattern r | Within 10% (slope) |
+|--------|---------|-------------------|-------------------|
+| Baseline (July 2024) | 1.000 | 1.000 | 100% (reference) |
+| Module (haghighi_mito) | 0.830 | 0.923 | 19% |
+| **Minimal notebook** | **0.415** | **0.756** | **7.7%** |
+
+**Observation:** Minimal notebook from `2.0-mh-virtual-screen-original.py` produces 2x worse baseline agreement than module.
+
+**Possible explanations:**
+- Modifications required for local execution (commented sys.path, pixi singlecell package vs original path)
+- Package version differences (original used dgx environment, now using pixi)
+- File may not be the true baseline-generating code (repo created Sept 2025, baseline from July 2024)
+- Environmental differences not accounted for
+
+**Cannot conclude** which explanation is correct without further investigation. What is certain: module (r=0.830) currently achieves better baseline agreement than this notebook snapshot (r=0.415).
+
+### Diagnostic methodology (hack)
+
+Diagnostic tool (`compare-baseline`) expects module output in `virtual_screen_module/` directory. To compare "original" notebook output:
+
+```bash
+# 1. Run minimal notebook (outputs to virtual_screen_original/)
+pixi run python notebooks/2.0-mh-virtual-screen-minimal.py
+
+# 2. Copy to module directory for comparison
+cp data/processed/virtual_screen_original/taorf_*.csv \
+   data/processed/virtual_screen_module/taorf_*.csv
+
+# 3. Run diagnostic comparison
+pixi run haghighi-mito compare-baseline --dataset taorf
+```
+
+This is a workaround - diagnostic tool was designed for module/baseline comparison, not original/baseline. Results are valid but workflow is non-standard.
+
+### Resolution
+
+- **Module remains best available implementation** - achieves r=0.830 baseline agreement
+- **Notebook snapshot underperforms** - but root cause unclear (environmental vs code differences)
+- **Further investigation needed** - to determine if package/environment differences explain discrepancy
+- **Two-stage aggregation confirmed correct** (2025-11-08 entry shows r=1.000 for cell counts)
