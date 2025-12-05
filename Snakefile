@@ -345,6 +345,23 @@ rule diagnose_module:
         pixi run haghighi-mito compare-baseline --dataset {wildcards.dataset}
         """
 
+rule run_reproduction_script:
+    """Run slope discrepancy reproduction script for a dataset (FAST - ~23 sec).
+
+    Recalculates slopes from raw profiles and compares with baseline.
+    Useful for debugging without running full statistical tests.
+    """
+    input:
+        baseline_csv=f"{BASELINE_DIR}/{{dataset}}_results_pattern_aug_070624.csv",
+        per_site_profiles=f"{MITO_WORKSPACE_DIR}/per_site_aggregated_profiles_newpattern_2/{{dataset}}/.download_complete"
+    output:
+        plot="data/processed/virtual_screen_module/{dataset}_slope_discrepancy.png",
+        csv="data/processed/virtual_screen_module/{dataset}_slope_comparison.csv"
+    shell:
+        """
+        pixi run python scripts/reproduce_slope_discrepancy.py {wildcards.dataset}
+        """
+
 ## Processing Rules ##
 
 rule process_module_csv:
@@ -397,6 +414,12 @@ rule all_module_diagnose:
         expand("data/processed/virtual_screen_module/{dataset}_comparison_metrics.png",
                dataset=DATASETS)
 
+rule all_reproduce:
+    """Target: Run reproduction script for all datasets."""
+    input:
+        expand("data/processed/virtual_screen_module/{dataset}_slope_discrepancy.png",
+               dataset=ALL_DATASETS)
+
 rule all_module:
     """Target: Complete Method 2 pipeline (CSV → Excel → DuckDB)."""
     input:
@@ -427,30 +450,6 @@ rule validate_database_pair:
             --baseline data/processed/screen_results_{params.db1}.duckdb \
             --new data/processed/screen_results_{params.db2}.duckdb
         """
-
-
-rule run_reproduction_script:
-    """Run slope discrepancy reproduction script for a dataset.
-
-    Generates detailed comparison plots and CSV for debugging/author consultation.
-    """
-    input:
-        baseline_csv=f"{BASELINE_DIR}/{{dataset}}_results_pattern_aug_070624.csv",
-        per_site_profiles=f"{MITO_WORKSPACE_DIR}/per_site_aggregated_profiles_newpattern_2/{{dataset}}/.download_complete"
-    output:
-        plot="data/processed/virtual_screen_module/{dataset}_slope_discrepancy.png",
-        csv="data/processed/virtual_screen_module/{dataset}_slope_comparison.csv"
-    shell:
-        """
-        pixi run python scripts/reproduce_slope_discrepancy.py {wildcards.dataset}
-        """
-
-
-rule all_reproduce:
-    """Target: Run reproduction script for all datasets."""
-    input:
-        expand("data/processed/virtual_screen_module/{dataset}_slope_discrepancy.png",
-               dataset=ALL_DATASETS)
 
 
 # ============================================================================
