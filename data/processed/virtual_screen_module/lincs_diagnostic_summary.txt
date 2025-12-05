@@ -3,12 +3,12 @@ LINCS: Baseline Comparison Summary (n=9395)
 Metric                Pearson r   Within 10%   Mean Abs Diff
 --------------------------------------------------------------------------------
 Count_Cells_avg           1.000       100.0%           0.000
-slope                     0.911        20.8%           0.122  ⚠
-last_peak_ind             0.627          N/A           0.311
-t_target_pattern          0.925        42.8%           1.475  ⚠
-t_orth                    0.824        35.4%           7.220  ⚠
-t_slope                   0.806        13.4%           1.113  ⚠⚠
-d_slope                   0.884        17.0%           0.274  ⚠⚠
+slope                     1.000       100.0%           0.000
+last_peak_ind             1.000          N/A           0.000
+t_target_pattern          1.000       100.0%           0.000
+t_orth                    1.000       100.0%           0.000
+t_slope                   1.000       100.0%           0.000
+d_slope                   1.000       100.0%           0.000
 ================================================================================
 ⚠ = <50% within 10%, ⚠⚠ = <20% within 10%
 
@@ -18,4 +18,4 @@ Sites per perturbation:  median=45, range=8-14387
   ⚠ 333 perturbations (3.5%) have <10 sites
 Plates per perturbation: median=5, range=1-134
   ⚠ 334 perturbations (3.6%) have only 1 plate
-Slope variability:       median=0.258, range=0.016-2.125
+Slope variability:       median=0.274, range=0.034-2.167
