@@ -1,0 +1,21 @@
+JUMP_ORF: Baseline Comparison Summary (n=15132)
+================================================================================
+Metric                Pearson r   Within 10%   Mean Abs Diff
+--------------------------------------------------------------------------------
+Count_Cells_avg           1.000        97.7%           0.000
+slope                     0.993        83.5%           0.020
+last_peak_ind             0.978          N/A           0.017
+t_target_pattern          0.979        91.8%           0.052
+t_orth                    0.867        69.6%           0.425
+t_slope                   0.991        78.2%           0.051
+d_slope                   0.997        80.5%           0.010
+================================================================================
+⚠ = <50% within 10%, ⚠⚠ = <20% within 10%
+
+PROVENANCE METADATA (regenerated data only)
+--------------------------------------------------------------------------------
+Sites per perturbation:  median=45, range=8-17190
+  ⚠ 335 perturbations (2.2%) have <10 sites
+Plates per perturbation: median=5, range=1-225
+  ⚠ 335 perturbations (2.2%) have only 1 plate
+Slope variability:       median=0.460, range=0.033-2.960
