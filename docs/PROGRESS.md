@@ -1302,3 +1302,24 @@ Also added second standardization pass for radial + orthogonal features before s
 
 - Pattern follows successful consolidation in `cpg0037-oasis-broad-U2OS-data` repo
 - Net reduction: -71 lines (Justfile deleted, Snakefile expanded with utility rules)
+
+---
+
+## 2025-12-04: JUMP Dataset Discrepancy Investigation
+
+### What was done
+
+- Investigated why JUMP datasets show r=0.993 while CDRP shows r=1.000
+- Compared with upstream repo (`2025_Haghighi_Mito-upstream`) preprocessing
+- Added `handle_nans()` function (from upstream `utils.py`) to test if NaN handling was the cause
+
+### Key findings
+
+- `handle_nans` preprocessing did NOT improve correlation (still r=0.993)
+- Function retained in codebase but not called (for future reference)
+- JUMP discrepancy remains unexplained; likely due to pre-repository baseline generation
+
+### Notes
+
+- r=0.993 is acceptable for practical purposes
+- Root cause may be floating point differences or aggregation order in original code
