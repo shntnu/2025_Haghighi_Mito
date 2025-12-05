@@ -429,6 +429,39 @@ rule validate_database_pair:
         """
 
 
+rule run_reproduction_script:
+    """Run slope discrepancy reproduction script for a dataset.
+
+    Generates detailed comparison plots and CSV for debugging/author consultation.
+    """
+    input:
+        baseline_csv=f"{BASELINE_DIR}/{{dataset}}_results_pattern_aug_070624.csv",
+        per_site_profiles=f"{MITO_WORKSPACE_DIR}/per_site_aggregated_profiles_newpattern_2/{{dataset}}/.download_complete"
+    output:
+        plot="data/processed/virtual_screen_module/{dataset}_slope_discrepancy.png",
+        csv="data/processed/virtual_screen_module/{dataset}_slope_comparison.csv"
+    shell:
+        """
+        pixi run python scripts/reproduce_slope_discrepancy.py {wildcards.dataset}
+        """
+
+
+rule all_reproduce:
+    """Target: Run reproduction script for all datasets."""
+    input:
+        expand("data/processed/virtual_screen_module/{dataset}_slope_discrepancy.png",
+               dataset=DATASETS)
+
+
+rule all_analysis:
+    """Target: Run ALL analysis (diagnostics + reproduction) for all datasets."""
+    input:
+        expand("data/processed/virtual_screen_module/{dataset}_comparison_metrics.png",
+               dataset=DATASETS),
+        expand("data/processed/virtual_screen_module/{dataset}_slope_discrepancy.png",
+               dataset=DATASETS)
+
+
 # ============================================================================
 # Configuration Display
 # ============================================================================

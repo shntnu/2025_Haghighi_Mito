@@ -58,6 +58,9 @@ snakemake data/processed/virtual_screen_module/taorf_results_pattern_aug_070624.
 # Diagnostics (~1 sec)
 snakemake data/processed/virtual_screen_module/taorf_comparison_metrics.png -c1 -p  # Single
 snakemake all_module_diagnose -c4 -p                                                 # All
+
+# Full analysis (diagnostics + reproduction scripts)
+snakemake all_analysis -c4 -p
 ```
 
 **Utility commands:**
