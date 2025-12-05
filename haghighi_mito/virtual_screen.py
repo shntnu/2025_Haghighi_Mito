@@ -563,22 +563,23 @@ def calculate_statistical_tests(per_site_df, dataset: str):
     control_dfs_by_plate = {plate: group for plate, group in control_df.groupby("batch_plate")}
     logger.info(f"Prepared controls for {len(control_dfs_by_plate)} plates")
 
-    # Get unique perturbations (non-controls only)
+    # Get non-control data and group by perturbation
     pert_df = per_site_df[per_site_df["ctrl_well"] == False].copy()  # noqa: E712
-    unique_perts = pert_df[pert_col].dropna().unique()
-    logger.info(f"Processing {len(unique_perts)} unique perturbations")
+    pert_df = pert_df[pert_df[pert_col].notna()]  # Remove NaN perturbations upfront
+
+    # Use groupby for efficient iteration (avoids O(n) filter per perturbation)
+    pert_groups = pert_df.groupby(pert_col, sort=False)
+    n_perts = len(pert_groups)
+    logger.info(f"Processing {n_perts} unique perturbations (using groupby)")
 
     # Process each perturbation
     results_list = []
 
-    for i, pert in enumerate(unique_perts):
-        if (i + 1) % 50 == 0:
-            logger.info(f"  Processed {i + 1}/{len(unique_perts)} perturbations")
+    for i, (pert, per_site_df_pert) in enumerate(pert_groups):
+        if (i + 1) % 500 == 0:
+            logger.info(f"  Processed {i + 1}/{n_perts} perturbations")
 
-        # Get data for this perturbation
-        per_site_df_pert = pert_df[pert_df[pert_col] == pert].copy()
-
-        # Calculate statistics using vectorized function
+        # Calculate statistics using vectorized function (group already filtered)
         batch_results = batch_plate_statistics(per_site_df_pert, control_dfs_by_plate, target_columns, orth_features)
 
         if batch_results is None:
