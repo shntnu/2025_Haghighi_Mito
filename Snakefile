@@ -408,7 +408,7 @@ rule all_module_diagnose:
     """Target: Run diagnostics (comparison CSV + plots) for all datasets."""
     input:
         expand("data/processed/virtual_screen_module/{dataset}_comparison_metrics.png",
-               dataset=DATASETS)
+               dataset=ALL_DATASETS)
 
 rule all_module_reproduce:
     """Target: Run reproduction script for all datasets."""
