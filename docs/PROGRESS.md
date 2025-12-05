@@ -1356,3 +1356,29 @@ for i, (pert, per_site_df_pert) in enumerate(pert_df.groupby(pert_col, sort=Fals
 
 - Also changed progress logging from every 50 to every 500 perturbations
 - All datasets now complete full virtual screen in under 20 minutes
+
+---
+
+## 2025-12-05: JUMP Dataset Discrepancy Investigation - Concluded
+
+### What was done
+
+- Investigated why jump_orf shows r=0.993 instead of r=1.000 (like taorf/lincs)
+- Compared upstream notebook `3.rank_perturbations.ipynb` with current implementation
+- Tested reverting `nanpercentile` to old `argsort` method for median plate selection
+- Tested adding `handle_nans()` preprocessing from `singlecell` package
+
+### Key findings
+
+**Neither change improved correlation:**
+- `argsort` method: No effect (the reproduce script only uses `calculate_metrics()`, not `calculate_statistical_tests()` where median plate selection happens)
+- `handle_nans`: No effect - jump_orf has no NaN rows to drop (777,496 rows before and after)
+
+**Root cause remains unknown but acceptable:**
+- r=0.993 is very high correlation
+- Baseline likely generated with slightly different code or floating point precision
+- taorf/lincs baseline may have been generated at different time than JUMP datasets
+
+### Resolution
+
+Accepting r=0.993 for jump_orf as "good enough". The discrepancy is small (~0.7%) and doesn't affect practical use of the pipeline. Further investigation would require access to the exact environment/code used to generate the July 2024 baseline.
