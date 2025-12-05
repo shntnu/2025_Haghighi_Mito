@@ -250,45 +250,39 @@ Cannot reproduce baseline without access to July 2024 code. Three options:
 
 ## Current Status
 
+### ✅ Baseline Reproduction Achieved (2025-12-04)
+
+**Module now perfectly reproduces July 2024 baseline** (r=1.000 for all metrics).
+
+- **taorf:** 324 perturbations, 99.7% within 10%
+- **lincs:** 9,395 perturbations, 100% within 10%
+
+Two algorithmic fixes identified from upstream refactored code:
+1. Pre-standardize radial features per plate BEFORE control subtraction
+2. Use `nanpercentile(interpolation="nearest")` for median plate selection
+
+See entry **2025-12-04** below for details.
+
 ### What's Working ✅
 
-- **Baseline pipeline:** Fully validated, reproducible, safe for publication
+- **Module pipeline:** Fully validated, reproduces baseline perfectly
+  - Raw profiles → CSV → Excel → DuckDB
+  - r=1.000 correlation with July 2024 baseline
+  - Run via: `just generate-module-all`
+
+- **Baseline pipeline:** Pre-computed CSVs (for comparison/fallback)
   - S3 CSVs → Excel → DuckDB (178,826 rows)
-  - Perfect match to Aug 2024 curated files
-  - Run via: `just download-baseline && just run-baseline`
+  - Run via: `just generate-baseline-all`
 
 - **Infrastructure:** Production-ready automation
   - Snakemake pipeline with Justfile commands
   - Typer CLI for processing operations
   - Parquet integration for performance
-  - Pipeline visualization tools
 
 - **Performance:** Optimized and tested
-  - Vectorized slope: 200x speedup (validated on baseline)
+  - Vectorized slope: 200x speedup
   - Vectorized stats: 10-30x speedup
   - Parallel processing: 6 datasets in <1 minute
-
-### Critical Issue ⚠️
-
-**Regenerated pipeline produces 99.99% different results from baseline**
-
-**Root cause:** Control subtraction timing difference (`if 1` vs `if 0` branch in notebook 2.0)
-
-- Cannot reproduce baseline without knowing which branch was used in July 2024
-- Vectorization is NOT the bug (functions produce identical results)
-- This is a fundamental methodological question: Should slope be calculated on control-subtracted or z-scored data?
-
-**Impact:**
-
-- Baseline pipeline validated → safe for publication
-- Regenerated pipeline functional but divergent → experimental only
-- Optimization work cannot be validated against baseline
-
-**Decision required:**
-
-- Accept baseline as-is (use S3 results, optimization unvalidated)
-- OR commit to regenerated version (document divergence from baseline)
-- OR reverse-engineer baseline methodology from results
 
 ---
 
@@ -1245,3 +1239,42 @@ This is a workaround - diagnostic tool was designed for module/baseline comparis
 - **Notebook snapshot underperforms** - but root cause unclear (environmental vs code differences)
 - **Further investigation needed** - to determine if package/environment differences explain discrepancy
 - **Two-stage aggregation confirmed correct** (2025-11-08 entry shows r=1.000 for cell counts)
+
+---
+
+## 2025-12-04: Perfect Baseline Reproduction Achieved
+
+### What was done
+
+- Analyzed upstream refactored code (`3.rank_perturbations.ipynb`) from Marzieh's updated repository
+- Identified two algorithmic differences causing baseline disagreement
+- Implemented fixes in `haghighi_mito/virtual_screen.py`
+
+### Key findings
+
+**Two fixes achieved r=1.000 baseline reproduction:**
+
+1. **Pre-standardize radial features per plate BEFORE control subtraction**
+   - Added z-score normalization at `calculate_metrics()` line 272-277
+   - Previously suspected (PROGRESS.md line 956) but never tested
+   - This alone improved slope from r=0.830 → r=1.000
+
+2. **Use `nanpercentile(interpolation="nearest")` for median plate selection**
+   - Changed from `np.argsort(np.abs(tvals))` to upstream method
+   - This fixed t-values: t_target_pattern r=0.942 → r=1.000
+
+Also added second standardization pass for radial + orthogonal features before statistical tests (matches upstream double-standardization pattern).
+
+### Validation results
+
+| Dataset | Perturbations | slope r | t_target_pattern r | Within 10% |
+|---------|--------------|---------|-------------------|------------|
+| taorf   | 324          | 1.000   | 1.000             | 99.7%      |
+| lincs   | 9,395        | 1.000   | 1.000             | 100%       |
+
+### Resolution
+
+- **Environment differences NOT required** - pure algorithmic fix
+- **Module now production-ready** - can regenerate results from raw data
+- **Upstream refactored code** validated the correct methodology
+- Previous hypothesis about scipy/numpy version differences was a red herring
