@@ -7,21 +7,30 @@ Three methods for generating virtual screen results:
 Method 0: BASELINE (Recommended for production/publication)
   - Uses pre-computed validated results from S3
   - Fast, no recalculation
-  - Run: just generate-baseline-all
+  - Run: snakemake all_baseline -c4 -p
   - Output: data/processed/screen_results_baseline.duckdb
 
 Method 1: NOTEBOOK (Original exploratory implementation)
   - Recalculates from raw per-site profiles
   - Converted Jupyter notebook (retained for reference)
-  - Run: just generate-notebook-all
+  - Run: snakemake all_notebook -c4 -p
   - Output: data/processed/screen_results_notebook.duckdb
 
 Method 2: MODULE (Recommended for development)
   - Recalculates from raw per-site profiles
   - Clean refactored implementation
   - Includes diagnostic comparisons with baseline
-  - Run: just generate-module-all
+  - Run: snakemake all_module -c4 -p
   - Output: data/processed/screen_results_module.duckdb
+
+COMMON COMMANDS
+===============
+  snakemake --list-target-rules          # List all available targets
+  snakemake all_baseline -c4 -p          # Method 0: Baseline pipeline
+  snakemake all_module -c4 -p            # Method 2: Module pipeline
+  snakemake all_module_diagnose -c4 -p   # Run diagnostics for all datasets
+  snakemake -n -p <target>               # Dry run (preview)
+  snakemake --summary                    # Show pipeline status
 
 REPRODUCIBILITY
 ===============
@@ -84,7 +93,7 @@ TABLES_MODULE = f"{PROCESSED_DATA_DIR}/tables/generated_from_module"
 # It only performs filtering and formatting - NO slope calculation or stats.
 # Output: data/processed/screen_results_baseline.duckdb (178,826 rows for all 6 datasets)
 #
-# Commands: just generate-baseline-all
+# Usage: snakemake all_baseline -c4 -p
 
 ## Download Rules ##
 
@@ -139,14 +148,6 @@ rule create_baseline_database:
         """
 
 ## Target Rules ##
-
-# NOTE: No default 'rule all' is defined. Users should run explicit targets via Justfile:
-#   - just generate-baseline-all  (Method 0 - validated results)
-#   - just generate-notebook-all  (Method 1 - original implementation)
-#   - just generate-module-all    (Method 2 - refactored implementation)
-#
-# FUTURE: Consider adding 'rule all' that runs both baseline (validated) + module
-# (reproducible) as the recommended default workflow.
 
 rule all_baseline:
     """Target: Complete baseline pipeline (CSV → Excel → DuckDB)."""
@@ -211,7 +212,7 @@ rule download_metadata_file:
 # STATUS: ✅ COMPLETE - Full pipeline works (CSV → Excel → DuckDB)
 #          Method 2 provides a cleaner refactored implementation
 #
-# Commands: just generate-notebook-all
+# Usage: snakemake all_notebook -c4 -p
 # Output: data/processed/screen_results_notebook.duckdb
 
 ## Notebook Execution Rules ##
@@ -303,7 +304,7 @@ rule all_notebook:
 # STATUS: ✅ COMPLETE - Full pipeline works (CSV → Excel → DuckDB)
 #          Clean refactored implementation, recommended for development
 #
-# Commands: just generate-module-all
+# Usage: snakemake all_module -c4 -p
 # Output: data/processed/screen_results_module.duckdb
 
 ## Analysis Rules ##
@@ -397,13 +398,35 @@ rule all_module_diagnose:
                dataset=DATASETS)
 
 rule all_module:
-    """Target: Complete Method 2 pipeline (CSV → Excel → DuckDB).
-
-    This is the Method 2 equivalent of all_notebook (Method 1).
-    Use: just generate-module-all
-    """
+    """Target: Complete Method 2 pipeline (CSV → Excel → DuckDB)."""
     input:
         "data/processed/screen_results_module.duckdb"
+
+
+# ============================================================================
+# UTILITY RULES
+# ============================================================================
+
+rule generate_dag_visualizations:
+    """Generate DAG PNGs for all pipeline methods in docs/pipeline/."""
+    shell:
+        "./scripts/generate-dag.sh"
+
+
+rule validate_database_pair:
+    """Compare two DuckDB databases (e.g., baseline vs module).
+
+    Usage: snakemake validate_database_pair --config db1=baseline db2=module
+    """
+    params:
+        db1=config.get("db1", "baseline"),
+        db2=config.get("db2", "module")
+    shell:
+        """
+        pixi run haghighi-mito validate-databases \
+            --baseline data/processed/screen_results_{params.db1}.duckdb \
+            --new data/processed/screen_results_{params.db2}.duckdb
+        """
 
 
 # ============================================================================

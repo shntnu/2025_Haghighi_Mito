@@ -171,7 +171,7 @@ def main(
     if not baseline_file.exists():
         logger.error("Baseline data not found!")
         logger.error(f"Expected: {baseline_file}")
-        logger.error("Please run first: just generate-baseline-all")
+        logger.error("Please run first: snakemake all_baseline -c4 -p")
         sys.exit(1)
 
     logger.info("=" * 80)

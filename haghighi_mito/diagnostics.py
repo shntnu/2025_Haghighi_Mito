@@ -6,7 +6,7 @@ Functions:
     compare_with_baseline(results, dataset) - Internal: comparison logic
 
 Workflow:
-    just diagnose-for taorf  → comparison CSV + diagnostic PNG (1 command!)
+    snakemake data/processed/virtual_screen_module/taorf_comparison_metrics.png -c1 -p
 
 Files:
     Input:  virtual_screen_module/{dataset}_results_pattern_aug_070624.csv (module)

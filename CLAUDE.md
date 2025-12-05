@@ -32,8 +32,7 @@ This repository follows the [Carpenter-Singh lab workflow conventions](protocols
 │   ├── external/          # Downloaded data from S3 (gitignored)
 │   ├── interim/           # Intermediate Parquet files (gitignored)
 │   └── processed/         # Final outputs (DuckDB, Excel, figures)
-├── Snakefile              # Pipeline automation (download + processing)
-├── Justfile               # Convenience commands (run, clean, viz)
+├── Snakefile              # Pipeline automation (all commands)
 ├── pyproject.toml         # Pixi configuration and dependencies
 └── protocols/             # Experimental protocols and workflow docs
 ```
@@ -41,22 +40,33 @@ This repository follows the [Carpenter-Singh lab workflow conventions](protocols
 ## Common Commands
 
 ```bash
-just --list                          # View all available commands
+snakemake --list-target-rules        # View all available targets
 ```
 
 **Quick workflows:**
 
 ```bash
 # Baseline (validated, fast ~5 min)
-just generate-baseline-all           # Download from S3 → Excel → DuckDB
+snakemake all_baseline -c4 -p        # Download from S3 → Excel → DuckDB
 
 # Regenerate from raw data (~10 min/dataset)
-just generate-module-all             # Full pipeline: profiles → CSV → Excel → DuckDB
-just generate-module-csv-for taorf   # Single dataset CSV only
+snakemake all_module -c4 -p          # Full pipeline: profiles → CSV → Excel → DuckDB
+
+# Single dataset CSV only
+snakemake data/processed/virtual_screen_module/taorf_results_pattern_aug_070624.csv -c1 -p
 
 # Diagnostics (~1 sec)
-just diagnose-for taorf              # Compare with baseline + plots
-just diagnose-all                    # All datasets
+snakemake data/processed/virtual_screen_module/taorf_comparison_metrics.png -c1 -p  # Single
+snakemake all_module_diagnose -c4 -p                                                 # All
+```
+
+**Utility commands:**
+
+```bash
+snakemake -n -p <target>             # Dry run (preview what will run)
+snakemake --summary                  # Show pipeline status
+snakemake generate_dag_visualizations  # Generate DAG PNGs
+snakemake validate_database_pair --config db1=baseline db2=module  # Compare databases
 ```
 
 **Python CLI (for advanced control):**
@@ -79,9 +89,9 @@ Three methods for generating virtual screen results:
 
 | Method | Input | Processing | Speed | Command | Use Case |
 |--------|-------|------------|-------|---------|----------|
-| **0: Baseline** | Pre-computed CSVs (65 MB) | Filtering only | ~5 min | `just generate-baseline-all` | **Production** (validated) |
-| **1: Notebook** | Raw profiles (2.7 GB) | Full recalculation | ~10 min/dataset | `just generate-notebook-all` | Reference (original code) |
-| **2: Module** | Raw profiles (2.7 GB) | Full recalculation | ~10 min/dataset | `just generate-module-all` | **Development** (clean code) |
+| **0: Baseline** | Pre-computed CSVs (65 MB) | Filtering only | ~5 min | `snakemake all_baseline` | **Production** (validated) |
+| **1: Notebook** | Raw profiles (2.7 GB) | Full recalculation | ~10 min/dataset | `snakemake all_notebook` | Reference (original code) |
+| **2: Module** | Raw profiles (2.7 GB) | Full recalculation | ~10 min/dataset | `snakemake all_module` | **Development** (clean code) |
 
 - **Method 0** outputs: `screen_results_baseline.duckdb` (178,826 rows), uses `haghighi_mito/data.py`
 - **Method 1** outputs: `screen_results_notebook.duckdb`, uses `notebooks/2.0-mh-virtual-screen.py` (1433 lines)
