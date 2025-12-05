@@ -345,7 +345,7 @@ rule diagnose_module:
         pixi run haghighi-mito compare-baseline --dataset {wildcards.dataset}
         """
 
-rule run_reproduction_script:
+rule reproduce_module:
     """Run slope discrepancy reproduction script for a dataset (FAST - ~23 sec).
 
     Recalculates slopes from raw profiles and compares with baseline.
@@ -414,7 +414,7 @@ rule all_module_diagnose:
         expand("data/processed/virtual_screen_module/{dataset}_comparison_metrics.png",
                dataset=DATASETS)
 
-rule all_reproduce:
+rule all_module_reproduce:
     """Target: Run reproduction script for all datasets."""
     input:
         expand("data/processed/virtual_screen_module/{dataset}_slope_discrepancy.png",
