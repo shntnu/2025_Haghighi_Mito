@@ -453,15 +453,6 @@ rule all_reproduce:
                dataset=ALL_DATASETS)
 
 
-rule all_analysis:
-    """Target: Run ALL analysis (diagnostics + reproduction) for all datasets."""
-    input:
-        expand("data/processed/virtual_screen_module/{dataset}_comparison_metrics.png",
-               dataset=ALL_DATASETS),
-        expand("data/processed/virtual_screen_module/{dataset}_slope_discrepancy.png",
-               dataset=ALL_DATASETS)
-
-
 # ============================================================================
 # Configuration Display
 # ============================================================================
