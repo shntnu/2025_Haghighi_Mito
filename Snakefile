@@ -41,7 +41,8 @@ validated publication results. See docs/PROGRESS.md for details.
 
 CONFIGURATION
 =============
-Edit DATASETS variable below to process all 6 datasets or subset for testing.
+ALL_DATASETS: All 6 datasets (used by Method 0 baseline and Method 2 module)
+NOTEBOOK_DATASETS: Limited set for Method 1 notebook (only validated for lincs/taorf)
 
 """
 
@@ -53,9 +54,8 @@ Edit DATASETS variable below to process all 6 datasets or subset for testing.
 # All 6 datasets available in the study
 ALL_DATASETS = ["CDRP", "jump_compound", "jump_crispr", "jump_orf", "lincs", "taorf"]
 
-# Filtered subset for Methods 1 & 2 (regeneration from raw data - slower)
-# Method 0 (baseline) uses ALL_DATASETS since it only downloads pre-computed CSVs (fast)
-DATASETS = ["lincs", "taorf"]
+# Method 1 (notebook) only validated for these datasets
+NOTEBOOK_DATASETS = ["lincs", "taorf"]
 
 # S3 configuration
 S3_BASE = "s3://imaging-platform/projects/2016_08_01_RadialMitochondriaDistribution_donna/workspace"
@@ -265,12 +265,12 @@ rule create_notebook_database:
     """Combine notebook-generated Parquet files into unified DuckDB database (Method 1)."""
     input:
         expand(f"{INTERIM_NOTEBOOK}/{{dataset}}_unfiltered.parquet",
-               dataset=DATASETS)
+               dataset=NOTEBOOK_DATASETS)
     output:
         "data/processed/screen_results_notebook.duckdb"
     params:
         output_path="data/processed/screen_results_notebook.duckdb",
-        datasets=",".join(DATASETS)
+        datasets=",".join(NOTEBOOK_DATASETS)
     shell:
         """
         pixi run haghighi-mito create-database \
@@ -287,7 +287,7 @@ rule all_notebook_csvs:
     """Target: Generate results CSVs for all datasets (notebook analysis only, no Excel/DuckDB)."""
     input:
         expand(f"{NOTEBOOK_DIR}/{{dataset}}_results_pattern_aug_070624.csv",
-               dataset=DATASETS)
+               dataset=NOTEBOOK_DATASETS)
 
 rule all_notebook:
     """Target: Complete Method 1 pipeline (notebook → CSV → Excel → DuckDB)."""
@@ -458,7 +458,8 @@ onstart:
     print("MITOCHONDRIAL MORPHOLOGY SCREEN PIPELINE")
     print("=" * 70)
     print(f"Baseline datasets (Method 0): {', '.join(ALL_DATASETS)}")
-    print(f"Module/Notebook datasets (Methods 1 & 2): {', '.join(DATASETS)}")
+    print(f"Module datasets (Method 2): {', '.join(ALL_DATASETS)}")
+    print(f"Notebook datasets (Method 1): {', '.join(NOTEBOOK_DATASETS)}")
     print(f"Data directory: {DATA_DIR}")
     print(f"Mito workspace: {MITO_WORKSPACE_DIR}")
     print(f"Baseline output: {PROCESSED_DATA_DIR}/screen_results_baseline.duckdb")
