@@ -1278,3 +1278,27 @@ Also added second standardization pass for radial + orthogonal features before s
 - **Module now production-ready** - can regenerate results from raw data
 - **Upstream refactored code** validated the correct methodology
 - Previous hypothesis about scipy/numpy version differences was a red herring
+
+---
+
+## 2025-12-04: Workflow Consolidation - Justfile Eliminated
+
+### What was done
+
+- Consolidated all workflow commands into Snakefile, eliminating Justfile
+- Added utility rules: `generate_dag_visualizations`, `validate_database_pair`
+- Updated `.envrc` with pixi shell-hook for direct `snakemake` usage
+
+### Key changes
+
+| Old (Justfile) | New (Snakefile) |
+|----------------|-----------------|
+| `just generate-baseline-all` | `snakemake all_baseline -c4 -p` |
+| `just generate-module-all` | `snakemake all_module -c4 -p` |
+| `just diagnose-for taorf` | `snakemake data/processed/virtual_screen_module/taorf_comparison_metrics.png` |
+| `just viz` | `snakemake generate_dag_visualizations` |
+
+### Notes
+
+- Pattern follows successful consolidation in `cpg0037-oasis-broad-U2OS-data` repo
+- Net reduction: -71 lines (Justfile deleted, Snakefile expanded with utility rules)
