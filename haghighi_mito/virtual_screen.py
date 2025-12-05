@@ -54,6 +54,72 @@ from haghighi_mito.vectorized_slope import find_end_slope2_vectorized
 from haghighi_mito.vectorized_stats import batch_plate_statistics
 
 
+def handle_nans(
+    df: pd.DataFrame,
+    feature_cols: list[str],
+    thrsh_null_ratio: float = 0.05,
+    thrsh_std: float = 0.001,
+    fill_na_method: str = "drop-rows",
+) -> tuple[pd.DataFrame, list[str]]:
+    """Handle NaN values and low-variance columns in feature data.
+
+    This replicates the preprocessing from upstream utils.py::handle_nans().
+    Called before standardization to ensure consistent feature set.
+
+    Args:
+        df: DataFrame with features
+        feature_cols: List of feature columns to process
+        thrsh_null_ratio: Remove columns with null ratio > this threshold (default 0.05 = 5%)
+        thrsh_std: Remove columns with std < this threshold (default 0.001)
+        fill_na_method: How to handle remaining NaNs - "drop-rows", "median", or None
+
+    Returns:
+        Tuple of (processed DataFrame, list of remaining feature columns)
+    """
+    # Only process columns that exist in the dataframe
+    feature_cols = [c for c in feature_cols if c in df.columns]
+    logger.info(f"handle_nans: Processing {len(feature_cols)} feature columns")
+
+    # Convert object columns to numeric
+    object_cols = df[feature_cols].select_dtypes([object]).columns
+    if len(object_cols) > 0:
+        df[object_cols] = df[object_cols].apply(pd.to_numeric, errors="coerce")
+
+    # Find columns with too many nulls
+    null_ratios = df[feature_cols].isnull().sum() / len(df)
+    cols_many_nulls = null_ratios[null_ratios > thrsh_null_ratio].index.tolist()
+
+    # Find columns with very low variance
+    stds = df[feature_cols].std()
+    cols_low_var = stds[stds < thrsh_std].index.tolist()
+
+    cols_to_remove = list(set(cols_many_nulls + cols_low_var))
+
+    if cols_many_nulls:
+        logger.info(f"  Removing {len(cols_many_nulls)} columns with >{thrsh_null_ratio*100}% nulls")
+    if cols_low_var:
+        logger.info(f"  Removing {len(cols_low_var)} columns with std < {thrsh_std}")
+
+    # Remove problematic columns
+    df = df.drop(columns=[c for c in cols_to_remove if c in df.columns], errors="ignore")
+    features_remaining = [c for c in feature_cols if c not in cols_to_remove]
+
+    # Handle remaining NaN values
+    if fill_na_method == "drop-rows":
+        n_before = len(df)
+        df = df.dropna(subset=features_remaining).reset_index(drop=True)
+        n_dropped = n_before - len(df)
+        if n_dropped > 0:
+            logger.info(f"  Dropped {n_dropped} rows with NaN values ({n_before} -> {len(df)})")
+    elif fill_na_method == "median":
+        df.loc[:, features_remaining] = df.loc[:, features_remaining].fillna(
+            df[features_remaining].median()
+        )
+
+    logger.info(f"  Features remaining: {len(features_remaining)}")
+    return df, features_remaining
+
+
 def preprocess_metadata(dataset: str, mito_project_root: Path) -> pd.DataFrame:
     """Preprocess raw metadata for a dataset.
 
