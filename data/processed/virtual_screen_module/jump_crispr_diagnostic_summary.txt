@@ -1,0 +1,21 @@
+JUMP_CRISPR: Baseline Comparison Summary (n=7977)
+================================================================================
+Metric                Pearson r   Within 10%   Mean Abs Diff
+--------------------------------------------------------------------------------
+Count_Cells_avg           1.000       100.0%           0.000
+slope                     0.900        22.4%           0.131  ⚠
+last_peak_ind             0.794          N/A           0.146
+t_target_pattern          0.886        64.1%           0.986
+t_orth                    0.907        66.0%           1.416
+t_slope                   0.926        18.1%           0.595  ⚠⚠
+d_slope                   0.959        18.8%           0.140  ⚠⚠
+================================================================================
+⚠ = <50% within 10%, ⚠⚠ = <20% within 10%
+
+PROVENANCE METADATA (regenerated data only)
+--------------------------------------------------------------------------------
+Sites per perturbation:  median=45, range=9-38250
+  ⚠ 3 perturbations (0.0%) have <10 sites
+Plates per perturbation: median=5, range=1-143
+  ⚠ 3 perturbations (0.0%) have only 1 plate
+Slope variability:       median=0.407, range=0.035-2.068
