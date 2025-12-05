@@ -1323,3 +1323,36 @@ Also added second standardization pass for radial + orthogonal features before s
 
 - r=0.993 is acceptable for practical purposes
 - Root cause may be floating point differences or aggregation order in original code
+
+---
+
+## 2025-12-05: Performance Optimization - 24x Speedup for Large Datasets
+
+### What was done
+
+- Identified O(n²) bottleneck in `calculate_statistical_tests()` for large datasets
+- Refactored from filter-in-loop to groupby pattern
+
+### Key findings
+
+**Root cause:** DataFrame filter inside loop of 115k perturbations:
+```python
+# OLD (O(n²) - filter scans entire DataFrame each iteration)
+for i, pert in enumerate(unique_perts):
+    per_site_df_pert = pert_df[pert_df[pert_col] == pert].copy()
+
+# NEW (O(n) - single groupby, then iterate groups)
+for i, (pert, per_site_df_pert) in enumerate(pert_df.groupby(pert_col, sort=False)):
+```
+
+**Performance results:**
+
+| Dataset | Perturbations | Before | After | Speedup |
+|---------|--------------|--------|-------|---------|
+| jump_compound | 115,729 | ~8 hours | ~20 min | **24x** |
+| taorf | 773 | ~13 min | ~5 sec | **150x** |
+
+### Notes
+
+- Also changed progress logging from every 50 to every 500 perturbations
+- All datasets now complete full virtual screen in under 20 minutes
