@@ -1,0 +1,21 @@
+CDRP: Baseline Comparison Summary (n=30618)
+================================================================================
+Metric                Pearson r   Within 10%   Mean Abs Diff
+--------------------------------------------------------------------------------
+Count_Cells_avg           1.000       100.0%           0.000
+slope                     1.000       100.0%           0.000
+last_peak_ind             1.000          N/A           0.000
+t_target_pattern          1.000       100.0%           0.000
+t_orth                    1.000       100.0%           0.000
+t_slope                   1.000       100.0%           0.000
+d_slope                   1.000       100.0%           0.000
+================================================================================
+⚠ = <50% within 10%, ⚠⚠ = <20% within 10%
+
+PROVENANCE METADATA (regenerated data only)
+--------------------------------------------------------------------------------
+Sites per perturbation:  median=24, range=2-96
+  ⚠ 237 perturbations (0.8%) have <10 sites
+Plates per perturbation: median=4, range=1-8
+  ⚠ 216 perturbations (0.7%) have only 1 plate
+Slope variability:       median=0.506, range=0.000-5.236
