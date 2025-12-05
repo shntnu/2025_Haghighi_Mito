@@ -101,14 +101,16 @@ See Snakefile docstring for full pipeline documentation.
 
 ## Reproducibility Status
 
-⚠️ **Regenerated methods (1 & 2) show incomplete agreement with validated baseline.**
+✅ **Module perfectly reproduces July 2024 baseline** (r=1.000 for all metrics).
 
-- **Root cause**: Baseline generated with pre-repository code (Sept 2025 repo creation)
-- **Input data**: Confirmed identical (100% match on `Count_Cells_avg`)
-- **Agreement**: Method 2 closer to baseline than Method 1, but discrepancies remain unexplained
-- **Recommendation**: Use Method 0 for publication; Method 2 for development
+Two algorithmic fixes resolved prior discrepancies:
+1. Pre-standardize radial features per plate before control subtraction
+2. Use `nanpercentile` for median plate selection (matching upstream method)
 
-See `docs/PROGRESS.md` for detailed diagnostics and investigation history.
+- **Validation**: taorf (324 perturbations) and lincs (9,395 perturbations) both show 99.7-100% agreement
+- **Recommendation**: Use Method 2 (module) for both development and production
+
+See `docs/PROGRESS.md` for detailed investigation history.
 
 ## Dataset Configuration
 
