@@ -380,12 +380,12 @@ rule create_module_database:
     """Combine module-generated Parquet files into unified DuckDB database (Method 2)."""
     input:
         expand(f"{INTERIM_MODULE}/{{dataset}}_unfiltered.parquet",
-               dataset=DATASETS)
+               dataset=ALL_DATASETS)
     output:
         "data/processed/screen_results_module.duckdb"
     params:
         output_path="data/processed/screen_results_module.duckdb",
-        datasets=",".join(DATASETS)
+        datasets=",".join(ALL_DATASETS)
     shell:
         """
         pixi run haghighi-mito create-database \
@@ -402,7 +402,7 @@ rule all_module_csvs:
     """Target: Generate results CSVs for all datasets (virtual screen analysis only, no Excel/DuckDB)."""
     input:
         expand("data/processed/virtual_screen_module/{dataset}_results_pattern_aug_070624.csv",
-               dataset=DATASETS)
+               dataset=ALL_DATASETS)
 
 rule all_module_diagnose:
     """Target: Run diagnostics (comparison CSV + plots) for all datasets."""
