@@ -269,7 +269,14 @@ def calculate_metrics(per_site_df, annot, dataset: str):
 
     logger.info(f"Using {len(target_columns)} radial distribution bins (5-16)")
 
-    # Step 1: Calculate per-plate control means
+    # Pre-standardize radial features per plate BEFORE control subtraction
+    # (matches upstream notebook 3.rank_perturbations.ipynb)
+    logger.info("Pre-standardizing radial features per plate...")
+    per_site_df[target_columns] = per_site_df.groupby("batch_plate")[target_columns].transform(
+        lambda x: (x - x.mean()) / x.std() if x.std().all() > 0 else x
+    )
+
+    # Step 1: Calculate per-plate control means (now on z-scored data)
     logger.info("Calculating per-plate control means...")
     control_df_perplate = per_site_df.loc[per_site_df["ctrl_well"]].groupby("batch_plate")[target_columns].mean()
 
@@ -472,15 +479,25 @@ def calculate_statistical_tests(per_site_df, dataset: str):
     # Load orthogonal features
     orth_features = load_orthogonal_features(dataset)
 
+    # Filter to orthogonal features that exist in the dataframe
+    orth_features = [f for f in orth_features if f in per_site_df.columns]
+    logger.info(f"Using {len(orth_features)} orthogonal features (after filtering to available columns)")
+
+    # Second standardization of ALL features per plate (matches upstream notebook 3)
+    # Radial features pre-standardized in calculate_metrics(); this adds orth + second pass for both
+    logger.info("Standardizing radial + orthogonal features per plate...")
+    all_features = target_columns + orth_features
+    per_site_df[all_features] = per_site_df.groupby("batch_plate")[all_features].transform(
+        lambda x: (x - x.mean()) / x.std() if x.std().all() > 0 else x
+    )
+
     # Prepare control data by plate
     logger.info("Preparing control data by plate...")
     control_df = per_site_df[per_site_df["ctrl_well"]].copy()
-    # Dict comprehension is correct here (not dict(groupby)) - GroupBy objects aren't directly convertible to dict
     control_dfs_by_plate = {plate: group for plate, group in control_df.groupby("batch_plate")}
     logger.info(f"Prepared controls for {len(control_dfs_by_plate)} plates")
 
     # Get unique perturbations (non-controls only)
-    # Note: ctrl_well is dtype object, so use == False instead of ~ to avoid -1 indexing issue
     pert_df = per_site_df[per_site_df["ctrl_well"] == False].copy()  # noqa: E712
     unique_perts = pert_df[pert_col].dropna().unique()
     logger.info(f"Processing {len(unique_perts)} unique perturbations")
@@ -506,10 +523,13 @@ def calculate_statistical_tests(per_site_df, dataset: str):
         pvals = batch_results["pvals"]  # shape (n_plates, 6)
         plates = batch_results["plates"]
 
-        # Find plate with median d_slope (index 3 of tvals) - using abs() sorting
-        # NOTE: This differs from notebook (which uses percentile without abs())
-        # but empirically matches baseline better (r=0.90 vs 0.85)
-        median_plate_idx = np.argsort(np.abs(tvals[:, 3]))[len(tvals) // 2]
+        # Find plate with median d_slope using nanpercentile (matches upstream notebook 3)
+        median_selection_idx = 3  # d_slope column
+        med_val = np.nanpercentile(tvals[:, median_selection_idx], 50, interpolation="nearest")
+        if not np.isnan(med_val):
+            median_plate_idx = np.argwhere(tvals[:, median_selection_idx] == med_val)[0][0]
+        else:
+            median_plate_idx = 0  # fallback
         median_plate_id = plates[median_plate_idx]
 
         # Get t-values from median plate
@@ -518,7 +538,7 @@ def calculate_statistical_tests(per_site_df, dataset: str):
         t_slope = tvals[median_plate_idx, 2]
         d_slope = tvals[median_plate_idx, 3]
 
-        # Get p-values from median plate (matches notebook 2.0 lines 1401-1410)
+        # Get p-values from median plate
         p_target_pattern = pvals[median_plate_idx, 0]
         p_orth = pvals[median_plate_idx, 1]
         p_slope = pvals[median_plate_idx, 2]
