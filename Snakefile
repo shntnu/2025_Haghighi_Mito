@@ -333,7 +333,7 @@ rule run_virtual_screen_module:
         """
 
 rule diagnose_module:
-    """Compare module CSV with baseline and generate diagnostic plots (FAST - ~1 sec)."""
+    """Compare all metrics (slopes + stats) from full virtual screen output (~4 sec, requires ~13 min CSV)."""
     input:
         results_csv="data/processed/virtual_screen_module/{dataset}_results_pattern_aug_070624.csv",
         baseline_csv=f"{BASELINE_DIR}/{{dataset}}_results_pattern_aug_070624.csv"
@@ -346,11 +346,7 @@ rule diagnose_module:
         """
 
 rule reproduce_module:
-    """Run slope discrepancy reproduction script for a dataset (FAST - ~23 sec).
-
-    Recalculates slopes from raw profiles and compares with baseline.
-    Useful for debugging without running full statistical tests.
-    """
+    """Compare slopes only, recalculated from raw profiles (~23 sec, standalone - no stats)."""
     input:
         baseline_csv=f"{BASELINE_DIR}/{{dataset}}_results_pattern_aug_070624.csv",
         per_site_profiles=f"{MITO_WORKSPACE_DIR}/per_site_aggregated_profiles_newpattern_2/{{dataset}}/.download_complete"
