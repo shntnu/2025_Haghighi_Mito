@@ -1,0 +1,21 @@
+JUMP_COMPOUND: Baseline Comparison Summary (n=115731)
+================================================================================
+Metric                Pearson r   Within 10%   Mean Abs Diff
+--------------------------------------------------------------------------------
+Count_Cells_avg           0.999        99.6%           0.137
+slope                     0.996        96.4%           0.004
+last_peak_ind             0.998          N/A           0.002
+t_target_pattern          1.000        99.7%           0.026
+t_orth                    1.000        99.7%           0.056
+t_slope                   0.999        99.1%           0.003
+d_slope                   0.999        99.2%           0.001
+================================================================================
+⚠ = <50% within 10%, ⚠⚠ = <20% within 10%
+
+PROVENANCE METADATA (regenerated data only)
+--------------------------------------------------------------------------------
+Sites per perturbation:  median=34, range=3-181177
+  ⚠ 8 perturbations (0.0%) have <10 sites
+Plates per perturbation: median=5, range=1-1623
+  ⚠ 1 perturbations (0.0%) have only 1 plate
+Slope variability:       median=0.481, range=0.002-13.503
