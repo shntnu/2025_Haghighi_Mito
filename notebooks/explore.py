@@ -43,7 +43,7 @@ def _(Path, duckdb, pl):
         print(f"Loaded from local DuckDB: {local_db_path}")
     else:
         # Load from Figshare DuckDB using httpfs extension
-        figshare_url = "https://figshare.com/ndownloader/files/58970131"
+        figshare_url = "https://ndownloader.figshare.com/files/59100098"
         con = duckdb.connect(':memory:', read_only=False)
         con.execute('INSTALL httpfs')
         con.execute('LOAD httpfs')
