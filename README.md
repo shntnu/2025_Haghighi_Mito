@@ -17,4 +17,4 @@ See `docs/PROGRESS.md` for detailed investigation history.
 
 ## Status
 
-This repository is now archived. The upstream paper repository at [carpenter-singh-lab/2025_Haghighi_Mito](https://github.com/carpenter-singh-lab/2025_Haghighi_Mito) is stable and the reproduction work is complete.
+The reproduction work is complete. The upstream paper repository at [carpenter-singh-lab/2025_Haghighi_Mito](https://github.com/carpenter-singh-lab/2025_Haghighi_Mito) continues active development. Upstream changes are tracked via a git worktree at `.worktrees/upstream/`.

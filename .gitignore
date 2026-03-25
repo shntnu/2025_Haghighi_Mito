@@ -194,3 +194,6 @@ logs/
 
 .DS_Store
 data_bak_*/
+
+# Git worktrees
+.worktrees/

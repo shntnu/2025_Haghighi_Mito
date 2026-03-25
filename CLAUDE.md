@@ -157,3 +157,4 @@ Managed via Pixi (see `pyproject.toml`):
 - **Always use** `pixi run python` instead of bare `python`
 - **Never modify** `docs/PROGRESS.md` unless explicitly requested (see maintenance guidelines in that file)
 - **Workflow principles**: Data flows one direction (raw → interim → processed), raw data is immutable
+- **Upstream worktree**: `.worktrees/upstream/` tracks `upstream/main` (carpenter-singh-lab). Update with `git fetch upstream` then `cd .worktrees/upstream && git pull`
