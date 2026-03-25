@@ -19,22 +19,40 @@ This repository follows the [Carpenter-Singh lab workflow conventions](protocols
 │   ├── cli.py             # Typer CLI interface
 │   ├── config.py          # Dataset configuration (DATASET_INFO dict)
 │   ├── data.py            # Processing: CSV → Excel/Parquet, DuckDB creation
-│   ├── virtual_screen.py  # Clean module: per-site profiles → virtual screen CSVs
+│   ├── virtual_screen.py  # Clean module: per-site profiles → virtual screen CSVs (~656 lines)
 │   ├── diagnostics.py     # Baseline comparison plots and metrics
 │   ├── vectorized_slope.py # Optimized slope calculation (~200x speedup)
-│   └── vectorized_stats.py # Batch statistical testing
-├── notebooks/             # Analysis notebooks (numbered by phase)
-│   ├── 1.0-mh-feat-importance.py           # Feature importance
-│   ├── 2.0-mh-virtual-screen.py            # Virtual screening (1433 lines)
-│   ├── 2.1-mh-set-enrichment-analysis.py   # GSEA
-│   └── 2.2-mh-check-vs-lists.py            # Validation
+│   ├── vectorized_stats.py # Batch statistical testing
+│   └── tests/             # Unit tests (test_vectorized_slope.py, test_vectorized_stats.py)
+├── notebooks/             # Jupytext .py notebooks (not .ipynb — use jupytext or marimo to run)
+│   ├── 1.0-mh-feat-importance.py           # Feature importance (patient fibroblasts)
+│   ├── 2.0-mh-virtual-screen.py            # Virtual screening (1438 lines)
+│   ├── 2.0-mh-virtual-screen-original.py   # Original baseline version (archived)
+│   ├── 2.0-mh-virtual-screen-minimal.py    # Minimal version for testing
+│   ├── 2.1-mh-set-enrichment-analysis.py   # GSEA (blitzgsea)
+│   ├── 2.2-mh-check-vs-lists.py            # Validation and filtering
+│   └── explore.py                           # Exploratory analysis
 ├── data/
-│   ├── external/          # Downloaded data from S3 (gitignored)
+│   ├── external/          # Downloaded data from S3 (~5.1 GB, gitignored)
 │   ├── interim/           # Intermediate Parquet files (gitignored)
 │   └── processed/         # Final outputs (DuckDB, Excel, figures)
+├── scripts/               # Utility scripts
+│   ├── reproduce_slope_discrepancy.py  # Diagnostic: reproduce slopes from raw profiles
+│   ├── restore_intelligent.py          # S3 Glacier data restoration
+│   ├── generate-dag.sh                 # Pipeline DAG visualization
+│   └── check_restore_status.sh         # S3 restore status checker
+├── docs/                  # Project documentation
+│   ├── PROGRESS.md        # Investigation history and milestones (DO NOT MODIFY)
+│   ├── DATA_FLOW.md       # Complete data flow architecture
+│   ├── DATA_DOWNLOAD.md   # Data requirements (~5.1 GB breakdown)
+│   ├── MANUSCRIPT.md      # Manuscript preparation notes
+│   └── pipeline/          # DAG visualizations (PNG)
+├── pipelines/             # CellProfiler pipeline XMLs (15+ files, image analysis)
+├── protocols/             # Experimental protocols and workflow docs
+├── tests/                 # Standalone tests (scipy_version_test)
 ├── Snakefile              # Pipeline automation (all commands)
 ├── pyproject.toml         # Pixi configuration and dependencies
-└── protocols/             # Experimental protocols and workflow docs
+└── flake.nix              # NixOS environment (+ .envrc for direnv auto-activation)
 ```
 
 ## Common Commands
@@ -80,6 +98,15 @@ pixi run haghighi-mito virtual-screen --dataset taorf
 pixi run haghighi-mito compare-baseline --dataset taorf
 ```
 
+**Testing:**
+
+```bash
+pixi run pytest                      # Run all tests (haghighi_mito/tests/)
+pixi run pytest -x -v                # Stop on first failure, verbose
+```
+
+Tests cover vectorized slope calculation (9 tests) and vectorized statistics (16 tests).
+
 **Development:**
 
 ```bash
@@ -97,8 +124,8 @@ Three methods for generating virtual screen results:
 | **2: Module** | Raw profiles (2.7 GB) | Full recalculation | ~10 min/dataset | `snakemake all_module` | **Development** (clean code) |
 
 - **Method 0** outputs: `screen_results_baseline.duckdb` (178,826 rows), uses `haghighi_mito/data.py`
-- **Method 1** outputs: `screen_results_notebook.duckdb`, uses `notebooks/2.0-mh-virtual-screen.py` (1433 lines)
-- **Method 2** outputs: `screen_results_module.duckdb`, uses `haghighi_mito/virtual_screen.py` (448 lines) + `diagnostics.py`
+- **Method 1** outputs: `screen_results_notebook.duckdb`, uses `notebooks/2.0-mh-virtual-screen.py` (1438 lines)
+- **Method 2** outputs: `screen_results_module.duckdb`, uses `haghighi_mito/virtual_screen.py` (~656 lines) + `diagnostics.py`
 
 See Snakefile docstring for full pipeline documentation.
 
@@ -150,6 +177,19 @@ Managed via Pixi (see `pyproject.toml`):
 - **Analysis**: sklearn, blitzgsea (enrichment)
 - **Custom**: singlecell-morph package (morphological analysis)
 
+## Code Style
+
+Ruff with permissive settings (see `pyproject.toml`):
+- **Line length**: 300 (intentionally wide — scientific code with long variable names)
+- **Target**: Python 3.12
+- Notebooks have relaxed rules (E402, F401, E703 etc. are ignored)
+
+## Git Workflow
+
+- **origin**: `shntnu/2025_Haghighi_Mito` (personal fork)
+- **upstream**: `carpenter-singh-lab/2025_Haghighi_Mito` (lab repo)
+- **Upstream worktree**: `.worktrees/upstream/` tracks `upstream/main`. Update with `git fetch upstream` then `cd .worktrees/upstream && git pull`
+
 ## Important Notes
 
 - **Data provenance**: Excel files in `curated_2024-08-11/` and `curated_2025-10-25/` are manually curated via Google Sheets, not direct pipeline outputs
@@ -157,4 +197,4 @@ Managed via Pixi (see `pyproject.toml`):
 - **Always use** `pixi run python` instead of bare `python`
 - **Never modify** `docs/PROGRESS.md` unless explicitly requested (see maintenance guidelines in that file)
 - **Workflow principles**: Data flows one direction (raw → interim → processed), raw data is immutable
-- **Upstream worktree**: `.worktrees/upstream/` tracks `upstream/main` (carpenter-singh-lab). Update with `git fetch upstream` then `cd .worktrees/upstream && git pull`
+- **Notebooks are Jupytext `.py` files**, not `.ipynb`. They have YAML frontmatter for Jupyter metadata. Edit as Python files; run with `pixi run jupyter lab` (jupytext syncs automatically) or `pixi run marimo edit`
