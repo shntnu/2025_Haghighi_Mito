@@ -30,7 +30,9 @@ from haghighi_mito.config import (
 def load_patient_labels() -> pd.DataFrame:
     """Load and standardize patient disease labels.
 
-    Returns DataFrame with columns: subject (str), D, D1, etc.
+    The git-tracked version contains only ID and D (top-level diagnosis)
+    for privacy reasons. The full version with D1, Sex, Age is available
+    via S3 download (see Snakefile download_patient_labels rule).
     """
     disease_labels = pd.read_csv(PATIENT_LABELS_PATH)
     disease_labels = disease_labels.rename(columns={"ID": "subject"})
