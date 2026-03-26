@@ -478,6 +478,21 @@ rule download_aggregated_profiles:
         """
 
 
+rule download_patient_labels:
+    """Download patient labels from S3 and convert to CSV (not tracked in git for privacy)."""
+    output:
+        csv=f"{PROCESSED_DATA_DIR}/tables/curated_2025-10-25/patient_labels_updatedSept302025.csv"
+    params:
+        s3_path=f"{S3_BASE}/metadata/patient_labels_updatedSept302025.xlsx"
+    shell:
+        """
+        mkdir -p $(dirname {output.csv})
+        s5cmd cp {params.s3_path} $(dirname {output.csv})/patient_labels_updatedSept302025.xlsx
+        pixi run python -c "import pandas as pd; pd.read_excel('$(dirname {output.csv})/patient_labels_updatedSept302025.xlsx').to_csv('{output.csv}', index=False)"
+        rm $(dirname {output.csv})/patient_labels_updatedSept302025.xlsx
+        """
+
+
 rule download_single_cell_pickles:
     """Download pre-processed single-cell pickle files from S3 (~1.2 GB)."""
     output:
@@ -515,10 +530,80 @@ rule download_all_patient_data:
         SQLITE_DATA_DIR,
 
 
-rule all_patient_figures:
-    """Target: Generate all patient phenotype figures."""
+## Figure Generation Rules ##
+
+rule generate_supplemental_mito_features:
+    """Generate supplemental intensity and skeleton feature boxplots (16 plots)."""
     input:
-        f"{FIBROBLAST_DATA_DIR}/aggregated_profiles_fibroblast.csv"
+        csv=f"{FIBROBLAST_DATA_DIR}/aggregated_profiles_fibroblast.csv"
+    output:
+        directory(f"{SUPPLEMENTAL_FIGURES_DIR}/skel_features"),
+        directory(f"{SUPPLEMENTAL_FIGURES_DIR}/intensity_features"),
+    shell:
+        "pixi run python notebooks/3.1-ew-supplemental-mito-features.py"
+
+
+rule generate_radial_distribution_plots:
+    """Generate radial distribution polar plots (24 plots)."""
+    input:
+        csv=f"{FIBROBLAST_DATA_DIR}/aggregated_profiles_fibroblast.csv"
+    output:
+        directory(f"{SUPPLEMENTAL_FIGURES_DIR}/skeleton"),
+        directory(f"{SUPPLEMENTAL_FIGURES_DIR}/fluorescence"),
+    shell:
+        "pixi run python notebooks/3.2-ew-radial-distribution-plots.py"
+
+
+rule generate_slope_figures:
+    """Generate Figure 4c (MITO-SLOPE boxplots by patient category)."""
+    input:
+        csv=f"{FIBROBLAST_DATA_DIR}/aggregated_profiles_fibroblast.csv"
+    output:
+        f"{PATIENT_FIGURES_DIR}/Figure4c.pdf"
+    shell:
+        "pixi run python notebooks/3.0-mh-slope-analysis.py"
+
+
+rule generate_feature_importance_figures:
+    """Generate Figure 3, 4b, SuppFigure 2, dendrogram (requires SQLite + pickle data)."""
+    input:
+        labels=f"{PROCESSED_DATA_DIR}/tables/curated_2025-10-25/patient_labels_updatedSept302025.csv",
+        pkl1=f"{FIBROBLAST_DATA_DIR}/single_cell_with_annot.pkl",
+        pkl2=f"{FIBROBLAST_DATA_DIR}/single_cell_with_annot_allFeatures.pkl",
+        sqlite_dir=SQLITE_DATA_DIR,
+    output:
+        f"{PATIENT_FIGURES_DIR}/Figure3.pdf",
+        f"{PATIENT_FIGURES_DIR}/Figure4b.pdf",
+        f"{PATIENT_FIGURES_DIR}/SuppFigure2.pdf",
+        f"{PATIENT_FIGURES_DIR}/dendrogram_mito.pdf",
+    shell:
+        "pixi run python notebooks/1.0-mh-feat-importance.py"
+
+
+## Target Rules ##
+
+rule all_supplemental_figures:
+    """Target: Generate all supplemental figures (from aggregated CSV only, fast)."""
+    input:
+        f"{SUPPLEMENTAL_FIGURES_DIR}/skel_features",
+        f"{SUPPLEMENTAL_FIGURES_DIR}/intensity_features",
+        f"{SUPPLEMENTAL_FIGURES_DIR}/skeleton",
+        f"{SUPPLEMENTAL_FIGURES_DIR}/fluorescence",
+        f"{PATIENT_FIGURES_DIR}/Figure4c.pdf",
+
+
+rule all_patient_figures:
+    """Target: Generate all patient phenotype figures (requires full data download)."""
+    input:
+        f"{SUPPLEMENTAL_FIGURES_DIR}/skel_features",
+        f"{SUPPLEMENTAL_FIGURES_DIR}/intensity_features",
+        f"{SUPPLEMENTAL_FIGURES_DIR}/skeleton",
+        f"{SUPPLEMENTAL_FIGURES_DIR}/fluorescence",
+        f"{PATIENT_FIGURES_DIR}/Figure4c.pdf",
+        f"{PATIENT_FIGURES_DIR}/Figure3.pdf",
+        f"{PATIENT_FIGURES_DIR}/Figure4b.pdf",
+        f"{PATIENT_FIGURES_DIR}/SuppFigure2.pdf",
+        f"{PATIENT_FIGURES_DIR}/dendrogram_mito.pdf",
 
 
 # ============================================================================
