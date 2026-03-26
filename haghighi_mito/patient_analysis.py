@@ -32,7 +32,7 @@ def load_patient_labels() -> pd.DataFrame:
 
     Returns DataFrame with columns: subject (str), D, D1, etc.
     """
-    disease_labels = pd.read_excel(PATIENT_LABELS_PATH)
+    disease_labels = pd.read_csv(PATIENT_LABELS_PATH)
     disease_labels = disease_labels.rename(columns={"ID": "subject"})
     disease_labels["subject"] = disease_labels["subject"].astype(str)
     return disease_labels

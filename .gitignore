@@ -179,7 +179,8 @@ data/processed/figures/
 logs/
 *.csv
 
-# Exception: commit diagnostic summaries (small, key validation artifacts)
+# Exception: commit curated data and diagnostic summaries (small, key artifacts)
+!data/processed/tables/curated_*/patient_labels*.csv
 !data/processed/virtual_screen_module/*_diagnostic_summary.csv
 !data/processed/virtual_screen_module/*_diagnostic_summary.txt
 !data/processed/virtual_screen_module/*_comparison_metrics.png
