@@ -173,6 +173,7 @@ data/processed/*.duckdb
 # Regenerated analysis outputs (reproducible from code + data)
 # Keep curated versions (manual work); ignore generated versions
 data/processed/tables/generated_from_*/
+data/processed/figures/
 
 # Logs and temporary operational files
 logs/

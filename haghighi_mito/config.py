@@ -26,6 +26,18 @@ MITO_WORKSPACE_DIR = MITO_PROJECT_DIR / "workspace"
 MITO_VIRTUAL_SCREEN_DIR = MITO_WORKSPACE_DIR / "results" / "virtual_screen"
 MITO_ORTH_FEATURES_DIR = MITO_WORKSPACE_DIR / "results" / "target_pattern_orth_features_lists"
 
+# Patient fibroblast analysis paths
+FIBROBLAST_DATA_DIR = MITO_WORKSPACE_DIR / "singleCellData"
+SQLITE_DATA_DIR = MITO_WORKSPACE_DIR / "backend" / "Mito_Morphology_input"
+AGGREGATED_PROFILES_PATH = FIBROBLAST_DATA_DIR / "aggregated_profiles_fibroblast.csv"
+PATIENT_LABELS_PATH = PROCESSED_TABLES_DIR / "patient_labels_updatedSept302025.xlsx"
+PATIENT_FIGURES_DIR = PROCESSED_DATA_DIR / "figures" / "patient_phenotype"
+SUPPLEMENTAL_FIGURES_DIR = PROCESSED_DATA_DIR / "figures" / "supplemental"
+
+# Patient category display constants
+PATIENT_ORDER = ["Control", "psychosis", "BP", "SZ", "SZA", "MDD"]
+PATIENT_PALETTE = ["lightgray", "#a484ac", "firebrick", "lightcoral", "pink", "lightsteelblue"]
+
 # Dataset metadata configuration for virtual screen analysis
 DATASET_INFO = {
     "taorf": {

@@ -449,6 +449,79 @@ rule validate_database_pair:
 
 
 # ============================================================================
+# PATIENT PHENOTYPE ANALYSIS - Fibroblast figure generation
+# ============================================================================
+# Generates publication figures from patient fibroblast data.
+# Two tiers of data:
+#   Tier 1 (7 MB): aggregated_profiles_fibroblast.csv → supplemental plots + Figure 4c
+#   Tier 2 (2.9 GB): SQLite databases + pickle files → all figures including Figure 2, 3, 4b
+#
+# Usage: snakemake all_patient_figures -c4 -p
+
+FIBROBLAST_DATA_DIR = f"{MITO_WORKSPACE_DIR}/singleCellData"
+SQLITE_DATA_DIR = f"{MITO_WORKSPACE_DIR}/backend/Mito_Morphology_input"
+PATIENT_FIGURES_DIR = f"{PROCESSED_DATA_DIR}/figures/patient_phenotype"
+SUPPLEMENTAL_FIGURES_DIR = f"{PROCESSED_DATA_DIR}/figures/supplemental"
+
+## Download Rules ##
+
+rule download_aggregated_profiles:
+    """Download pre-aggregated patient fibroblast profiles from S3 (7 MB)."""
+    output:
+        csv=f"{FIBROBLAST_DATA_DIR}/aggregated_profiles_fibroblast.csv"
+    params:
+        s3_path=f"{S3_BASE}/singleCellData/aggregated_profiles_fibroblast.csv"
+    shell:
+        """
+        mkdir -p $(dirname {output.csv})
+        s5cmd cp {params.s3_path} {output.csv}
+        """
+
+
+rule download_single_cell_pickles:
+    """Download pre-processed single-cell pickle files from S3 (~1.2 GB)."""
+    output:
+        pkl1=f"{FIBROBLAST_DATA_DIR}/single_cell_with_annot.pkl",
+        pkl2=f"{FIBROBLAST_DATA_DIR}/single_cell_with_annot_allFeatures.pkl",
+    params:
+        s3_dir=f"{S3_BASE}/singleCellData/"
+    shell:
+        """
+        mkdir -p {FIBROBLAST_DATA_DIR}
+        s5cmd cp '{params.s3_dir}single_cell_with_annot.pkl' {output.pkl1}
+        s5cmd cp '{params.s3_dir}single_cell_with_annot_allFeatures.pkl' {output.pkl2}
+        """
+
+
+rule download_sqlite_databases:
+    """Download all patient SQLite single-cell databases from S3 (1.7 GB, 185 subjects)."""
+    output:
+        directory(SQLITE_DATA_DIR)
+    params:
+        s3_dir=f"{S3_BASE}/backend/Mito_Morphology_input/"
+    shell:
+        """
+        mkdir -p {output}
+        s5cmd sync '{params.s3_dir}*' {output}/
+        """
+
+
+rule download_all_patient_data:
+    """Target: Download all patient fibroblast data (aggregated + pickles + SQLite)."""
+    input:
+        f"{FIBROBLAST_DATA_DIR}/aggregated_profiles_fibroblast.csv",
+        f"{FIBROBLAST_DATA_DIR}/single_cell_with_annot.pkl",
+        f"{FIBROBLAST_DATA_DIR}/single_cell_with_annot_allFeatures.pkl",
+        SQLITE_DATA_DIR,
+
+
+rule all_patient_figures:
+    """Target: Generate all patient phenotype figures."""
+    input:
+        f"{FIBROBLAST_DATA_DIR}/aggregated_profiles_fibroblast.csv"
+
+
+# ============================================================================
 # Configuration Display
 # ============================================================================
 

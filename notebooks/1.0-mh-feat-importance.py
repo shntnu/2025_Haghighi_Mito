@@ -13,9 +13,6 @@
 # ---
 
 # %%
-# %load_ext autoreload
-# %autoreload 2
-# %matplotlib inline
 import os
 import pickle
 import time
@@ -29,32 +26,19 @@ import scipy
 import seaborn as sns
 import sklearn.preprocessing as sp
 from scipy.stats import ttest_ind
-
-today = date.today()
-
-import sys
-
-# sys.path.insert(0, '/home/ubuntu/workspace_SingleCell/SingleCell_Morphological_Analysis/')
-sys.path.insert(
-    0,
-    "/home/jupyter-mhaghigh@broadinst-ee45a/workspace_SingleCell/SingleCell_Morphological_Analysis/",
-)
-from singlecell.preprocess import (
-    extract_cpfeature_names,
-    find_highly_correlated_features,
-    handle_nans,
-)
-from singlecell.preprocess.control_for_cellcount import control_feature_y_for_variable_x
-from singlecell.preprocess.filter_out_edge_single_cells import edgeCellFilter
-from singlecell.process import precision_recall, statistical_tests
-from singlecell.process.abundance import abundance_rawFeature
-from singlecell.read import read_single_cell_sql
-from singlecell.save.save_pandas_dfs import saveDF_to_CSV_GZ_no_timestamp
-from singlecell.visualize import cluster, visualize_n_SingleCell
+from singlecell.preprocess.find_highly_correlated_features import find_correlation
+from singlecell.visualize import cluster
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 
-# plt.style.use('science')
-# plt.style.use(['science','no-latex'])
+from haghighi_mito.config import PATIENT_FIGURES_DIR, PATIENT_ORDER, PATIENT_PALETTE
+from haghighi_mito.patient_analysis import (
+    load_single_cell_data,
+    prepare_psychosis_groups,
+    preprocess_single_cells,
+)
+
+today = date.today()
+PATIENT_FIGURES_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # %%
@@ -67,131 +51,14 @@ print(sklearn.__version__)
 # ## Read Data
 
 # %%
-# %%time
+# Load single-cell data from SQLite + pickles, apply QC filtering and standardization
+# This takes ~2-5 minutes (reads 185 SQLite databases)
+df_1, _ = load_single_cell_data()
+df_1, df_1_scaled, cp_features_analysis = preprocess_single_cells(df_1)
 
-home_path = "/home/ubuntu/"  # ec2
-home_path = "/home/jupyter-mhaghigh@broadinst-ee45a/"  # dgx
-
-rootDir = home_path + "bucket/projects/2016_08_01_RadialMitochondriaDistribution_donna/"
-
-compartments = ["mito", "actin", "dna"]
-# the directory data and images are stored in
-dataDir = rootDir + "workspace/singleCellData/"
-imDir = rootDir + "Mito_Morphology_input/images/"
-sql_data = rootDir + "workspace/backend/Mito_Morphology_input"
-
-df_1_0_0 = pd.read_pickle(dataDir + "single_cell_with_annot.pkl", compression="infer")
-subject_list = os.listdir(sql_data)
-sc_df_ls = []
-compartments = ["Cells", "Cytoplasm", "Nuclei"]
-for si in subject_list:
-    fileName = sql_data + "/" + si + "/" + si + ".sqlite"
-    sc_df = read_single_cell_sql.readSingleCellData_sqlalch(fileName, compartments)
-    sc_df["subject"] = si
-    sc_df_ls.append(sc_df)
-
-df_new = pd.concat(sc_df_ls, ignore_index=True)
-
-df_1_0 = pd.read_pickle(dataDir + "single_cell_with_annot_allFeatures.pkl", compression="infer")
-df_1_0 = df_1_0.interpolate()
-
-common_subjects = list(set(df_new["subject"].unique()) & set(df_1_0["subject"].unique()))
-df_1 = df_new[df_new["subject"].isin(common_subjects)]
-
-
-df_1 = pd.merge(df_1, df_1_0[["subject", "label"]].drop_duplicates(), on="subject", how="left")
-disease_labels = pd.read_excel(
-    home_path
-    + "bucket/projects/2016_08_01_RadialMitochondriaDistribution_donna/\
-workspace/metadata/patient_labels_updatedSept302025.xlsx"
-)
-disease_labels = disease_labels.rename(columns={"ID": "subject"})
-disease_labels["subject"] = disease_labels["subject"].astype(str)
-
-df_1 = pd.merge(df_1, disease_labels, on=["subject"], how="left")
-
-df_1["subject"] = df_1["subject"].replace(["370E", "370F", "370H"], "370")
-##################### Clean and shrink features
-(
-    cp_features,
-    cp_features_analysis_0,
-) = extract_cpfeature_names.extract_cpfeature_names(df_1)
-df_1, cp_features_analysis = handle_nans.handle_nans(
-    df_1,
-    cp_features_analysis_0,
-    thrsh_null_ratio=0.05,
-    thrsh_std=0.001,
-    fill_na_method="drop-rows",
-)
-
-
-############### remove cells on the border
-borderLength = 200
-
-im_width = df_1["Width_Mito"].values[0]  # 1388
-im_height = df_1["Height_Mito"].values[0]  # 1040
-print(df_1.shape)
-df_1_centCells = df_1.loc[
-    ~(
-        (df_1["Nuclei_Location_Center_X"] > (im_width - borderLength))
-        | (df_1["Nuclei_Location_Center_X"] < (borderLength))
-        | (df_1["Nuclei_Location_Center_Y"] > (im_height - borderLength))
-        | (df_1["Nuclei_Location_Center_Y"] < (borderLength))
-    ),
-    :,
-].reset_index(drop=True)
-
-print("After border cell removal: ", df_1_centCells.shape)
-
-df_1_centCells["Cells2Nuclei_MajorAxisLengthRatio"] = (
-    df_1_centCells["Cells_AreaShape_MajorAxisLength"]
-    / df_1_centCells["Nuclei_AreaShape_MajorAxisLength"]
-)
-df_1_centCells["Cells2Nuclei_AreaShapeRatio"] = (
-    df_1_centCells["Cells_AreaShape_Area"] / df_1_centCells["Nuclei_AreaShape_Area"]
-)
-df_1_centCells = df_1_centCells[
-    df_1_centCells["Cells2Nuclei_MajorAxisLengthRatio"] > 2
-].reset_index(drop=True)
-df_1_centCells = df_1_centCells[df_1_centCells["Cells2Nuclei_AreaShapeRatio"] > 5].reset_index(
-    drop=True
-)
-
-print("After cell seg pron cells removal: ", df_1_centCells.shape)
-
-df_1 = df_1_centCells[
-    (df_1_centCells["Cells_Intensity_MeanIntensity_Actin"] < 0.5)
-    & (df_1_centCells["Nuclei_Intensity_MeanIntensity_Actin"] < 0.55)
-].reset_index(drop=True)
-
-print("After intensity artifact cells removal: ", df_1.shape)
-
-
-# df_1=df_1_centCells.copy()
-
-df_1, cp_features_analysis = handle_nans.handle_nans(
-    df_1,
-    cp_features_analysis,
-    thrsh_null_ratio=0.05,
-    thrsh_std=0.001,
-    fill_na_method="drop-rows",
-)
-
-
-scaler = sp.StandardScaler()
-s0 = scaler.fit(df_1[cp_features_analysis])
-df_1_scaled = df_1.copy()
-
-df_1_scaled[cp_features_analysis] = s0.transform(df_1[cp_features_analysis])
-
-similar_fs_2remove = find_highly_correlated_features.find_correlation(
-    df_1_scaled[cp_features_analysis], threshold=0.7, remove_negative=True
-)
-
+# Remove highly correlated features
+similar_fs_2remove = find_correlation(df_1_scaled[cp_features_analysis], threshold=0.7, remove_negative=True)
 cp_features_collcorr = list(set(cp_features_analysis) - set(similar_fs_2remove))
-
-df_1["label"] = df_1["label"].replace("MDD or Dep", "MDD")
-df_1_scaled["label"] = df_1_scaled["label"].replace("MDD or Dep", "MDD")
 
 # %%
 df_1.columns
@@ -263,7 +130,7 @@ for v in cluster_id_to_feature_ids.values():
 
 # cluster_rep_feats = df_1_scaled[filteredbyMoFnamesMito].columns[selected_features]
 print(len(cluster_rep_feats))
-fig.savefig("results/dendrogram_mito.pdf", bbox_inches="tight")
+fig.savefig(PATIENT_FIGURES_DIR / "dendrogram_mito.pdf", bbox_inches="tight")
 
 # %%
 len(cluster_rep_feats)
@@ -578,7 +445,7 @@ axes.set_xticklabels(
 )
 
 fig.tight_layout()
-fig.savefig("results/Figure3.pdf", bbox_inches="tight")
+fig.savefig(PATIENT_FIGURES_DIR / "Figure3.pdf", bbox_inches="tight")
 
 # %%
 # fq_all_ds[fq_all_ds[fq_all_ds["features"].isin(final_features_to_use_for_VS)].isnull().max(axis=1)]
@@ -757,7 +624,7 @@ axes.set_xticklabels(
         "MDD",
     ]
 )
-fig.savefig("results/SuppFigure2.pdf", bbox_inches="tight")
+fig.savefig(PATIENT_FIGURES_DIR / "SuppFigure2.pdf", bbox_inches="tight")
 
 # %%
 logreg_results.loc[logreg_results["group"] == "DEP"].shape
@@ -830,7 +697,9 @@ def find_end_slope2(data, height=None, plot=False, subject=None, smooth=False):
         y_values_slope = [data[last_peak_ind] + slope * (x - last_peak_ind) for x in x_values]
         plt.ylim([-1.5, 1.5])
         plt.plot(x_values, y_values_slope, label="Slope", color="red")
-        plt.savefig(rootDir + "/workspace/results/slope_subjects_donna2/" + subject + "_smooth.png")
+        slope_dir = PATIENT_FIGURES_DIR / "slope_subjects"
+        slope_dir.mkdir(parents=True, exist_ok=True)
+        plt.savefig(slope_dir / f"{subject}_smooth.png")
 
         plt.legend()
         plt.show()
@@ -1046,7 +915,7 @@ for pat in ["CEN"]:
         labels[1] = "psychosis\n(BP + SZ + SZA)"
         axes.set_xticklabels(labels)
 
-fig.savefig("results/Figure4c.pdf", bbox_inches="tight")
+fig.savefig(PATIENT_FIGURES_DIR / "Figure4c.pdf", bbox_inches="tight")
 
 # %%
 plt.style.use(["science", "no-latex", "nature"])
@@ -1054,11 +923,8 @@ custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", rc=custom_params, font_scale=1)
 
 
-disease_labels = pd.read_excel(
-    home_path
-    + "bucket/projects/2016_08_01_RadialMitochondriaDistribution_donna/\
-workspace/metadata/patient_labels.xlsx"
-)
+from haghighi_mito.config import MITO_WORKSPACE_DIR
+disease_labels = pd.read_excel(MITO_WORKSPACE_DIR / "metadata" / "patient_labels.xlsx")
 disease_labels = disease_labels.rename(columns={"ID": "subject"})
 disease_labels["subject"] = disease_labels["subject"].astype(str)
 
@@ -1157,7 +1023,6 @@ axes.set(xlabel="Patient category")
 plt.tight_layout()
 
 # %%
-counts
 
 # %% [markdown]
 # ## Paper Figure
@@ -1178,12 +1043,12 @@ fig, ax = plt.subplots(1, 2, figsize=(8, 4))
 fig.subplots_adjust(wspace=0.5, bottom=0.5)
 sns.set_style("whitegrid")
 
-means = df_1_scaled.groupby("label").mean()[target_columns]
+means = df_1_scaled.groupby("label")[target_columns].mean()
 
 means = means - means.loc["Control"]
 
-std_dev = df_1_scaled.groupby("label").std()[target_columns]
-counts = df_1_scaled.groupby("label").count()[target_columns]
+std_dev = df_1_scaled.groupby("label")[target_columns].std()
+counts = df_1_scaled.groupby("label")[target_columns].count()
 standard_errors = std_dev / np.sqrt(counts)
 
 # for the scaled data
@@ -1216,8 +1081,8 @@ legend_handles = [Line2D([0], [0], color=color_dict[label], lw=2, label=label) f
 ax[0].legend(handles=legend_handles, title="", loc="lower left")
 ax[0].set_ylim([-0.2, 0.2])
 raw_data = (
-    df_1.groupby("label")
-    .mean()[target_columns]
+    df_1.groupby("label")[target_columns]
+    .mean()
     .T.reset_index()
     .melt(id_vars="index", var_name="label")
 )
@@ -1239,8 +1104,7 @@ plt.tight_layout()
 
 # Save only the first subplot (ax[0]) as an SVG file
 extent = ax[0].get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-fig.savefig("results/Figure4b.pdf", format="pdf", bbox_inches=extent)
-# fig.savefig("results/dendrogram_mito.pdf", bbox_inches="tight")
+fig.savefig(PATIENT_FIGURES_DIR / "Figure4b.pdf", format="pdf", bbox_inches=extent)
 
 # %%
 
