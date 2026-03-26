@@ -1382,3 +1382,63 @@ for i, (pert, per_site_df_pert) in enumerate(pert_df.groupby(pert_col, sort=Fals
 ### Resolution
 
 Accepting r=0.993 for jump_orf as "good enough". The discrepancy is small (~0.7%) and doesn't affect practical use of the pipeline. Further investigation would require access to the exact environment/code used to generate the July 2024 baseline.
+
+---
+
+## 2026-03-25: Patient Phenotype Analysis — Upstream Notebooks Ported
+
+### What was done
+
+- Audited all upstream content against fork to identify remaining unported code
+- Ported three upstream notebooks for patient fibroblast figure generation:
+  - `notebooks/3.0-mh-slope-analysis.py` (from `phenotype_discovery/2.slope_analysis.ipynb`)
+  - `notebooks/3.1-ew-supplemental-mito-features.py` (from `results/supplemental_mito_features/plot_mito_features.ipynb`)
+  - `notebooks/3.2-ew-radial-distribution-plots.py` (from `results/supplemental_fig_radial_dist/fibroblast_radial_distribution_plots.ipynb`)
+- Extracted shared single-cell data loading pipeline into `haghighi_mito/patient_analysis.py`
+- Refactored `notebooks/1.0-mh-feat-importance.py` to use the shared module
+- Added Snakemake download rules for patient fibroblast data from S3 (~2.9 GB total)
+- Deposited curated `patient_labels_updatedSept302025.xlsx` (corrected subjects 272 and MCL004)
+
+### Key findings
+
+**All upstream notebook logic is now captured in the fork.** Systematic audit confirmed:
+
+- Virtual screen pipeline (notebooks 1-4): Fully distilled into `haghighi_mito/virtual_screen.py` (previous work)
+- Patient phenotype analysis: Now ported as notebooks 1.0 + 3.0
+- Supplemental figure generation: Now ported as notebooks 3.1 + 3.2
+- Enrichment analysis: Already captured in `notebooks/2.1-mh-set-enrichment-analysis.py`
+- `handle_nans` and per-plate minimum observation filter: Both investigated and accounted for (deliberate omission and already implemented, respectively)
+
+**All patient data is accessible on S3 (not in Glacier):**
+
+| Data | Size |
+|------|------|
+| SQLite databases (185 subjects) | 1.7 GB |
+| `single_cell_with_annot.pkl` | 217 MB |
+| `single_cell_with_annot_allFeatures.pkl` | 1.0 GB |
+| `aggregated_profiles_fibroblast.csv` | 7 MB |
+
+**Figure reproduction status:**
+
+| Figure | Reproducible | Notebook |
+|--------|-------------|----------|
+| Figure 3 (classification) | Yes | 1.0 |
+| Figure 4b (radial profiles) | Yes | 1.0 |
+| Figure 4c (slope boxplots) | Yes | 1.0 + 3.0 |
+| SuppFigure 2 (CP-LR vs CNN) | Yes | 1.0 |
+| dendrogram_mito | Yes | 1.0 |
+| 16 intensity/skeleton plots | Yes | 3.1 |
+| 24 radial polar plots | Yes | 3.2 |
+| Figure 2 (microscopy composite) | No | Manual image assembly |
+
+### Unresolved issues
+
+**Deferred refinements (not blocking):**
+- Extract shared plotting functions into `haghighi_mito/plotting.py` (boxplot and polar plot patterns repeated across notebooks)
+- Wire figure generation into Snakemake `all_patient_figures` target (currently only downloads data)
+- Add unit tests for `patient_analysis.py` and future `plotting.py`
+
+### Notes
+
+- Fork is now the authoritative codebase — upstream has no logic that isn't captured here
+- Fork's origin repo (`shntnu/2025_Haghighi_Mito`) is currently archived; needs unarchiving to push
