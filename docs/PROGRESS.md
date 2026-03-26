@@ -1435,10 +1435,33 @@ Accepting r=0.993 for jump_orf as "good enough". The discrepancy is small (~0.7%
 
 **Deferred refinements (not blocking):**
 - Extract shared plotting functions into `haghighi_mito/plotting.py` (boxplot and polar plot patterns repeated across notebooks)
-- Wire figure generation into Snakemake `all_patient_figures` target (currently only downloads data)
 - Add unit tests for `patient_analysis.py` and future `plotting.py`
 
 ### Notes
 
 - Fork is now the authoritative codebase — upstream has no logic that isn't captured here
-- Fork's origin repo (`shntnu/2025_Haghighi_Mito`) is currently archived; needs unarchiving to push
+
+---
+
+## 2026-03-25: Snakemake Integration & Patient Labels Privacy Issue
+
+### What was done
+
+- Wired all figure-generating notebooks into Snakemake pipeline:
+  - `snakemake all_supplemental_figures` — runs notebooks 3.0, 3.1, 3.2 (fast, CSV only)
+  - `snakemake all_patient_figures` — adds notebook 1.0 (requires SQLite + pickles from S3)
+- Added `download_patient_labels` rule that fetches labels from S3 and converts Excel→CSV at runtime
+- Removed `patient_labels_updatedSept302025.csv` from git and scrubbed from history (`git filter-repo`) after discovering privacy concern
+
+### Key findings
+
+**Patient labels privacy concern:** Email from Donna McPhie (Feb 2023) states per-subject demographics tables (subject ID + diagnosis + sex + age) should not be published due to patient privacy. However, the same file is already public in the upstream repo (`carpenter-singh-lab/2025_Haghighi_Mito`). Flagged to Anne for resolution.
+
+**Resolution for reproducibility:** Patient labels file is downloaded from S3 at runtime via Snakemake (requires S3 credentials). Not tracked in git. Notebooks that only need the aggregated CSV (3.0, 3.1, 3.2) work without it.
+
+### Pipeline commands
+
+```bash
+snakemake all_supplemental_figures -c1 -p   # ~30 sec, 7 MB download
+snakemake all_patient_figures -c1 -p        # ~3 min, ~3 GB download
+```
