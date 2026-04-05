@@ -85,7 +85,9 @@ def load_single_cell_data() -> tuple[pd.DataFrame, pd.DataFrame]:
     disease_labels = load_patient_labels()
     df_raw = pd.merge(df_raw, disease_labels, on=["subject"], how="left")
 
-    # Subject corrections
+    # Subject corrections (match upstream notebook 1.feature_inspection.ipynb lines 137-138).
+    # Note: upstream phenotype_discovery/subjects.csv does NOT include these corrections
+    # and is missing 8 subjects (176 in pickle vs 168 in that file).
     df_raw["subject"] = df_raw["subject"].replace(["370E", "370F", "370H"], "370")
     df_raw.loc[df_raw["subject"] == "272", "label"] = "Control"
     df_raw.loc[df_raw["subject"] == "MCL004", "label"] = "SZA"
