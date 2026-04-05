@@ -1491,3 +1491,22 @@ snakemake all_patient_figures -c1 -p        # ~3 min, ~3 GB download
 ### Notes
 
 - The `MDD or Dep` → `MDD` normalization affects 18 subjects but is handled by existing code in both `load_aggregated_profiles()` and `preprocess_single_cells()`
+
+## 2026-04-05: Figure 2 Representative Cell Selection — Aligned with Upstream
+
+### What was done
+
+- Moved Figure 2 subject/image selection from notebook 3.0 to notebook 1.0
+- Notebook 3.0 was using pre-aggregated CSV, which has different slopes than the fully preprocessed single-cell pipeline (SQLite → QC → standardize → aggregate)
+- Notebook 1.0 already has the correct data in scope (`df_1_scaled`, local `find_end_slope2`)
+
+### Key findings
+
+**4/5 groups match upstream exactly:** MCL128 (BP), 287 (MDD), MCL015 (SZ), 263 (SZA).
+
+**Control has a floating-point tie:** Subjects 22 and MCL162 are equidistant from the group median slope (differ by <2e-17). Upstream picks MCL162; our pipeline picks 22. Both are equally valid. BP and MDD also have epsilon-level ties that happen to resolve the same way as upstream.
+
+### Notes
+
+- The slope formula in notebook 1.0's local `find_end_slope2` uses `data[-1]`; the module `vectorized_slope.py` uses `(data[-1] + data[-2]) / 2`. Figure 2 selection uses the local version to match upstream.
+- Snakemake won't re-run notebook 1.0 unless inputs change; typical runtime is 5–8 min (SQLite loading dominates)
