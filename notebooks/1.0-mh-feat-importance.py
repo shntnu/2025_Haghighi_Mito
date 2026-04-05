@@ -1138,4 +1138,50 @@ summary["Age_range"] = summary.apply(lambda r: f"{int(r.Age_min)}–{int(r.Age_m
 # %%
 summary
 
+# %% [markdown]
+# ## Choosing representative single cells for Figure 2
+
 # %%
+# Find subject closest to group median slope (upstream cell 38)
+med = df_1_avg_persub.groupby("label")["slope"].transform("median")
+df2 = df_1_avg_persub.assign(_dist=(df_1_avg_persub["slope"] - med).abs())
+
+# Note: BP (MCL128/MCL113), Control (22/MCL162), and MDD (287/MLF002) each have
+# two subjects at identical distance from the median (differ by <2e-17, i.e. floating-
+# point noise). idxmin() picks arbitrarily among exact ties. Upstream gets MCL162 for
+# Control; we get 22. Both are equally valid — the choice has no scientific consequence.
+closest_to_median = df2.loc[df2.groupby("label")["_dist"].idxmin()].drop(columns=["_dist"]).sort_values("label")
+
+closest_to_median[["subject", "label", "slope"]]
+
+# %%
+# Image-level aggregates from single-cell data (upstream cell 39)
+df_1_scaled2 = df_1_scaled.groupby(["subject", "label", "ImageNumber", "PathName_Mito", "FileName_Mito"]).mean(numeric_only=True).reset_index()
+df_1_scaled2[target_columns] = df_1_scaled2[target_columns] - df_1_scaled2[df_1_scaled2["label"] == "Control"][target_columns].mean()
+
+df_1_scaled2[["peak", "slope"]] = df_1_scaled2.apply(
+    lambda x: find_end_slope2(x[target_columns], plot=False, subject=x["subject"], smooth=True),
+    axis=1,
+    result_type="expand",
+)
+
+# %%
+# For each chosen subject, find the image closest to the label median slope (upstream cells 40-41)
+label_median = df_1_avg_persub.groupby("label", as_index=False)["slope"].median().rename(columns={"slope": "label_median_slope"})
+
+keys = closest_to_median[["label", "subject"]].drop_duplicates()
+
+candidates = (
+    df_1_scaled2
+    .merge(keys, on=["label", "subject"], how="inner")
+    .merge(label_median, on="label", how="left")
+    .assign(_dist=lambda d: (d["slope"] - d["label_median_slope"]).abs())
+)
+
+best_raw_point = candidates.loc[candidates.groupby(["label", "subject"])["_dist"].idxmin()].drop(columns=["_dist"]).sort_values("label")
+
+print("Figure 2 representative images:")
+print(best_raw_point[["subject", "label", "slope", "label_median_slope", "FileName_Mito"]].to_string(index=False))
+print()
+print("FileName_Mito values:")
+print(best_raw_point["FileName_Mito"].values)

@@ -179,15 +179,3 @@ for tar in [
     labels = [tick.get_text() for tick in axes.get_xticklabels()]
     labels[1] = "psychosis\n(BP + SZ + SZA)"
     axes.set_xticklabels(labels)
-
-# %% [markdown]
-# ## Choosing representative single cells for Figure 2
-
-# %%
-med = df_1_avg_persub.groupby("label")["slope"].transform("median")
-df2 = df_1_avg_persub.assign(_dist=(df_1_avg_persub["slope"] - med).abs())
-
-# One representative row per label: closest to the median slope
-closest_to_median = df2.loc[df2.groupby("label")["_dist"].idxmin()].drop(columns=["_dist"]).sort_values("label")
-
-closest_to_median[["subject", "label", "slope"]]
