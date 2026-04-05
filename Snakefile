@@ -571,6 +571,7 @@ rule generate_feature_importance_figures:
     """Generate Figure 3, 4b, SuppFigure 2, dendrogram (requires SQLite + pickle data)."""
     input:
         labels=f"{PROCESSED_DATA_DIR}/tables/curated_2025-10-25/patient_labels_updatedSept302025.csv",
+        labels_full=f"{PROCESSED_DATA_DIR}/tables/curated_2025-10-25/patient_labels_updatedSept302025_full.csv",
         pkl1=f"{FIBROBLAST_DATA_DIR}/single_cell_with_annot.pkl",
         pkl2=f"{FIBROBLAST_DATA_DIR}/single_cell_with_annot_allFeatures.pkl",
         sqlite_dir=SQLITE_DATA_DIR,

@@ -22,6 +22,7 @@ from singlecell.read.read_single_cell_sql import readSingleCellData_sqlalch
 from haghighi_mito.config import (
     AGGREGATED_PROFILES_PATH,
     FIBROBLAST_DATA_DIR,
+    PATIENT_LABELS_FULL_PATH,
     PATIENT_LABELS_PATH,
     SQLITE_DATA_DIR,
 )
@@ -30,11 +31,12 @@ from haghighi_mito.config import (
 def load_patient_labels() -> pd.DataFrame:
     """Load and standardize patient disease labels.
 
-    The git-tracked version contains only ID and D (top-level diagnosis)
-    for privacy reasons. The full version with D1, Sex, Age is available
-    via S3 download (see Snakefile download_patient_labels rule).
+    Prefers the full version (with D1, Sex, Age) downloaded from S3 via
+    ``snakemake download_patient_labels``.  Falls back to the git-tracked
+    minimal CSV (ID + D only) when the full version is not present.
     """
-    disease_labels = pd.read_csv(PATIENT_LABELS_PATH)
+    path = PATIENT_LABELS_FULL_PATH if PATIENT_LABELS_FULL_PATH.exists() else PATIENT_LABELS_PATH
+    disease_labels = pd.read_csv(path)
     disease_labels = disease_labels.rename(columns={"ID": "subject"})
     disease_labels["subject"] = disease_labels["subject"].astype(str)
     return disease_labels

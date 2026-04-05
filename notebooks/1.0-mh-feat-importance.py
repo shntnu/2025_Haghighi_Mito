@@ -923,10 +923,8 @@ custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", rc=custom_params, font_scale=1)
 
 
-from haghighi_mito.config import MITO_WORKSPACE_DIR
-disease_labels = pd.read_excel(MITO_WORKSPACE_DIR / "metadata" / "patient_labels.xlsx")
-disease_labels = disease_labels.rename(columns={"ID": "subject"})
-disease_labels["subject"] = disease_labels["subject"].astype(str)
+from haghighi_mito.patient_analysis import load_patient_labels
+disease_labels = load_patient_labels()
 
 
 # data_phs0 = df_1_scaled.groupby(['label','subject']).mean().reset_index()

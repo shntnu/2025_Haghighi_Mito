@@ -31,6 +31,7 @@ FIBROBLAST_DATA_DIR = MITO_WORKSPACE_DIR / "singleCellData"
 SQLITE_DATA_DIR = MITO_WORKSPACE_DIR / "backend" / "Mito_Morphology_input"
 AGGREGATED_PROFILES_PATH = FIBROBLAST_DATA_DIR / "aggregated_profiles_fibroblast.csv"
 PATIENT_LABELS_PATH = PROCESSED_TABLES_DIR / "patient_labels_updatedSept302025.csv"
+PATIENT_LABELS_FULL_PATH = PROCESSED_TABLES_DIR / "patient_labels_updatedSept302025_full.csv"
 PATIENT_FIGURES_DIR = PROCESSED_DATA_DIR / "figures" / "patient_phenotype"
 SUPPLEMENTAL_FIGURES_DIR = PROCESSED_DATA_DIR / "figures" / "supplemental"
 
