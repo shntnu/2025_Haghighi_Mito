@@ -479,9 +479,12 @@ rule download_aggregated_profiles:
 
 
 rule download_patient_labels:
-    """Download patient labels from S3 and convert to CSV (not tracked in git for privacy)."""
+    """Download full patient labels from S3 (with D1, Sex, Age — not git-tracked for privacy).
+
+    Downloads to a separate '_full' path so the git-tracked minimal CSV (ID + D only) is never overwritten.
+    """
     output:
-        csv=f"{PROCESSED_DATA_DIR}/tables/curated_2025-10-25/patient_labels_updatedSept302025.csv"
+        csv=f"{PROCESSED_DATA_DIR}/tables/curated_2025-10-25/patient_labels_updatedSept302025_full.csv"
     params:
         s3_path=f"{S3_BASE}/metadata/patient_labels_updatedSept302025.xlsx"
     shell:
