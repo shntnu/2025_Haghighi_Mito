@@ -1465,3 +1465,29 @@ Accepting r=0.993 for jump_orf as "good enough". The discrepancy is small (~0.7%
 snakemake all_supplemental_figures -c1 -p   # ~30 sec, 7 MB download
 snakemake all_patient_figures -c1 -p        # ~3 min, ~3 GB download
 ```
+
+---
+
+## 2026-04-05: Patient Labels Investigation — Resolved
+
+### What was done
+
+- Traced full email thread ("Patient data for Mito paper", Mar 26–30) to resolve patient label file ambiguity
+- Compared all label sources: upstream `subjects.csv`, S3 xlsx, pickle `label` column, and code corrections
+- Fixed stale worktree and pixi environment after repo move from `misc/` to `mito/`
+- Added comment in `patient_analysis.py` documenting the discrepancy
+
+### Key findings
+
+**Upstream `phenotype_discovery/subjects.csv` does not match the labels used in the analysis.** Two discrepancies:
+
+1. Missing 8 subjects present in the pickle data (176 vs 168)
+2. Does not include the two diagnosis corrections that the upstream notebook itself applies in code: 272→Control and MCL004→SZA
+
+**Resolution:** Our code corrections in `patient_analysis.py` (matching upstream `1.feature_inspection.ipynb` lines 137-138) are correct and produce the labels used in the paper. No code changes needed — added a comment documenting the discrepancy.
+
+**Privacy resolution (from Mar 26 thread):** Confirmed with McLean collaborators that the public patient labels file is acceptable. Details in email thread "Patient data for Mito paper" (Mar 26–30).
+
+### Notes
+
+- The `MDD or Dep` → `MDD` normalization affects 18 subjects but is handled by existing code in both `load_aggregated_profiles()` and `preprocess_single_cells()`
