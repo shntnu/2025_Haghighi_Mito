@@ -1540,3 +1540,19 @@ snakemake all_patient_figures -c1 -p        # ~3 min, ~3 GB download
 - Channels: c1=DNA (blue), c2=Actin (green), c3=Mito (red); percentile-clipped uint16 → float for display
 - White box on Merge column marks selected cell; zoom column shows bounding-box crop with 30 px padding
 - Added `compose_figure2` Snakemake rule; `Figure2.pdf` now part of `all_patient_figures` target
+
+---
+
+## 2026-04-05: data/ Layout Restructuring
+
+### What was done
+
+- Moved curated reference tables from `data/processed/tables/curated_*/` → `data/external/tables/curated_*/` to match workflows.md convention (`processed/` = pipeline outputs only)
+- Renamed `PROCESSED_TABLES_DIR` → `EXTERNAL_TABLES_DIR` in `config.py` and updated `data.py`, Snakefile accordingly
+- Updated `.gitignore`: un-ignore `data/external/tables/` (otherwise ignored for large S3 downloads); re-ignore `patient_labels_updatedSept302025_full.csv` (PHI, runtime download)
+- `git rm` 31 stale tracked pipeline outputs: 5 top-level figure PDFs (superseded by `patient_phenotype/`), 24 virtual screen diagnostics, 2 dead external files (KEGG/WikiPathways with no code references)
+
+### Key findings
+
+- All removed files are fully regenerable: curated Excels exist in upstream repo (`carpenter-singh-lab/2025_Haghighi_Mito`); pipeline regenerates figures and diagnostics
+- `data/` can now be deleted and fully restored via `snakemake` + `git fetch upstream`
