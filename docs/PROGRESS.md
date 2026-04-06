@@ -1555,4 +1555,4 @@ snakemake all_patient_figures -c1 -p        # ~3 min, ~3 GB download
 ### Key findings
 
 - All removed files are fully regenerable: curated Excels exist in upstream repo (`carpenter-singh-lab/2025_Haghighi_Mito`); pipeline regenerates figures and diagnostics
-- `data/` can now be deleted and fully restored via `snakemake` + `git fetch upstream`
+- `data/` can now be deleted and fully restored: `git checkout -- data/external/tables/` restores curated Excels; `snakemake all_patient_figures all_baseline -c4` downloads and regenerates everything else from S3
