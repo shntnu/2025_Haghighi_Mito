@@ -3,10 +3,13 @@
 
 Usage: python scripts/compose_figure2.py <cells_csv> <images_dir> <output_pdf>
 
-Layout: 5 rows (BP, Control, MDD, SZ, SZA) × 5 columns (DNA, Mito, Actin, Merge, Zoomed).
-Canonical subjects matching upstream: MCL128, MCL162, 287, MCL015, 263.
+Layout: 5 rows (Control, BP, SZ, SZA, MDD) × 6 columns
+        (DNA, Mito, Actin, composite, Mito crop color, Mito crop grayscale).
+Canonical subjects matching upstream: MCL162, MCL128, MCL015, 263, 287.
 
 Channels: c1=DNA (blue), c2=Actin (green), c3=Mito (red).
+Normalization: 0.5/99.5 percentile for full-field columns;
+               min/max for grayscale zoom (matches figure legend).
 """
 import sys
 from pathlib import Path
@@ -25,27 +28,34 @@ CANONICAL = {
     "SZ": "MCL015",
     "SZA": "263",
 }
-GROUP_ORDER = ["BP", "Control", "MDD", "SZ", "SZA"]
+GROUP_ORDER = ["Control", "BP", "SZ", "SZA", "MDD"]
 
-# Channel display: c1=DNA/blue, c2=Actin/green, c3=Mito/red
-CHANNEL_COLOR = {"c1": np.array([0.2, 0.4, 1.0]), "c2": np.array([0.2, 0.9, 0.2]), "c3": np.array([1.0, 0.2, 0.2])}
-CHANNEL_LABEL = {"c1": "DNA", "c2": "Actin", "c3": "Mito"}
-COL_ORDER = ["c1", "c3", "c2", "merge", "zoom"]
-COL_TITLES = ["DNA", "Mito", "Actin", "Merge", "Cell (zoom)"]
+CHANNEL_COLOR = {
+    "c1": np.array([0.2, 0.4, 1.0]),   # DNA → blue
+    "c2": np.array([0.2, 0.9, 0.2]),   # Actin → green
+    "c3": np.array([1.0, 0.2, 0.2]),   # Mito → red
+}
+COL_ORDER = ["c1", "c3", "c2", "merge", "zoom_merge", "zoom_gray"]
+COL_TITLES = ["DNA", "Mito", "Actin", "composite", "", ""]
 
-ZOOM_PAD_PX = 30  # pixels of padding around bounding box for zoom crop
+ZOOM_PAD_PX = 30
 
 
-def normalize(img, plo=1, phi=99):
-    """Clip to percentiles and scale to [0, 1]."""
+def normalize(img, plo=0.5, phi=99.5):
     lo, hi = np.percentile(img, plo), np.percentile(img, phi)
     if hi == lo:
         return np.zeros_like(img, dtype=float)
     return np.clip((img.astype(float) - lo) / (hi - lo), 0, 1)
 
 
-def make_merge(channels: dict) -> np.ndarray:
-    """Combine normalized single-channel images into an RGB composite."""
+def normalize_minmax(img):
+    lo, hi = float(img.min()), float(img.max())
+    if hi == lo:
+        return np.zeros_like(img, dtype=float)
+    return (img.astype(float) - lo) / (hi - lo)
+
+
+def make_merge(channels):
     h, w = next(iter(channels.values())).shape
     rgb = np.zeros((h, w, 3), dtype=float)
     for ch, img_norm in channels.items():
@@ -53,25 +63,31 @@ def make_merge(channels: dict) -> np.ndarray:
     return np.clip(rgb, 0, 1)
 
 
-def load_channels(images_dir: Path, filename_mito: str) -> dict:
-    """Load all three channels for one image, returning normalized arrays."""
+def load_channels(images_dir, filename_mito):
+    """Load all three channels, returning normalized arrays keyed by channel."""
     result = {}
     for ch in ("c1", "c2", "c3"):
         fname = filename_mito.replace("_c3_", f"_{ch}_")
-        path = images_dir / fname
-        raw = tifffile.imread(str(path))
+        raw = tifffile.imread(str(images_dir / fname))
         result[ch] = normalize(raw)
     return result
 
 
-def crop(img, rmin, rmax, cmin, cmax, pad=ZOOM_PAD_PX):
-    """Crop image with optional padding, clamped to image bounds."""
+def crop_box(img, rmin, rmax, cmin, cmax, pad=ZOOM_PAD_PX):
     h, w = img.shape[:2]
-    r0 = max(0, rmin - pad)
-    r1 = min(h, rmax + pad)
-    c0 = max(0, cmin - pad)
-    c1 = min(w, cmax + pad)
-    return img[r0:r1, c0:c1]
+    return img[max(0, rmin - pad):min(h, rmax + pad),
+               max(0, cmin - pad):min(w, cmax + pad)]
+
+
+def pad_to_height(img, target_h):
+    """Embed img centered vertically in a black canvas of target_h rows."""
+    h = img.shape[0]
+    if h >= target_h:
+        return img
+    pad_top = (target_h - h) // 2
+    pad_bot = target_h - h - pad_top
+    pad_width = ((pad_top, pad_bot), (0, 0)) if img.ndim == 2 else ((pad_top, pad_bot), (0, 0), (0, 0))
+    return np.pad(img, pad_width)
 
 
 cells_csv, images_dir, output_pdf = sys.argv[1], Path(sys.argv[2]), sys.argv[3]
@@ -80,7 +96,7 @@ df["subject"] = df["subject"].astype(str)
 
 fig, axes = plt.subplots(
     len(GROUP_ORDER), len(COL_ORDER),
-    figsize=(5 * len(COL_ORDER), 4 * len(GROUP_ORDER)),
+    figsize=(3 * len(COL_ORDER), 3 * len(GROUP_ORDER)),
     squeeze=False,
 )
 
@@ -97,9 +113,14 @@ for row_i, group in enumerate(GROUP_ORDER):
     channels = load_channels(images_dir, r["FileName_Mito"])
     merge = make_merge(channels)
 
-    # Bounding box (BoundingBoxMinimum/Maximum are x=col, y=row in CellProfiler)
-    bx_min, by_min = int(r["Cells_AreaShape_BoundingBoxMinimum_X"]), int(r["Cells_AreaShape_BoundingBoxMinimum_Y"])
-    bx_max, by_max = int(r["Cells_AreaShape_BoundingBoxMaximum_X"]), int(r["Cells_AreaShape_BoundingBoxMaximum_Y"])
+    bx_min = int(r["Cells_AreaShape_BoundingBoxMinimum_X"])
+    by_min = int(r["Cells_AreaShape_BoundingBoxMinimum_Y"])
+    bx_max = int(r["Cells_AreaShape_BoundingBoxMaximum_X"])
+    by_max = int(r["Cells_AreaShape_BoundingBoxMaximum_Y"])
+
+    full_h = channels["c3"].shape[0]
+    mito_crop_color = pad_to_height(crop_box(merge, by_min, by_max, bx_min, bx_max), full_h)
+    mito_crop_gray = pad_to_height(normalize_minmax(crop_box(channels["c3"], by_min, by_max, bx_min, bx_max)), full_h)
 
     for col_i, col_key in enumerate(COL_ORDER):
         ax = axes[row_i][col_i]
@@ -107,22 +128,20 @@ for row_i, group in enumerate(GROUP_ORDER):
 
         if col_key == "merge":
             ax.imshow(merge, interpolation="nearest")
-            # Draw box around selected cell
-            rect = mpatches.Rectangle(
+            ax.add_patch(mpatches.Rectangle(
                 (bx_min, by_min), bx_max - bx_min, by_max - by_min,
                 linewidth=1.5, edgecolor="white", facecolor="none",
-            )
-            ax.add_patch(rect)
-        elif col_key == "zoom":
-            zoomed = crop(merge, by_min, by_max, bx_min, bx_max)
-            ax.imshow(zoomed, interpolation="nearest")
+            ))
+        elif col_key == "zoom_merge":
+            ax.imshow(mito_crop_color, interpolation="nearest")
+        elif col_key == "zoom_gray":
+            ax.imshow(mito_crop_gray, cmap="gray", vmin=0, vmax=1, interpolation="nearest")
         else:
             ax.imshow(channels[col_key], cmap="gray", interpolation="nearest")
 
         if row_i == 0:
             ax.set_title(COL_TITLES[col_i], fontsize=11, pad=4)
 
-    # Row label: add text annotation to the left of the first column
     axes[row_i][0].text(
         -0.08, 0.5, group,
         transform=axes[row_i][0].transAxes,
@@ -130,6 +149,6 @@ for row_i, group in enumerate(GROUP_ORDER):
         va="center", ha="right", rotation=90,
     )
 
-plt.tight_layout(h_pad=0.5, w_pad=0.5)
+plt.tight_layout(h_pad=0.3, w_pad=0.3)
 plt.savefig(output_pdf, dpi=150, bbox_inches="tight")
 print(f"Saved to {output_pdf}")

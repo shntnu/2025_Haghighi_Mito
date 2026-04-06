@@ -659,10 +659,12 @@ rule identify_figure2_cells:
 
 
 rule compose_figure2:
-    """Compose Figure 2: 5-row × 5-column panel (DNA/Mito/Actin/Merge/Zoom) per diagnosis group.
+    """Compose Figure 2: 5-row × 6-column panel per diagnosis group.
 
-    One canonical subject per group (MCL128=BP, MCL162=Control, 287=MDD, MCL015=SZ, 263=SZA)
-    matching upstream notebook selection. White box in Merge column marks the selected cell.
+    Rows: Control, BP, SZ, SZA, MDD.
+    Columns: DNA (gray), Mito (gray), Actin (gray), composite (color), Mito crop (color), Mito crop (gray).
+    Canonical subjects: MCL162=Control, MCL128=BP, MCL015=SZ, 263=SZA, 287=MDD.
+    White box in composite column marks the selected cell.
     """
     input:
         cells_csv=f"{PATIENT_FIGURES_DIR}/figure2_representative_cells_with_cells.csv",
