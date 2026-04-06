@@ -1509,4 +1509,23 @@ snakemake all_patient_figures -c1 -p        # ~3 min, ~3 GB download
 ### Notes
 
 - The slope formula in notebook 1.0's local `find_end_slope2` uses `data[-1]`; the module `vectorized_slope.py` uses `(data[-1] + data[-2]) / 2`. Figure 2 selection uses the local version to match upstream.
+
+## 2026-04-05: Figure 2 Source Image Pipeline
+
+### What was done
+
+- Added full Figure 2 provenance pipeline in response to Donna McPhie's request for subject lines and image numbers (MSB-2026-13630-T revision)
+- Notebook 1.0 now saves `figure2_representative_cells.csv` instead of printing; surfaces all tied candidates per group using epsilon comparison rather than `idxmin()`
+- Two new Snakemake rules: `download_figure2_source_images` (all 3 channels, batched s5cmd), `identify_figure2_cells` (per-cell ObjectNumber + pixel coordinates)
+- New scripts: `scripts/download_figure2_images.py`, `scripts/find_figure2_cells.py`
+
+### Key findings
+
+- Ties are mathematically guaranteed for even-sized groups (the two median-straddling subjects are equidistant by definition), not floating-point accidents — affects BP (MCL113/MCL128), Control (22/MCL162), MDD (287/MLF002)
+- Per-cell selection uses raw MeanFrac values with within-image ranking — no cross-subject standardization needed since all cells are on the same scale within one image
+- Upstream Figure 2 images (from cached `2.slope_analysis.ipynb` cell 41): MCL128 31, MCL162 48, 287 6, MCL015 49, 263 40 (all `_c3_ORG.tif`)
+
+### Unresolved issues
+
+- Figure composition script not yet written — have all source images and cell coordinates locally, but programmatic crop/composite to match Figure 2 layout (DNA/Mito/Actin/merge + zoomed cell) is a next session task
 - Snakemake won't re-run notebook 1.0 unless inputs change; typical runtime is 5–8 min (SQLite loading dominates)
