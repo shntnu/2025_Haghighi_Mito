@@ -79,16 +79,6 @@ def crop_box(img, rmin, rmax, cmin, cmax, pad=ZOOM_PAD_PX):
                max(0, cmin - pad):min(w, cmax + pad)]
 
 
-def pad_to_height(img, target_h):
-    """Embed img centered vertically in a black canvas of target_h rows."""
-    h = img.shape[0]
-    if h >= target_h:
-        return img
-    pad_top = (target_h - h) // 2
-    pad_bot = target_h - h - pad_top
-    pad_width = ((pad_top, pad_bot), (0, 0)) if img.ndim == 2 else ((pad_top, pad_bot), (0, 0), (0, 0))
-    return np.pad(img, pad_width)
-
 
 cells_csv, images_dir, output_pdf = sys.argv[1], Path(sys.argv[2]), sys.argv[3]
 df = pd.read_csv(cells_csv)
@@ -97,6 +87,7 @@ df["subject"] = df["subject"].astype(str)
 fig, axes = plt.subplots(
     len(GROUP_ORDER), len(COL_ORDER),
     figsize=(3 * len(COL_ORDER), 3 * len(GROUP_ORDER)),
+    gridspec_kw={"width_ratios": [1, 1, 1, 1, 0.5, 0.5]},
     squeeze=False,
 )
 
@@ -118,34 +109,33 @@ for row_i, group in enumerate(GROUP_ORDER):
     bx_max = int(r["Cells_AreaShape_BoundingBoxMaximum_X"])
     by_max = int(r["Cells_AreaShape_BoundingBoxMaximum_Y"])
 
-    full_h = channels["c3"].shape[0]
-    mito_crop_color = pad_to_height(crop_box(merge, by_min, by_max, bx_min, bx_max), full_h)
-    mito_crop_gray = pad_to_height(normalize_minmax(crop_box(channels["c3"], by_min, by_max, bx_min, bx_max)), full_h)
+    mito_crop_color = crop_box(merge, by_min, by_max, bx_min, bx_max)
+    mito_crop_gray = normalize_minmax(crop_box(channels["c3"], by_min, by_max, bx_min, bx_max))
 
     for col_i, col_key in enumerate(COL_ORDER):
         ax = axes[row_i][col_i]
         ax.axis("off")
 
         if col_key == "merge":
-            ax.imshow(merge, interpolation="nearest")
+            ax.imshow(merge, interpolation="nearest", aspect="auto")
             ax.add_patch(mpatches.Rectangle(
                 (bx_min, by_min), bx_max - bx_min, by_max - by_min,
                 linewidth=1.5, edgecolor="white", facecolor="none",
             ))
         elif col_key == "zoom_merge":
-            ax.imshow(mito_crop_color, interpolation="nearest")
+            ax.imshow(mito_crop_color, interpolation="nearest", aspect="auto")
         elif col_key == "zoom_gray":
-            ax.imshow(mito_crop_gray, cmap="gray", vmin=0, vmax=1, interpolation="nearest")
+            ax.imshow(mito_crop_gray, cmap="gray", vmin=0, vmax=1, interpolation="nearest", aspect="auto")
         else:
-            ax.imshow(channels[col_key], cmap="gray", interpolation="nearest")
+            ax.imshow(channels[col_key], cmap="gray", interpolation="nearest", aspect="auto")
 
         if row_i == 0:
-            ax.set_title(COL_TITLES[col_i], fontsize=11, pad=4)
+            ax.set_title(COL_TITLES[col_i], fontsize=16, pad=6)
 
     axes[row_i][0].text(
-        -0.08, 0.5, group,
+        -0.12, 0.5, group,
         transform=axes[row_i][0].transAxes,
-        fontsize=12, fontweight="bold",
+        fontsize=16, fontweight="bold",
         va="center", ha="right", rotation=90,
     )
 
