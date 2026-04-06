@@ -88,6 +88,10 @@ TABLES_MODULE = f"{PROCESSED_DATA_DIR}/tables/generated_from_module"
 # External curated reference tables (manually curated, git-tracked in data/external/)
 EXTERNAL_TABLES_DIR = f"{DATA_DIR}/external/tables/curated_2025-10-25"
 
+# Figure output directories
+PATIENT_FIGURES_DIR = f"{PROCESSED_DATA_DIR}/figures/patient_phenotype"
+SUPPLEMENTAL_FIGURES_DIR = f"{PROCESSED_DATA_DIR}/figures/supplemental"
+
 
 # ============================================================================
 # METHOD 0: BASELINE PIPELINE - Download + Process Pre-Computed Results
@@ -151,6 +155,22 @@ rule create_baseline_database:
         """
 
 ## Target Rules ##
+
+rule all:
+    """Default target: baseline virtual screen + all patient/supplemental figures."""
+    input:
+        "data/processed/screen_results_baseline.duckdb",
+        f"{SUPPLEMENTAL_FIGURES_DIR}/skel_features",
+        f"{SUPPLEMENTAL_FIGURES_DIR}/intensity_features",
+        f"{SUPPLEMENTAL_FIGURES_DIR}/skeleton",
+        f"{SUPPLEMENTAL_FIGURES_DIR}/fluorescence",
+        f"{PATIENT_FIGURES_DIR}/Figure2.pdf",
+        f"{PATIENT_FIGURES_DIR}/Figure4c.pdf",
+        f"{PATIENT_FIGURES_DIR}/Figure3.pdf",
+        f"{PATIENT_FIGURES_DIR}/Figure4b.pdf",
+        f"{PATIENT_FIGURES_DIR}/SuppFigure2.pdf",
+        f"{PATIENT_FIGURES_DIR}/dendrogram_mito.pdf",
+
 
 rule all_baseline:
     """Target: Complete baseline pipeline (CSV → Excel → DuckDB)."""
@@ -463,8 +483,6 @@ rule validate_database_pair:
 
 FIBROBLAST_DATA_DIR = f"{MITO_WORKSPACE_DIR}/singleCellData"
 SQLITE_DATA_DIR = f"{MITO_WORKSPACE_DIR}/backend/Mito_Morphology_input"
-PATIENT_FIGURES_DIR = f"{PROCESSED_DATA_DIR}/figures/patient_phenotype"
-SUPPLEMENTAL_FIGURES_DIR = f"{PROCESSED_DATA_DIR}/figures/supplemental"
 
 ## Download Rules ##
 
@@ -648,7 +666,7 @@ rule compose_figure2:
     """
     input:
         cells_csv=f"{PATIENT_FIGURES_DIR}/figure2_representative_cells_with_cells.csv",
-        images_dir=directory(f"{PATIENT_FIGURES_DIR}/figure2_source_images"),
+        images_dir=f"{PATIENT_FIGURES_DIR}/figure2_source_images",
     output:
         f"{PATIENT_FIGURES_DIR}/Figure2.pdf",
     shell:
