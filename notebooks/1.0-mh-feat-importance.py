@@ -1140,17 +1140,20 @@ summary
 # ## Choosing representative single cells for Figure 2
 
 # %%
-# Find subject closest to group median slope (upstream cell 38)
+# Find all subjects tied for closest to group median slope.
+# With an even-sized group, the two subjects straddling the median are always
+# equidistant by definition — so ties are expected, not coincidental. Rather than
+# break the tie arbitrarily with idxmin(), we keep all tied subjects per group so
+# downstream steps (and the figure designer) can choose among them.
+TIE_EPSILON = 1e-10  # threshold below which two distances are considered equal
+
 med = df_1_avg_persub.groupby("label")["slope"].transform("median")
 df2 = df_1_avg_persub.assign(_dist=(df_1_avg_persub["slope"] - med).abs())
+min_dist = df2.groupby("label")["_dist"].transform("min")
+closest_to_median = df2.loc[df2["_dist"] <= min_dist + TIE_EPSILON].drop(columns=["_dist"]).sort_values(["label", "subject"])
 
-# Note: BP (MCL128/MCL113), Control (22/MCL162), and MDD (287/MLF002) each have
-# two subjects at identical distance from the median (differ by <2e-17, i.e. floating-
-# point noise). idxmin() picks arbitrarily among exact ties. Upstream gets MCL162 for
-# Control; we get 22. Both are equally valid — the choice has no scientific consequence.
-closest_to_median = df2.loc[df2.groupby("label")["_dist"].idxmin()].drop(columns=["_dist"]).sort_values("label")
-
-closest_to_median[["subject", "label", "slope"]]
+print("Representative subjects per group (all tied candidates):")
+print(closest_to_median[["subject", "label", "slope"]].to_string(index=False))
 
 # %%
 # Image-level aggregates from single-cell data (upstream cell 39)
@@ -1164,22 +1167,23 @@ df_1_scaled2[["peak", "slope"]] = df_1_scaled2.apply(
 )
 
 # %%
-# For each chosen subject, find the image closest to the label median slope (upstream cells 40-41)
+# For each candidate subject, find the image closest to the label median slope.
+# Tied subjects each get their own best image — all are saved to the CSV.
 label_median = df_1_avg_persub.groupby("label", as_index=False)["slope"].median().rename(columns={"slope": "label_median_slope"})
 
 keys = closest_to_median[["label", "subject"]].drop_duplicates()
 
-candidates = (
+image_candidates = (
     df_1_scaled2
     .merge(keys, on=["label", "subject"], how="inner")
     .merge(label_median, on="label", how="left")
     .assign(_dist=lambda d: (d["slope"] - d["label_median_slope"]).abs())
 )
 
-best_raw_point = candidates.loc[candidates.groupby(["label", "subject"])["_dist"].idxmin()].drop(columns=["_dist"]).sort_values("label")
+best_raw_point = image_candidates.loc[image_candidates.groupby(["label", "subject"])["_dist"].idxmin()].drop(columns=["_dist"]).sort_values(["label", "subject"])
 
-print("Figure 2 representative images:")
-print(best_raw_point[["subject", "label", "slope", "label_median_slope", "FileName_Mito"]].to_string(index=False))
-print()
-print("FileName_Mito values:")
-print(best_raw_point["FileName_Mito"].values)
+fig2_cols = ["subject", "label", "slope", "label_median_slope", "ImageNumber", "FileName_Mito"]
+fig2_out = PATIENT_FIGURES_DIR / "figure2_representative_cells.csv"
+best_raw_point[fig2_cols].to_csv(fig2_out, index=False)
+print(f"\nFigure 2 representative images saved to {fig2_out}")
+print(best_raw_point[fig2_cols].to_string(index=False))

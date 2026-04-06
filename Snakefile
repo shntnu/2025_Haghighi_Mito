@@ -580,6 +580,7 @@ rule generate_feature_importance_figures:
         f"{PATIENT_FIGURES_DIR}/Figure4b.pdf",
         f"{PATIENT_FIGURES_DIR}/SuppFigure2.pdf",
         f"{PATIENT_FIGURES_DIR}/dendrogram_mito.pdf",
+        f"{PATIENT_FIGURES_DIR}/figure2_representative_cells.csv",
     shell:
         "pixi run python notebooks/1.0-mh-feat-importance.py"
 
@@ -596,6 +597,38 @@ rule all_supplemental_figures:
         f"{PATIENT_FIGURES_DIR}/Figure4c.pdf",
 
 
+rule download_figure2_source_images:
+    """Download the 5 representative MitoTracker images identified for Figure 2.
+
+    Reads figure2_representative_cells.csv (produced by generate_feature_importance_figures),
+    constructs the S3 path for each FileName_Mito entry, and downloads all images into
+    a single directory. Uses a directory output because filenames are determined at runtime.
+
+    S3 layout: .../Mito_Morphology_input/images/<subject> Mito_Morphology/<filename>
+    """
+    input:
+        csv=f"{PATIENT_FIGURES_DIR}/figure2_representative_cells.csv",
+    output:
+        directory(f"{PATIENT_FIGURES_DIR}/figure2_source_images"),
+    shell:
+        "mkdir -p {output} && pixi run python scripts/download_figure2_images.py {input.csv} {output}"
+
+
+rule identify_figure2_cells:
+    """Identify the representative single cell within each Figure 2 image.
+
+    For each image in figure2_representative_cells.csv, loads the subject's SQLite,
+    applies QC filters, computes per-cell slope, and picks the cell closest to the
+    within-image median slope. Outputs ObjectNumber and pixel coordinates for cropping.
+    """
+    input:
+        csv=f"{PATIENT_FIGURES_DIR}/figure2_representative_cells.csv",
+    output:
+        f"{PATIENT_FIGURES_DIR}/figure2_representative_cells_with_cells.csv",
+    shell:
+        "pixi run python scripts/find_figure2_cells.py {input.csv} {output}"
+
+
 rule all_patient_figures:
     """Target: Generate all patient phenotype figures (requires full data download)."""
     input:
@@ -608,6 +641,9 @@ rule all_patient_figures:
         f"{PATIENT_FIGURES_DIR}/Figure4b.pdf",
         f"{PATIENT_FIGURES_DIR}/SuppFigure2.pdf",
         f"{PATIENT_FIGURES_DIR}/dendrogram_mito.pdf",
+        f"{PATIENT_FIGURES_DIR}/figure2_representative_cells.csv",
+        f"{PATIENT_FIGURES_DIR}/figure2_representative_cells_with_cells.csv",
+        f"{PATIENT_FIGURES_DIR}/figure2_source_images",
 
 
 # ============================================================================
