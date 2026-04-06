@@ -482,20 +482,28 @@ rule download_aggregated_profiles:
 
 
 rule download_patient_labels:
-    """Download full patient labels from S3 (with D1, Sex, Age — not git-tracked for privacy).
+    """Download patient labels from S3 and produce both full and minimal CSVs.
 
-    Downloads to a separate '_full' path so the git-tracked minimal CSV (ID + D only) is never overwritten.
+    Full CSV (ID + D1 + Sex + Age): not git-tracked, runtime-only.
+    Minimal CSV (ID + D only): not git-tracked, derived from full at download time.
+    Both are fully reproducible from S3 so neither needs to be in git.
     """
     output:
-        csv=f"{EXTERNAL_TABLES_DIR}/patient_labels_updatedSept302025_full.csv"
+        full=f"{EXTERNAL_TABLES_DIR}/patient_labels_updatedSept302025_full.csv",
+        minimal=f"{EXTERNAL_TABLES_DIR}/patient_labels_updatedSept302025.csv",
     params:
         s3_path=f"{S3_BASE}/metadata/patient_labels_updatedSept302025.xlsx"
     shell:
         """
-        mkdir -p $(dirname {output.csv})
-        s5cmd cp {params.s3_path} $(dirname {output.csv})/patient_labels_updatedSept302025.xlsx
-        pixi run python -c "import pandas as pd; pd.read_excel('$(dirname {output.csv})/patient_labels_updatedSept302025.xlsx').to_csv('{output.csv}', index=False)"
-        rm $(dirname {output.csv})/patient_labels_updatedSept302025.xlsx
+        mkdir -p $(dirname {output.full})
+        s5cmd cp {params.s3_path} $(dirname {output.full})/patient_labels_updatedSept302025.xlsx
+        pixi run python -c "
+import pandas as pd
+df = pd.read_excel('$(dirname {output.full})/patient_labels_updatedSept302025.xlsx')
+df.to_csv('{output.full}', index=False)
+df[['ID', 'D']].to_csv('{output.minimal}', index=False)
+"
+        rm $(dirname {output.full})/patient_labels_updatedSept302025.xlsx
         """
 
 
