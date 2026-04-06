@@ -192,7 +192,7 @@ Ruff with permissive settings (see `pyproject.toml`):
 
 ## Important Notes
 
-- **Data provenance**: Excel files in `curated_2024-08-11/` and `curated_2025-10-25/` are manually curated via Google Sheets, not direct pipeline outputs
+- **Data provenance**: Excel files in `data/external/tables/curated_2024-08-11/` and `data/external/tables/curated_2025-10-25/` are manually curated via Google Sheets (originate from upstream `carpenter-singh-lab/2025_Haghighi_Mito`), not direct pipeline outputs
 - **Pipeline-generated files** are in `generated_from_*/` directories (gitignored, reproducible)
 - **Always use** `pixi run python` instead of bare `python`
 - **Never modify** `docs/PROGRESS.md` unless explicitly requested (see maintenance guidelines in that file)

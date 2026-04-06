@@ -1525,7 +1525,18 @@ snakemake all_patient_figures -c1 -p        # ~3 min, ~3 GB download
 - Per-cell selection uses raw MeanFrac values with within-image ranking — no cross-subject standardization needed since all cells are on the same scale within one image
 - Upstream Figure 2 images (from cached `2.slope_analysis.ipynb` cell 41): MCL128 31, MCL162 48, 287 6, MCL015 49, 263 40 (all `_c3_ORG.tif`)
 
-### Unresolved issues
+### Notes
 
-- Figure composition script not yet written — have all source images and cell coordinates locally, but programmatic crop/composite to match Figure 2 layout (DNA/Mito/Actin/merge + zoomed cell) is a next session task
 - Snakemake won't re-run notebook 1.0 unless inputs change; typical runtime is 5–8 min (SQLite loading dominates)
+
+---
+
+## 2026-04-05: Figure 2 Composition Script
+
+### What was done
+
+- Created `scripts/compose_figure2.py`: 5-row × 5-column panel (DNA, Mito, Actin, Merge, Cell zoom)
+- One canonical subject per group matching upstream: MCL128=BP, MCL162=Control, 287=MDD, MCL015=SZ, 263=SZA
+- Channels: c1=DNA (blue), c2=Actin (green), c3=Mito (red); percentile-clipped uint16 → float for display
+- White box on Merge column marks selected cell; zoom column shows bounding-box crop with 30 px padding
+- Added `compose_figure2` Snakemake rule; `Figure2.pdf` now part of `all_patient_figures` target

@@ -16,8 +16,8 @@ INTERIM_DATA_DIR = DATA_DIR / "interim"
 PROCESSED_DATA_DIR = DATA_DIR / "processed"
 EXTERNAL_DATA_DIR = DATA_DIR / "external"
 
-# Processed data subdirectories
-PROCESSED_TABLES_DIR = PROCESSED_DATA_DIR / "tables" / "curated_2025-10-25"
+# External curated reference tables (manually curated, not pipeline outputs)
+EXTERNAL_TABLES_DIR = EXTERNAL_DATA_DIR / "tables" / "curated_2025-10-25"
 PROCESSED_FIGURES_DIR = PROCESSED_DATA_DIR / "figures"
 
 # Mito project paths (from S3 download)
@@ -30,8 +30,8 @@ MITO_ORTH_FEATURES_DIR = MITO_WORKSPACE_DIR / "results" / "target_pattern_orth_f
 FIBROBLAST_DATA_DIR = MITO_WORKSPACE_DIR / "singleCellData"
 SQLITE_DATA_DIR = MITO_WORKSPACE_DIR / "backend" / "Mito_Morphology_input"
 AGGREGATED_PROFILES_PATH = FIBROBLAST_DATA_DIR / "aggregated_profiles_fibroblast.csv"
-PATIENT_LABELS_PATH = PROCESSED_TABLES_DIR / "patient_labels_updatedSept302025.csv"
-PATIENT_LABELS_FULL_PATH = PROCESSED_TABLES_DIR / "patient_labels_updatedSept302025_full.csv"
+PATIENT_LABELS_PATH = EXTERNAL_TABLES_DIR / "patient_labels_updatedSept302025.csv"
+PATIENT_LABELS_FULL_PATH = EXTERNAL_TABLES_DIR / "patient_labels_updatedSept302025_full.csv"
 PATIENT_FIGURES_DIR = PROCESSED_DATA_DIR / "figures" / "patient_phenotype"
 SUPPLEMENTAL_FIGURES_DIR = PROCESSED_DATA_DIR / "figures" / "supplemental"
 

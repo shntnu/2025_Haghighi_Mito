@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 
-from haghighi_mito.config import DATASET_INFO, PROCESSED_DATA_DIR, PROCESSED_TABLES_DIR
+from haghighi_mito.config import DATASET_INFO, EXTERNAL_TABLES_DIR, PROCESSED_DATA_DIR
 
 
 def create_screen_database(
@@ -24,7 +24,7 @@ def create_screen_database(
 
     Args:
         output_path: Path to output DuckDB database file
-        tables_dir: Directory containing Excel files. If None, uses PROCESSED_TABLES_DIR from config
+        tables_dir: Directory containing Excel files. If None, uses EXTERNAL_TABLES_DIR from config
         overwrite: If True, recreate database even if it exists
         use_parquet: If True, read from Parquet files instead of Excel
         datasets: List of dataset names to include. If None, includes all 6 datasets
@@ -48,7 +48,7 @@ def create_screen_database(
 
     # Use provided tables_dir or default from config
     if tables_dir is None:
-        tables_dir = PROCESSED_TABLES_DIR
+        tables_dir = EXTERNAL_TABLES_DIR
     else:
         tables_dir = Path(tables_dir)
 

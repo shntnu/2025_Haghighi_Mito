@@ -80,10 +80,13 @@ INTERIM_BASELINE = f"{INTERIM_DATA_DIR}/parquet_baseline"
 INTERIM_NOTEBOOK = f"{INTERIM_DATA_DIR}/parquet_notebook"
 INTERIM_MODULE = f"{INTERIM_DATA_DIR}/parquet_module"
 
-# Processed tables directories
+# Processed tables directories (pipeline-generated outputs)
 TABLES_BASELINE = f"{PROCESSED_DATA_DIR}/tables/generated_from_baseline"
 TABLES_NOTEBOOK = f"{PROCESSED_DATA_DIR}/tables/generated_from_notebook"
 TABLES_MODULE = f"{PROCESSED_DATA_DIR}/tables/generated_from_module"
+
+# External curated reference tables (manually curated, git-tracked in data/external/)
+EXTERNAL_TABLES_DIR = f"{DATA_DIR}/external/tables/curated_2025-10-25"
 
 
 # ============================================================================
@@ -484,7 +487,7 @@ rule download_patient_labels:
     Downloads to a separate '_full' path so the git-tracked minimal CSV (ID + D only) is never overwritten.
     """
     output:
-        csv=f"{PROCESSED_DATA_DIR}/tables/curated_2025-10-25/patient_labels_updatedSept302025_full.csv"
+        csv=f"{EXTERNAL_TABLES_DIR}/patient_labels_updatedSept302025_full.csv"
     params:
         s3_path=f"{S3_BASE}/metadata/patient_labels_updatedSept302025.xlsx"
     shell:
@@ -570,8 +573,8 @@ rule generate_slope_figures:
 rule generate_feature_importance_figures:
     """Generate Figure 3, 4b, SuppFigure 2, dendrogram (requires SQLite + pickle data)."""
     input:
-        labels=f"{PROCESSED_DATA_DIR}/tables/curated_2025-10-25/patient_labels_updatedSept302025.csv",
-        labels_full=f"{PROCESSED_DATA_DIR}/tables/curated_2025-10-25/patient_labels_updatedSept302025_full.csv",
+        labels=f"{EXTERNAL_TABLES_DIR}/patient_labels_updatedSept302025.csv",
+        labels_full=f"{EXTERNAL_TABLES_DIR}/patient_labels_updatedSept302025_full.csv",
         pkl1=f"{FIBROBLAST_DATA_DIR}/single_cell_with_annot.pkl",
         pkl2=f"{FIBROBLAST_DATA_DIR}/single_cell_with_annot_allFeatures.pkl",
         sqlite_dir=SQLITE_DATA_DIR,
@@ -629,6 +632,21 @@ rule identify_figure2_cells:
         "pixi run python scripts/find_figure2_cells.py {input.csv} {output}"
 
 
+rule compose_figure2:
+    """Compose Figure 2: 5-row × 5-column panel (DNA/Mito/Actin/Merge/Zoom) per diagnosis group.
+
+    One canonical subject per group (MCL128=BP, MCL162=Control, 287=MDD, MCL015=SZ, 263=SZA)
+    matching upstream notebook selection. White box in Merge column marks the selected cell.
+    """
+    input:
+        cells_csv=f"{PATIENT_FIGURES_DIR}/figure2_representative_cells_with_cells.csv",
+        images_dir=directory(f"{PATIENT_FIGURES_DIR}/figure2_source_images"),
+    output:
+        f"{PATIENT_FIGURES_DIR}/Figure2.pdf",
+    shell:
+        "pixi run python scripts/compose_figure2.py {input.cells_csv} {input.images_dir} {output}"
+
+
 rule all_patient_figures:
     """Target: Generate all patient phenotype figures (requires full data download)."""
     input:
@@ -636,14 +654,12 @@ rule all_patient_figures:
         f"{SUPPLEMENTAL_FIGURES_DIR}/intensity_features",
         f"{SUPPLEMENTAL_FIGURES_DIR}/skeleton",
         f"{SUPPLEMENTAL_FIGURES_DIR}/fluorescence",
+        f"{PATIENT_FIGURES_DIR}/Figure2.pdf",
         f"{PATIENT_FIGURES_DIR}/Figure4c.pdf",
         f"{PATIENT_FIGURES_DIR}/Figure3.pdf",
         f"{PATIENT_FIGURES_DIR}/Figure4b.pdf",
         f"{PATIENT_FIGURES_DIR}/SuppFigure2.pdf",
         f"{PATIENT_FIGURES_DIR}/dendrogram_mito.pdf",
-        f"{PATIENT_FIGURES_DIR}/figure2_representative_cells.csv",
-        f"{PATIENT_FIGURES_DIR}/figure2_representative_cells_with_cells.csv",
-        f"{PATIENT_FIGURES_DIR}/figure2_source_images",
 
 
 # ============================================================================

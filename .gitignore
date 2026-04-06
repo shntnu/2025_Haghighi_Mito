@@ -179,11 +179,11 @@ data/processed/figures/
 logs/
 *.csv
 
-# Exception: commit curated data and diagnostic summaries (small, key artifacts)
-!data/processed/tables/curated_*/patient_labels*.csv
-!data/processed/virtual_screen_module/*_diagnostic_summary.csv
-!data/processed/virtual_screen_module/*_diagnostic_summary.txt
-!data/processed/virtual_screen_module/*_comparison_metrics.png
+# Exception: un-ignore curated reference tables in data/external/tables/
+# (data/external/ is otherwise ignored due to large S3 downloads)
+!data/external/tables/
+# Re-ignore the full patient labels file (PHI, downloaded from S3 at runtime)
+data/external/tables/curated_2025-10-25/patient_labels_updatedSept302025_full.csv
 
 # Snakemake
 .snakemake/
