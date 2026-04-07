@@ -3,13 +3,14 @@
 
 Usage: python scripts/compose_figure2.py <cells_csv> <images_dir> <output_pdf>
 
-Layout: 5 rows (Control, BP, SZ, SZA, MDD) × 6 columns
-        (DNA, Mito, Actin, composite, Mito crop color, Mito crop grayscale).
+Layout: 5 rows (Control, BP, SZ, SZA, MDD) × 4 columns
+        (DNA, Mito, Actin, composite).
+        Each panel shows a white bounding box around the selected cell
+        and a white × at the cell center.
 Canonical subjects matching upstream: MCL162, MCL128, MCL015, 263, 287.
 
 Channels: c1=DNA (blue), c2=Actin (green), c3=Mito (red).
-Normalization: 0.5/99.5 percentile for full-field columns;
-               min/max for grayscale zoom (matches figure legend).
+Normalization: 0.5/99.5 percentile for all channels.
 """
 import sys
 from pathlib import Path
@@ -35,10 +36,10 @@ CHANNEL_COLOR = {
     "c2": np.array([0.2, 0.9, 0.2]),   # Actin → green
     "c3": np.array([1.0, 0.2, 0.2]),   # Mito → red
 }
-COL_ORDER = ["c1", "c3", "c2", "merge", "zoom_merge", "zoom_gray"]
-COL_TITLES = ["DNA", "Mito", "Actin", "composite", "", ""]
+COL_ORDER = ["c1", "c3", "c2", "merge"]
+COL_TITLES = ["DNA", "Mito", "Actin", "Composite"]
 
-ZOOM_PAD_PX = 30
+BBOX_PAD_PX = 30  # padding around cell bounding box for the white rectangle
 
 
 def normalize(img, plo=0.5, phi=99.5):
@@ -46,13 +47,6 @@ def normalize(img, plo=0.5, phi=99.5):
     if hi == lo:
         return np.zeros_like(img, dtype=float)
     return np.clip((img.astype(float) - lo) / (hi - lo), 0, 1)
-
-
-def normalize_minmax(img):
-    lo, hi = float(img.min()), float(img.max())
-    if hi == lo:
-        return np.zeros_like(img, dtype=float)
-    return (img.astype(float) - lo) / (hi - lo)
 
 
 def make_merge(channels):
@@ -73,13 +67,6 @@ def load_channels(images_dir, filename_mito):
     return result
 
 
-def crop_box(img, rmin, rmax, cmin, cmax, pad=ZOOM_PAD_PX):
-    h, w = img.shape[:2]
-    return img[max(0, rmin - pad):min(h, rmax + pad),
-               max(0, cmin - pad):min(w, cmax + pad)]
-
-
-
 cells_csv, images_dir, output_pdf = sys.argv[1], Path(sys.argv[2]), sys.argv[3]
 df = pd.read_csv(cells_csv)
 df["subject"] = df["subject"].astype(str)
@@ -87,7 +74,6 @@ df["subject"] = df["subject"].astype(str)
 fig, axes = plt.subplots(
     len(GROUP_ORDER), len(COL_ORDER),
     figsize=(3 * len(COL_ORDER), 3 * len(GROUP_ORDER)),
-    gridspec_kw={"width_ratios": [1, 1, 1, 1, 0.5, 0.5]},
     squeeze=False,
 )
 
@@ -104,13 +90,12 @@ for row_i, group in enumerate(GROUP_ORDER):
     channels = load_channels(images_dir, r["FileName_Mito"])
     merge = make_merge(channels)
 
+    cx = float(r["Cells_Location_Center_X"])
+    cy = float(r["Cells_Location_Center_Y"])
     bx_min = int(r["Cells_AreaShape_BoundingBoxMinimum_X"])
     by_min = int(r["Cells_AreaShape_BoundingBoxMinimum_Y"])
     bx_max = int(r["Cells_AreaShape_BoundingBoxMaximum_X"])
     by_max = int(r["Cells_AreaShape_BoundingBoxMaximum_Y"])
-
-    mito_crop_color = crop_box(merge, by_min, by_max, bx_min, bx_max)
-    mito_crop_gray = normalize_minmax(crop_box(channels["c3"], by_min, by_max, bx_min, bx_max))
 
     for col_i, col_key in enumerate(COL_ORDER):
         ax = axes[row_i][col_i]
@@ -118,16 +103,21 @@ for row_i, group in enumerate(GROUP_ORDER):
 
         if col_key == "merge":
             ax.imshow(merge, interpolation="nearest", aspect="auto")
-            ax.add_patch(mpatches.Rectangle(
-                (bx_min, by_min), bx_max - bx_min, by_max - by_min,
-                linewidth=1.5, edgecolor="white", facecolor="none",
-            ))
-        elif col_key == "zoom_merge":
-            ax.imshow(mito_crop_color, interpolation="nearest", aspect="auto")
-        elif col_key == "zoom_gray":
-            ax.imshow(mito_crop_gray, cmap="gray", vmin=0, vmax=1, interpolation="nearest", aspect="auto")
         else:
             ax.imshow(channels[col_key], cmap="gray", interpolation="nearest", aspect="auto")
+
+        # White bounding box with padding
+        rect_x = bx_min - BBOX_PAD_PX
+        rect_y = by_min - BBOX_PAD_PX
+        rect_w = (bx_max - bx_min) + 2 * BBOX_PAD_PX
+        rect_h = (by_max - by_min) + 2 * BBOX_PAD_PX
+        ax.add_patch(mpatches.Rectangle(
+            (rect_x, rect_y), rect_w, rect_h,
+            linewidth=1.5, edgecolor="white", facecolor="none",
+        ))
+
+        # White × at cell center
+        ax.plot(cx, cy, marker="x", color="white", markersize=8, markeredgewidth=1.5)
 
         if row_i == 0:
             ax.set_title(COL_TITLES[col_i], fontsize=16, pad=6)
