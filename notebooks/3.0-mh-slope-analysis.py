@@ -69,6 +69,8 @@ df_1_avg_persub = pd.read_csv(AGGREGATED_PROFILES_PATH)
 df_1_avg_persub.loc[df_1_avg_persub["subject"].astype(str) == "272", "label"] = "Control"
 df_1_avg_persub.loc[df_1_avg_persub["subject"].astype(str) == "MCL004", "label"] = "SZA"
 df_1_avg_persub["label"] = df_1_avg_persub["label"].replace("MDD or Dep", "MDD")
+df_1_avg_persub["subject"] = df_1_avg_persub["subject"].astype(str)
+valid_subjects = set(df_1_avg_persub["subject"])
 
 print(f"Loaded {len(df_1_avg_persub)} patient profiles")
 print(f"Labels: {df_1_avg_persub['label'].value_counts().to_dict()}")
@@ -122,7 +124,7 @@ plt.tight_layout()
 
 labels = [tick.get_text() for tick in axes.get_xticklabels()]
 labels[1] = "psychosis\n(BP + SZ + SZA)"
-axes.set_xticklabels(labels)
+axes.set_xticks(range(len(labels)), labels)
 
 fig.savefig(PATIENT_FIGURES_DIR / "Figure4c.pdf", bbox_inches="tight")
 print(f"Saved {PATIENT_FIGURES_DIR / 'Figure4c.pdf'}")
@@ -176,7 +178,7 @@ plt.tight_layout()
 
 labels = [tick.get_text() for tick in axes.get_xticklabels()]
 labels[1] = "psychosis\n(BP + SZ + SZA)"
-axes.set_xticklabels(labels)
+axes.set_xticks(range(len(labels)), labels)
 
 fig.savefig(SUPPLEMENTAL_FIGURES_DIR / f"patient_boxplot_{tar}_zscored.pdf", bbox_inches="tight")
 plt.close(fig)
@@ -203,10 +205,16 @@ panel_e_features = [
 # %%
 pkl_path = FIBROBLAST_DATA_DIR / "single_cell_with_annot_allFeatures.pkl"
 df_cells = pd.read_pickle(pkl_path, compression="infer")
-df_cells["subject"] = df_cells["subject"].replace(["370E", "370F", "370H"], "370")
+df_cells["subject"] = df_cells["subject"].replace(["370E", "370F", "370H"], "370").astype(str)
 df_cells.loc[df_cells["subject"].astype(str) == "272", "label"] = "Control"
 df_cells.loc[df_cells["subject"].astype(str) == "MCL004", "label"] = "SZA"
 df_cells["label"] = df_cells["label"].replace("MDD or Dep", "MDD")
+
+# Keep the raw-micron panels on the same manuscript cohort as the aggregated CSV.
+extra_pickle_subjects = sorted(set(df_cells["subject"]) - valid_subjects)
+if extra_pickle_subjects:
+    print(f"Excluding {len(extra_pickle_subjects)} raw-only subjects absent from aggregated cohort: {extra_pickle_subjects}")
+df_cells = df_cells[df_cells["subject"].isin(valid_subjects)].copy()
 
 raw_area_features = [
     "Cells_AreaShape_Area",
@@ -255,7 +263,7 @@ for feat, nice_name, unit, slug in panel_ad_features:
 
     labels = [tick.get_text() for tick in axes.get_xticklabels()]
     labels[1] = "psychosis\n(BP + SZ + SZA)"
-    axes.set_xticklabels(labels)
+    axes.set_xticks(range(len(labels)), labels)
 
     fig.savefig(SUPPLEMENTAL_FIGURES_DIR / f"SuppFig3_{slug}_microns.pdf", bbox_inches="tight")
     plt.close(fig)
@@ -276,6 +284,9 @@ raw_persub["Cells_AreaShape_Area"] = raw_persub["Cells_AreaShape_Area"] * (PIXEL
 
 slope_persub = df_1_avg_persub.set_index("subject")["slope"]
 panel_e_raw = raw_persub.join(slope_persub, how="inner").reset_index()
+if len(panel_e_raw) != len(valid_subjects):
+    missing_subjects = sorted(valid_subjects - set(panel_e_raw["subject"]))
+    raise ValueError(f"Raw-micron panel E lost subjects after join: {missing_subjects}")
 
 panel_e_raw_corr = panel_e_raw[panel_e_features].corrwith(panel_e_raw["slope"])
 print("Raw-micron AreaShape correlations with MITO-SLOPE:")
@@ -335,7 +346,7 @@ for idx, (letter, feat, short_title, unit) in enumerate(panel_boxplots):
 
     ax.set_ylabel(f"{short_title} ({unit})", fontsize=10)
     ax.set_xlabel("")
-    ax.set_xticklabels(xlabels_with_n, fontsize=8)
+    ax.set_xticks(range(len(xlabels_with_n)), xlabels_with_n, fontsize=8)
     ax.tick_params(axis="y", labelsize=8)
     # Panel letter
     ax.text(-0.12, 1.05, letter, transform=ax.transAxes, fontsize=16, fontweight="bold", va="top", ha="left")

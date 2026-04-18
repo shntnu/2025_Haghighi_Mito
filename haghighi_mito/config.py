@@ -45,8 +45,25 @@ PATIENT_PALETTE = ["lightgray", "#a484ac", "firebrick", "lightcoral", "pink", "l
 # Used by notebooks/3.0-mh-slope-analysis.py to convert CellProfiler AreaShape
 # features (reported in pixels) into microns for Supp Fig 3 panels A–E.
 #
+# !!! IMPORTANT: THIS VALUE IS *INFERRED*, NOT MEASURED. !!!
+#
+#   - No calibration slide / stage micrometer image exists in the repo or in
+#     the published Zenodo data (doi:10.5281/zenodo.15390513), so the pixel
+#     size cannot be ground-truth verified.
+#   - The value below is derived from three indirect pieces of evidence
+#     (protocol text, TIFF pixel dimensions, and a sanity check against
+#     expected fibroblast cell sizes). The camera model is not recorded in
+#     the acquisition protocol — it is deduced from the image dimensions
+#     matching one specific Zeiss camera's native sensor resolution.
+#   - Until confirmed by the person who collected the data (Erin Weisbart),
+#     treat raw-micron figures as provisional. Changing this single constant
+#     and re-running `snakemake generate_slope_figures` will regenerate all
+#     raw-micron outputs. Welch t-test p-values and Pearson correlations are
+#     affine-invariant, so statistical conclusions do not depend on the
+#     exact value.
+#
 # ===========================================================================
-# Evidence chain for PIXEL_SIZE_UM = 0.16125 µm/px
+# Evidence chain for PIXEL_SIZE_UM = 0.16125 µm/px (inferred)
 # ===========================================================================
 #
 # 1) PROTOCOL (protocols/McleanCollectionFibroblastGrowthProtocol.md:122)
