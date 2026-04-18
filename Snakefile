@@ -617,6 +617,30 @@ rule verify_corrected_labels_equivalence:
         "pixi run python scripts/verify_corrected_labels_equivalence.py"
 
 
+rule regenerate_erin_suppfig3:
+    """Regenerate Erin's upstream Supp Fig 3 against the corrected label CSV.
+
+    Mirrors ``plot_singlecell_cellsize.ipynb`` at upstream commit ef8f26b but
+    reads labels from the corrected aggregated CSV (so 272 plots as Control and
+    MCL004 as SZA) and sources raw features from the cached SQL parquet. All
+    QC gates, micron conversion, and plotting style match Erin's notebook
+    verbatim. Produces 5 PDFs suitable as drop-in replacements for the
+    published Supp Fig 3 panels.
+    """
+    input:
+        corrected_csv="data/interim/upstream_corrected/aggregated_profiles_fibroblast.csv",
+        parquet=f"data/interim/fibroblast_singlecell.parquet",
+        script="scripts/regenerate_erin_suppfig3.py",
+    output:
+        "data/interim/upstream_corrected/erin_suppfig3_corrected/cell_area_microns.pdf",
+        "data/interim/upstream_corrected/erin_suppfig3_corrected/major_axis_microns.pdf",
+        "data/interim/upstream_corrected/erin_suppfig3_corrected/minor_axis_microns.pdf",
+        "data/interim/upstream_corrected/erin_suppfig3_corrected/perimeter_microns.pdf",
+        "data/interim/upstream_corrected/erin_suppfig3_corrected/areashape_vs_slope_pairplot.pdf",
+    shell:
+        "pixi run python scripts/regenerate_erin_suppfig3.py"
+
+
 ## Figure Generation Rules ##
 
 rule generate_supplemental_mito_features:
