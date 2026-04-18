@@ -216,6 +216,24 @@ if extra_pickle_subjects:
     print(f"Excluding {len(extra_pickle_subjects)} raw-only subjects absent from aggregated cohort: {extra_pickle_subjects}")
 df_cells = df_cells[df_cells["subject"].isin(valid_subjects)].copy()
 
+# Per-cell QC to match Erin's upstream plot_singlecell_cellsize.ipynb
+# (carpenter-singh-lab/2025_Haghighi_Mito @ ef8f26b, cell 5).
+# Reviewer-visible panels must exclude edge-truncated cells and segmentation
+# artefacts where the "cell" is just the nucleus + a thin cytoplasm ring.
+n_before = len(df_cells)
+border_px, im_w, im_h = 200, 1388, 1040
+df_cells = df_cells[~(
+    (df_cells["Nuclei_Location_Center_X"] > im_w - border_px)
+    | (df_cells["Nuclei_Location_Center_X"] < border_px)
+    | (df_cells["Nuclei_Location_Center_Y"] > im_h - border_px)
+    | (df_cells["Nuclei_Location_Center_Y"] < border_px)
+)].copy()
+df_cells["_cells2nuclei_major_ratio"] = df_cells["Cells_AreaShape_MajorAxisLength"] / df_cells["Nuclei_AreaShape_MajorAxisLength"]
+df_cells["_cells2nuclei_area_ratio"] = df_cells["Cells_AreaShape_Area"] / df_cells["Nuclei_AreaShape_Area"]
+df_cells = df_cells[df_cells["_cells2nuclei_major_ratio"] > 2]
+df_cells = df_cells[df_cells["_cells2nuclei_area_ratio"] > 5]
+print(f"Per-cell QC: {n_before} -> {len(df_cells)} cells (-{n_before - len(df_cells)}, {100*(1 - len(df_cells)/n_before):.1f}%)")
+
 raw_area_features = [
     "Cells_AreaShape_Area",
     "Cells_AreaShape_MajorAxisLength",
