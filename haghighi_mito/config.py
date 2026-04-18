@@ -39,6 +39,74 @@ SUPPLEMENTAL_FIGURES_DIR = PROCESSED_DATA_DIR / "figures" / "supplemental"
 PATIENT_ORDER = ["Control", "psychosis", "BP", "SZ", "SZA", "MDD"]
 PATIENT_PALETTE = ["lightgray", "#a484ac", "firebrick", "lightcoral", "pink", "lightsteelblue"]
 
+# ---------------------------------------------------------------------------
+# Imaging calibration: pixel size of the patient fibroblast images
+# ---------------------------------------------------------------------------
+# Used by notebooks/3.0-mh-slope-analysis.py to convert CellProfiler AreaShape
+# features (reported in pixels) into microns for Supp Fig 3 panels A–E.
+#
+# ===========================================================================
+# Evidence chain for PIXEL_SIZE_UM = 0.16125 µm/px
+# ===========================================================================
+#
+# 1) PROTOCOL (protocols/McleanCollectionFibroblastGrowthProtocol.md:122)
+#    Quote: "25 fields from each of the two coverslips (50 fields per sample)
+#    were imaged with a 40X objective in three independent channels on a Zeiss
+#    Axiovert Observer 2.1 with a Colibri 2 LED illumination system. Image
+#    acquisition was done with Zeiss Zen 2.0 software."
+#    → Objective magnification = 40× (confirmed).
+#    → Acquisition software = Zeiss ZEN (confirmed in TIFF tag 305 below).
+#    → Camera model is NOT stated — has to be inferred from the image files.
+#
+# 2) TIFF DIMENSIONS (all 24 source images identical)
+#    Inspecting data/processed/figures/patient_phenotype/figure2_source_images/
+#    all 24 TIFFs are:
+#        shape      = (1040, 1388)         # height × width, 1388 × 1040 px
+#        dtype      = uint16                # 12–14 bit monochrome, stored 16-bit
+#        Software   = "ZEN 2012 (blue edition)"   (tag 305)
+#        XResolution = 96000/1000 = 96 dpi  (tag 282, ResolutionUnit=INCH)
+#    → 1388 × 1040 is the native sensor resolution of exactly one Zeiss camera
+#      sold with the Axiovert Observer 2.1: the AxioCam MRm (monochrome).
+#      No other AxioCam model has this exact pixel grid. See Zeiss datasheet
+#      "AxioCam MRm / MRc", 1388 × 1040 px, 6.45 µm × 6.45 µm pixel pitch,
+#      8.95 mm × 6.71 mm sensor area (2/3" format, Sony ICX285 CCD).
+#    → The 96 dpi XResolution is a Windows print-resolution placeholder that
+#      ZEN writes on TIFF export; it is NOT physical calibration. Real
+#      calibration ("ScalingX/Y" in meters/pixel) lives only in the native
+#      .czi files, which are stripped on TIFF export.
+#    → Matches the date evidence: TIFF XMP "CreateDate=2014-11-20"; AxioCam MRm
+#      was the standard monochrome fluorescence camera sold with the Observer
+#      platform in the 2012–2015 timeframe.
+#
+# 3) ARITHMETIC
+#        pixel_size = sensor_pitch / objective_magnification
+#                   = 6.45 µm / 40
+#                   = 0.16125 µm/px  →  area factor = 0.16125² ≈ 0.026 µm²/px²
+#
+# 4) SANITY CHECK against the data (pickle-aggregated means per subject)
+#    After converting with 0.16125 µm/px, whole-cell means land at:
+#        Area        ≈ 1,840 µm²   (70,768 px² × 0.16125²)
+#        MajorAxis   ≈ 75.6 µm     (468.6 px × 0.16125)
+#        MinorAxis   ≈ 35.8 µm
+#        Perimeter   ≈ 469 µm
+#    These are in the expected range for cultured human dermal fibroblasts
+#    (typical area 1,000–3,000 µm²; major-axis 50–150 µm). A wrong pixel size
+#    (e.g., a 20× value of 0.3225 µm/px) would put areas at 7,400 µm² — far
+#    too large. A 63× value (0.102 µm/px) would put areas at ~740 µm² — too
+#    small. Only the 40× assumption produces physically plausible cells.
+#
+# ===========================================================================
+# Caveats
+# ===========================================================================
+# - No binning evidence: the protocol does not mention binning, and 1388 × 1040
+#   is the un-binned native resolution, so 1×1 binning is assumed.
+# - No calibration slide (e.g., a stage micrometer image) is shipped with the
+#   repo, so this cannot be ground-truth verified from the data alone.
+# - If Erin confirms the acquisition used a different camera or binning,
+#   updating this single constant and re-running the figure rule is enough —
+#   relative values and p-values are unchanged (affine-invariant).
+PIXEL_SIZE_UM = 0.16125
+
 # Dataset metadata configuration for virtual screen analysis
 DATASET_INFO = {
     "taorf": {

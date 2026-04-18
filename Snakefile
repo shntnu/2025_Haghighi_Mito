@@ -587,11 +587,19 @@ rule generate_radial_distribution_plots:
 
 
 rule generate_slope_figures:
-    """Generate Figure 4c (MITO-SLOPE boxplots by patient category)."""
+    """Generate Figure 4c (MITO-SLOPE boxplots) and Supp Fig 3 AreaShape panels."""
     input:
-        csv=f"{FIBROBLAST_DATA_DIR}/aggregated_profiles_fibroblast.csv"
+        csv=f"{FIBROBLAST_DATA_DIR}/aggregated_profiles_fibroblast.csv",
+        pkl=f"{FIBROBLAST_DATA_DIR}/single_cell_with_annot_allFeatures.pkl",
     output:
-        f"{PATIENT_FIGURES_DIR}/Figure4c.pdf"
+        f"{PATIENT_FIGURES_DIR}/Figure4c.pdf",
+        f"{SUPPLEMENTAL_FIGURES_DIR}/patient_boxplot_Cells_MitoTubeness_MeanRadialPosition_zscored.pdf",
+        f"{SUPPLEMENTAL_FIGURES_DIR}/SuppFig3_cell_area_microns.pdf",
+        f"{SUPPLEMENTAL_FIGURES_DIR}/SuppFig3_cell_perimeter_microns.pdf",
+        f"{SUPPLEMENTAL_FIGURES_DIR}/SuppFig3_major_axis_microns.pdf",
+        f"{SUPPLEMENTAL_FIGURES_DIR}/SuppFig3_minor_axis_microns.pdf",
+        f"{SUPPLEMENTAL_FIGURES_DIR}/SuppFig3E_AreaShape_vs_slope_pairplot_microns.pdf",
+        f"{SUPPLEMENTAL_FIGURES_DIR}/SuppFig3_combined_microns.pdf",
     shell:
         "pixi run python notebooks/3.0-mh-slope-analysis.py"
 
