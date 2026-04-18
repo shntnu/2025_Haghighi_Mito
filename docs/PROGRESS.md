@@ -1604,3 +1604,25 @@ snakemake all_patient_figures -c1 -p        # ~3 min, ~3 GB download
 - Pipeline contract: `build_fibroblast_singlecell_parquet` is a one-off intermediate. Re-run only if SQLite inputs change or the parquet is deleted. Stored pre-QC so other notebooks can apply their own filters
 - `notebooks/1.0-mh-feat-importance.py` still uses the legacy `load_single_cell_data()` path (SQL loop + pickle). Migrating it to the parquet would shave ~1–3 min off each run but is not required for reviewer response
 - This closes the "are our figures numerically equivalent to upstream's Supp Fig 3?" question raised during reviewer-response prep. Answer: yes, they are now
+
+---
+
+## Open: upstream `subjects.csv` label inconsistency (carry-over)
+
+### What remains
+
+- `carpenter-singh-lab/2025_Haghighi_Mito/phenotype_discovery/subjects.csv` does not match the labels that drive the paper's figures. Two issues, both persisted upstream:
+  1. Missing 8 subjects present in the data (176 pickle subjects vs 168 in that file)
+  2. Does NOT apply `272→Control` or `MCL004→SZA`, even though upstream's own notebooks apply both overrides inline (`1.feature_inspection.ipynb:137-138`, `2.slope_analysis.ipynb:170-171`) before any downstream analysis
+- Net effect: the published `subjects.csv` is a dead artefact — it disagrees with the labels the paper's analysis actually uses
+- Gdoc reply to Anne proposing "keep code overrides as source of truth, flag the discrepancy in reviewer response, don't block on regenerating `subjects.csv`" is drafted but not yet posted
+
+### Why this is not blocking
+
+- Our fork applies both overrides in `load_aggregated_profiles()` and `load_single_cell_data()` (documented in `haghighi_mito/patient_analysis.py:90-95`), so all our figures use the paper's true labels
+- The SQL-parquet switch (prior entry) verified our Supp Fig 3 is numerically identical to upstream's Supp Fig 3 cell-for-cell. The remaining label inconsistency is entirely inside the upstream CSV file, not in any computation we or upstream run
+- The "Resolved" marker on 2026-04-05's entry ("Patient Labels Investigation — Resolved") refers to our fork's correctness, which stands. The upstream-cleanup piece is Anne/Erin's call
+
+### Next action
+
+- Finalize the gdoc response to Anne: (a) confirm our fork matches upstream numerically, (b) propose either leaving `subjects.csv` as-is with a note in the paper, or regenerating it from the code-applied labels, (c) indicate we won't block reviewer response on the choice
