@@ -232,6 +232,12 @@ df_cells["_cells2nuclei_major_ratio"] = df_cells["Cells_AreaShape_MajorAxisLengt
 df_cells["_cells2nuclei_area_ratio"] = df_cells["Cells_AreaShape_Area"] / df_cells["Nuclei_AreaShape_Area"]
 df_cells = df_cells[df_cells["_cells2nuclei_major_ratio"] > 2]
 df_cells = df_cells[df_cells["_cells2nuclei_area_ratio"] > 5]
+# Drop bright-actin artefacts (dead/clumped cells) — upstream column names
+# are `*_Actin` (capital A); our pickle has `*_actin` (lowercase).
+df_cells = df_cells[
+    (df_cells["Cells_Intensity_MeanIntensity_actin"] < 0.5)
+    & (df_cells["Nuclei_Intensity_MeanIntensity_actin"] < 0.55)
+]
 print(f"Per-cell QC: {n_before} -> {len(df_cells)} cells (-{n_before - len(df_cells)}, {100*(1 - len(df_cells)/n_before):.1f}%)")
 
 raw_area_features = [
