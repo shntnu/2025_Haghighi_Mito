@@ -128,6 +128,21 @@ def compare_baseline_cmd(
     compare_with_baseline_csv(dataset=dataset)
 
 
+@app.command(name="build-singlecell-parquet")
+def build_singlecell_parquet_cmd(
+    output_path: Annotated[Path | None, typer.Option(help="Output parquet path (default: data/interim/fibroblast_singlecell.parquet)")] = None,
+):
+    """Cache the raw SQL single-cell merge as parquet.
+
+    Runs the 185-subject SQLite loop once (Cells + Cytoplasm + Nuclei merge)
+    and writes a single compressed parquet. Downstream notebooks read this
+    instead of the pickle, so Supp Fig 3 matches upstream's SQL-based cell set.
+    """
+    from haghighi_mito.patient_analysis import build_singlecell_parquet
+
+    build_singlecell_parquet(output_path=output_path)
+
+
 def main():
     """Entry point for CLI."""
     app()

@@ -30,6 +30,7 @@ MITO_ORTH_FEATURES_DIR = MITO_WORKSPACE_DIR / "results" / "target_pattern_orth_f
 FIBROBLAST_DATA_DIR = MITO_WORKSPACE_DIR / "singleCellData"
 SQLITE_DATA_DIR = MITO_WORKSPACE_DIR / "backend" / "Mito_Morphology_input"
 AGGREGATED_PROFILES_PATH = FIBROBLAST_DATA_DIR / "aggregated_profiles_fibroblast.csv"
+FIBROBLAST_SINGLECELL_PARQUET = INTERIM_DATA_DIR / "fibroblast_singlecell.parquet"
 PATIENT_LABELS_PATH = EXTERNAL_TABLES_DIR / "patient_labels_updatedSept302025.csv"
 PATIENT_LABELS_FULL_PATH = EXTERNAL_TABLES_DIR / "patient_labels_updatedSept302025_full.csv"
 PATIENT_FIGURES_DIR = PROCESSED_DATA_DIR / "figures" / "patient_phenotype"
@@ -63,7 +64,7 @@ PATIENT_PALETTE = ["lightgray", "#a484ac", "firebrick", "lightcoral", "pink", "l
 #     exact value.
 #
 # ===========================================================================
-# Evidence chain for PIXEL_SIZE_UM = 0.16125 µm/px (inferred)
+# Evidence chain for PIXEL_SIZE_UM = 0.161 µm/px (inferred, matches upstream)
 # ===========================================================================
 #
 # 1) PROTOCOL (protocols/McleanCollectionFibroblastGrowthProtocol.md:122)
@@ -98,19 +99,25 @@ PATIENT_PALETTE = ["lightgray", "#a484ac", "firebrick", "lightcoral", "pink", "l
 # 3) ARITHMETIC
 #        pixel_size = sensor_pitch / objective_magnification
 #                   = 6.45 µm / 40
-#                   = 0.16125 µm/px  →  area factor = 0.16125² ≈ 0.026 µm²/px²
+#                   = 0.16125 µm/px  →  area factor ≈ 0.026 µm²/px²
 #
-# 4) SANITY CHECK against the data (pickle-aggregated means per subject)
-#    After converting with 0.16125 µm/px, whole-cell means land at:
-#        Area        ≈ 1,840 µm²   (70,768 px² × 0.16125²)
-#        MajorAxis   ≈ 75.6 µm     (468.6 px × 0.16125)
-#        MinorAxis   ≈ 35.8 µm
-#        Perimeter   ≈ 469 µm
+#    Upstream (Erin's plot_singlecell_cellsize.ipynb, cell 14) uses the
+#    3-sig-fig value ``microns_per_pixel = 0.161``. We adopt the same value
+#    so figures are numerically identical to the published Supp Fig 3 panels.
+#    The 0.155% difference vs the camera-exact 0.16125 is cosmetic and below
+#    plot resolution.
+#
+# 4) SANITY CHECK against the data (SQL-aggregated means per subject)
+#    After converting with 0.161 µm/px, whole-cell means land at:
+#        Area        ≈ 2,800 µm²    (per-patient means, post-QC 39017 cells)
+#        MajorAxis   ≈ 80 µm
+#        MinorAxis   ≈ 40 µm
+#        Perimeter   ≈ 300 µm
 #    These are in the expected range for cultured human dermal fibroblasts
 #    (typical area 1,000–3,000 µm²; major-axis 50–150 µm). A wrong pixel size
-#    (e.g., a 20× value of 0.3225 µm/px) would put areas at 7,400 µm² — far
-#    too large. A 63× value (0.102 µm/px) would put areas at ~740 µm² — too
-#    small. Only the 40× assumption produces physically plausible cells.
+#    (e.g., a 20× value of 0.3225 µm/px) would put areas at ~11,300 µm² — far
+#    too large. A 63× value (0.102 µm/px) would put areas at ~1,130 µm² — on
+#    the low end. The 40× assumption produces physically plausible cells.
 #
 # ===========================================================================
 # Caveats
@@ -122,7 +129,7 @@ PATIENT_PALETTE = ["lightgray", "#a484ac", "firebrick", "lightcoral", "pink", "l
 # - If Erin confirms the acquisition used a different camera or binning,
 #   updating this single constant and re-running the figure rule is enough —
 #   relative values and p-values are unchanged (affine-invariant).
-PIXEL_SIZE_UM = 0.16125
+PIXEL_SIZE_UM = 0.161
 
 # Dataset metadata configuration for virtual screen analysis
 DATASET_INFO = {

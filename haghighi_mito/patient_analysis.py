@@ -22,6 +22,7 @@ from singlecell.read.read_single_cell_sql import readSingleCellData_sqlalch
 from haghighi_mito.config import (
     AGGREGATED_PROFILES_PATH,
     FIBROBLAST_DATA_DIR,
+    FIBROBLAST_SINGLECELL_PARQUET,
     PATIENT_LABELS_FULL_PATH,
     PATIENT_LABELS_PATH,
     SQLITE_DATA_DIR,
@@ -40,6 +41,51 @@ def load_patient_labels() -> pd.DataFrame:
     disease_labels = disease_labels.rename(columns={"ID": "subject"})
     disease_labels["subject"] = disease_labels["subject"].astype(str)
     return disease_labels
+
+
+def load_raw_singlecell_from_sql() -> pd.DataFrame:
+    """Load raw single-cell data by looping SQLite backends (Cells + Cytoplasm + Nuclei).
+
+    Mirrors Erin's upstream ``plot_singlecell_cellsize.ipynb`` (and Marzieh's
+    ``2.slope_analysis.ipynb``) source pipeline: iterate ``<si>/<si>.sqlite``
+    files, merge the three object tables on (ImageNumber, ObjectNumber),
+    attach ``subject``. No labels, no overrides, no QC — just the raw frame.
+    """
+    logger.info(f"Loading single-cell data from SQLite backends at {SQLITE_DATA_DIR}")
+    subject_list = sorted(s for s in os.listdir(SQLITE_DATA_DIR) if (SQLITE_DATA_DIR / s).is_dir())
+    sc_df_ls = []
+    compartments = ["Cells", "Cytoplasm", "Nuclei"]
+    for si in subject_list:
+        file_name = str(SQLITE_DATA_DIR / si / f"{si}.sqlite")
+        if not os.path.exists(file_name):
+            continue
+        sc_df = readSingleCellData_sqlalch(file_name, compartments)
+        sc_df["subject"] = si
+        sc_df_ls.append(sc_df)
+    df_raw = pd.concat(sc_df_ls, ignore_index=True)
+    logger.info(f"Raw SQL frame: {df_raw.shape} from {len(sc_df_ls)} subjects")
+    return df_raw
+
+
+def build_singlecell_parquet(output_path=None) -> "Path":
+    """Cache the raw SQL merge as parquet under ``data/interim/``.
+
+    One-off intermediate so downstream notebooks (3.0 Supp Fig 3, 1.0 heavy
+    path) can skip the ~1–3 min SQL loop. Parquet is compressed (~10× vs pkl)
+    and reads in a few seconds.
+    """
+    from pathlib import Path
+
+    output_path = Path(output_path) if output_path is not None else FIBROBLAST_SINGLECELL_PARQUET
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    df_raw = load_raw_singlecell_from_sql()
+    # Metadata_* columns can be mixed-dtype object (e.g., '370A' alongside numeric strings)
+    # which breaks Arrow's type inference. Stringify all object columns defensively.
+    obj_cols = df_raw.select_dtypes(include="object").columns
+    df_raw[obj_cols] = df_raw[obj_cols].astype(str)
+    df_raw.to_parquet(output_path, index=False, compression="zstd")
+    logger.info(f"Wrote {output_path} ({output_path.stat().st_size / 1e6:.1f} MB)")
+    return output_path
 
 
 def load_single_cell_data() -> tuple[pd.DataFrame, pd.DataFrame]:

@@ -38,7 +38,7 @@ from scipy.stats import ttest_ind
 
 from haghighi_mito.config import (
     AGGREGATED_PROFILES_PATH,
-    FIBROBLAST_DATA_DIR,
+    FIBROBLAST_SINGLECELL_PARQUET,
     PATIENT_FIGURES_DIR,
     PATIENT_LABELS_PATH,
     PATIENT_ORDER,
@@ -198,28 +198,49 @@ panel_e_features = [
 # %% [markdown]
 # ## Supp Fig 3 A–D — Raw-micron AreaShape boxplots
 #
-# Loads per-cell raw pixel values from the allFeatures pickle, applies subject
-# label corrections, aggregates per subject, converts pixels → microns using
-# ``PIXEL_SIZE_UM`` from config (currently provisional — see note there).
+# Loads per-cell raw pixel values from the cached SQL parquet
+# (``data/interim/fibroblast_singlecell.parquet``, built by
+# ``haghighi-mito build-singlecell-parquet``). This matches Erin's upstream
+# ``plot_singlecell_cellsize.ipynb`` source — Cells + Cytoplasm + Nuclei merge
+# from the per-subject SQLite backends. The ``allFeatures.pkl`` is NOT used
+# here: upstream uses it only as a subject→label lookup, and it carries extra
+# ``CytoplasmRound_*`` columns from an augmented CellProfiler pipeline that
+# would shift raw-scale cell counts.
 
 # %%
-pkl_path = FIBROBLAST_DATA_DIR / "single_cell_with_annot_allFeatures.pkl"
-df_cells = pd.read_pickle(pkl_path, compression="infer")
-df_cells["subject"] = df_cells["subject"].replace(["370E", "370F", "370H"], "370").astype(str)
-df_cells.loc[df_cells["subject"].astype(str) == "272", "label"] = "Control"
-df_cells.loc[df_cells["subject"].astype(str) == "MCL004", "label"] = "SZA"
-df_cells["label"] = df_cells["label"].replace("MDD or Dep", "MDD")
+# Columns needed for QC + raw-micron features. Reading a slice keeps the
+# parquet load fast (~1 sec) even though the full file is ~1.7 GB.
+parquet_cols = [
+    "subject",
+    "Nuclei_Location_Center_X",
+    "Nuclei_Location_Center_Y",
+    "Cells_AreaShape_Area",
+    "Cells_AreaShape_MajorAxisLength",
+    "Cells_AreaShape_MinorAxisLength",
+    "Cells_AreaShape_Perimeter",
+    "Nuclei_AreaShape_MajorAxisLength",
+    "Nuclei_AreaShape_Area",
+    "Cells_Intensity_MeanIntensity_Actin",
+    "Nuclei_Intensity_MeanIntensity_Actin",
+]
+df_cells = pd.read_parquet(FIBROBLAST_SINGLECELL_PARQUET, columns=parquet_cols)
+df_cells["subject"] = df_cells["subject"].astype(str)
 
-# Keep the raw-micron panels on the same manuscript cohort as the aggregated CSV.
-extra_pickle_subjects = sorted(set(df_cells["subject"]) - valid_subjects)
-if extra_pickle_subjects:
-    print(f"Excluding {len(extra_pickle_subjects)} raw-only subjects absent from aggregated cohort: {extra_pickle_subjects}")
+# Attach labels from the (already-corrected) aggregated CSV. SQL backends
+# carry no label column, so per-cell label overrides that applied to the
+# pickle no longer exist here — df_1_avg_persub already has 272→Control,
+# MCL004→SZA, MDD-or-Dep→MDD applied above.
+df_cells = df_cells.merge(df_1_avg_persub[["subject", "label"]].drop_duplicates(), on="subject", how="left")
+
+# Cohort alignment: restrict to the 168-subject manuscript cohort. SQL
+# backends include 370A–370H which Erin explicitly drops; the aggregated CSV
+# has a collapsed '370' row, so those per-letter directories fall out here.
+n_all = len(df_cells)
 df_cells = df_cells[df_cells["subject"].isin(valid_subjects)].copy()
+print(f"Cohort filter: {n_all} -> {len(df_cells)} cells ({df_cells['subject'].nunique()} subjects)")
 
-# Per-cell QC to match Erin's upstream plot_singlecell_cellsize.ipynb
-# (carpenter-singh-lab/2025_Haghighi_Mito @ ef8f26b, cell 5).
-# Reviewer-visible panels must exclude edge-truncated cells and segmentation
-# artefacts where the "cell" is just the nucleus + a thin cytoplasm ring.
+# Per-cell QC — identical to Erin's upstream cell 5 (borderLength=200,
+# ratio gates >2 and >5, actin intensity <0.5 / <0.55).
 n_before = len(df_cells)
 border_px, im_w, im_h = 200, 1388, 1040
 df_cells = df_cells[~(
@@ -232,11 +253,9 @@ df_cells["_cells2nuclei_major_ratio"] = df_cells["Cells_AreaShape_MajorAxisLengt
 df_cells["_cells2nuclei_area_ratio"] = df_cells["Cells_AreaShape_Area"] / df_cells["Nuclei_AreaShape_Area"]
 df_cells = df_cells[df_cells["_cells2nuclei_major_ratio"] > 2]
 df_cells = df_cells[df_cells["_cells2nuclei_area_ratio"] > 5]
-# Drop bright-actin artefacts (dead/clumped cells) — upstream column names
-# are `*_Actin` (capital A); our pickle has `*_actin` (lowercase).
 df_cells = df_cells[
-    (df_cells["Cells_Intensity_MeanIntensity_actin"] < 0.5)
-    & (df_cells["Nuclei_Intensity_MeanIntensity_actin"] < 0.55)
+    (df_cells["Cells_Intensity_MeanIntensity_Actin"] < 0.5)
+    & (df_cells["Nuclei_Intensity_MeanIntensity_Actin"] < 0.55)
 ]
 print(f"Per-cell QC: {n_before} -> {len(df_cells)} cells (-{n_before - len(df_cells)}, {100*(1 - len(df_cells)/n_before):.1f}%)")
 
@@ -296,8 +315,8 @@ print(f"Saved raw-micron SuppFig3 A–D to {SUPPLEMENTAL_FIGURES_DIR} (PIXEL_SIZ
 # %% [markdown]
 # ## Supp Fig 3E — Raw-micron pair plot
 #
-# Uses raw-micron AreaShape values aggregated from the pickle, joined with the
-# z-scored ``slope`` from the aggregated CSV (slope is derived from radial
+# Uses raw-micron AreaShape values aggregated from the SQL parquet, joined with
+# the z-scored ``slope`` from the aggregated CSV (slope is derived from radial
 # features, not AreaShape, so leaving it z-scored is fine).
 
 # %%
@@ -308,9 +327,13 @@ raw_persub["Cells_AreaShape_Area"] = raw_persub["Cells_AreaShape_Area"] * (PIXEL
 
 slope_persub = df_1_avg_persub.set_index("subject")["slope"]
 panel_e_raw = raw_persub.join(slope_persub, how="inner").reset_index()
-if len(panel_e_raw) != len(valid_subjects):
-    missing_subjects = sorted(valid_subjects - set(panel_e_raw["subject"]))
-    raise ValueError(f"Raw-micron panel E lost subjects after join: {missing_subjects}")
+# Invariant: every subject carried through QC should appear in the pairplot.
+# (Note: the SQL cohort is 167, not 168 — upstream drops '370' because the
+# SQL backends have separate 370A–370H directories with no collapsed '370'.)
+sql_cohort_subjects = set(raw_persub.index)
+if set(panel_e_raw["subject"]) != sql_cohort_subjects:
+    missing_subjects = sorted(sql_cohort_subjects - set(panel_e_raw["subject"]))
+    raise ValueError(f"Raw-micron panel E lost subjects after slope join: {missing_subjects}")
 
 panel_e_raw_corr = panel_e_raw[panel_e_features].corrwith(panel_e_raw["slope"])
 print("Raw-micron AreaShape correlations with MITO-SLOPE:")

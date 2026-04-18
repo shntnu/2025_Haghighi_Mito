@@ -562,6 +562,22 @@ rule download_all_patient_data:
         SQLITE_DATA_DIR,
 
 
+rule build_fibroblast_singlecell_parquet:
+    """Cache the raw SQL single-cell merge as parquet (one-off, ~1.5 min).
+
+    Loops all 185 SQLite backends, merges Cells + Cytoplasm + Nuclei on
+    (ImageNumber, ObjectNumber), concatenates, and writes a compressed parquet.
+    Downstream notebooks (3.0 Supp Fig 3) load this instead of the allFeatures
+    pickle so cell counts match upstream's SQL-based Supp Fig 3 pipeline.
+    """
+    input:
+        sqlite_dir=SQLITE_DATA_DIR,
+    output:
+        f"data/interim/fibroblast_singlecell.parquet"
+    shell:
+        "pixi run haghighi-mito build-singlecell-parquet --output-path {output}"
+
+
 ## Figure Generation Rules ##
 
 rule generate_supplemental_mito_features:
@@ -587,10 +603,15 @@ rule generate_radial_distribution_plots:
 
 
 rule generate_slope_figures:
-    """Generate Figure 4c (MITO-SLOPE boxplots) and Supp Fig 3 AreaShape panels."""
+    """Generate Figure 4c (MITO-SLOPE boxplots) and Supp Fig 3 AreaShape panels.
+
+    Supp Fig 3 raw-micron panels read the cached SQL parquet (see
+    ``build_fibroblast_singlecell_parquet``) rather than the pickle, to match
+    Erin's upstream cell set for the ReviewCommons reviewer response.
+    """
     input:
         csv=f"{FIBROBLAST_DATA_DIR}/aggregated_profiles_fibroblast.csv",
-        pkl=f"{FIBROBLAST_DATA_DIR}/single_cell_with_annot_allFeatures.pkl",
+        parquet=f"data/interim/fibroblast_singlecell.parquet",
     output:
         f"{PATIENT_FIGURES_DIR}/Figure4c.pdf",
         f"{SUPPLEMENTAL_FIGURES_DIR}/patient_boxplot_Cells_MitoTubeness_MeanRadialPosition_zscored.pdf",
