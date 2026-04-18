@@ -1629,6 +1629,12 @@ snakemake all_patient_figures -c1 -p        # ~3 min, ~3 GB download
 - Codex-verified correction: the shipped `aggregated_profiles_fibroblast.csv` only reflects two of Marzieh's four corrections (`370{E,F,H}→370` and `"MDD or Dep"→MDD`), but still carries `272→SZA` and `MCL004→MDD`. Erin's notebook reads labels only from that CSV and applies no subject-specific rewrites, so Erin's labels diverge from Marzieh / our fork on exactly those two subjects
 - Corrected earlier in-session claim: Marzieh's `to_csv(.../aggregated_profiles_fibroblast.csv)` in cell 4 is guarded by `if 0:` and does not run on notebook re-execution. The shipped CSV was produced by a one-off manual run when the guard was removed
 
+### In-fork test path (Option A rehearsal)
+
+- **Step 1 — corrected upstream artefacts** (commit `c1cc7fb`): `haghighi_mito.patient_analysis.build_corrected_upstream_labels` + `haghighi-mito build-corrected-upstream-labels` CLI + Snakemake rule `build_corrected_upstream_labels` read the shipped aggregated CSV, apply all four inline corrections, and emit `aggregated_profiles_fibroblast.csv` + `subjects.csv` + a row-level `diff_report.md` under `data/interim/upstream_corrected/`. On the current shipped CSV this flips exactly 2 cells (`272 SZA→Control`, `MCL004 MDD→SZA`); all non-label columns are byte-identical
+- **Step 2 — equivalence proof**: `scripts/verify_corrected_labels_equivalence.py` (Snakemake rule `verify_corrected_labels_equivalence`) confirms that (shipped CSV + runtime overrides) produces a DataFrame byte-identical to (corrected CSV + no overrides). Currently passes: 168 rows × 2087 columns, zero mismatches. `load_aggregated_profiles()` and notebook 3.0's inline-override block both agree with the corrected CSV
+- Implication: if upstream adopts the corrected CSV, our fork can replace `load_aggregated_profiles()`'s three override lines with a plain `pd.read_csv(...)` and all figures remain pixel-identical
+
 ### Next action
 
-- Finalize the gdoc response to Anne: (a) confirm our fork matches upstream numerically, (b) propose either leaving `subjects.csv` as-is with a note in the paper, or regenerating it from the code-applied labels, (c) indicate we won't block reviewer response on the choice
+- Finalize the gdoc response to Anne: (a) confirm our fork matches upstream numerically, (b) propose either leaving `subjects.csv` as-is with a note in the paper, or regenerating it from the code-applied labels (we now have the exact corrected files ready to hand over), (c) indicate we won't block reviewer response on the choice

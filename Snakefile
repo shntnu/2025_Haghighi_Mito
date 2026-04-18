@@ -597,6 +597,26 @@ rule build_corrected_upstream_labels:
         "pixi run haghighi-mito build-corrected-upstream-labels --output-dir data/interim/upstream_corrected"
 
 
+rule verify_corrected_labels_equivalence:
+    """Prove that (shipped CSV + runtime overrides) == (corrected CSV, no overrides).
+
+    If this passes, any downstream figure that currently reads the shipped CSV
+    and applies the four label overrides is guaranteed byte-identical to the
+    same figure read from the corrected CSV with no overrides — confirming
+    Option A (regenerate upstream artefacts) has zero numeric impact on our
+    fork.
+    """
+    input:
+        shipped=f"{FIBROBLAST_DATA_DIR}/aggregated_profiles_fibroblast.csv",
+        corrected="data/interim/upstream_corrected/aggregated_profiles_fibroblast.csv",
+        subjects="data/interim/upstream_corrected/subjects.csv",
+        script="scripts/verify_corrected_labels_equivalence.py",
+    output:
+        touch("data/interim/upstream_corrected/.equivalence_verified")
+    shell:
+        "pixi run python scripts/verify_corrected_labels_equivalence.py"
+
+
 ## Figure Generation Rules ##
 
 rule generate_supplemental_mito_features:
