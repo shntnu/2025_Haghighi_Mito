@@ -1623,6 +1623,12 @@ snakemake all_patient_figures -c1 -p        # ~3 min, ~3 GB download
 - The SQL-parquet switch (prior entry) verified our Supp Fig 3 is numerically identical to upstream's Supp Fig 3 cell-for-cell. The remaining label inconsistency is entirely inside the upstream CSV file, not in any computation we or upstream run
 - The "Resolved" marker on 2026-04-05's entry ("Patient Labels Investigation — Resolved") refers to our fork's correctness, which stands. The upstream-cleanup piece is Anne/Erin's call
 
+### Verification artefact
+
+- `docs/LABEL_SOURCE_CLAIMS.md` (commits `530a9ab`, `1981066`) enumerates 16 independently checkable claims across Erin's supplemental cellsize notebook, Marzieh's phenotype-discovery notebooks, and our fork, covering which files supply labels and which inline overrides each pipeline applies. Each claim ships with a stdlib-only check and an expected output so a second agent can confirm or refute independently
+- Codex-verified correction: the shipped `aggregated_profiles_fibroblast.csv` only reflects two of Marzieh's four corrections (`370{E,F,H}→370` and `"MDD or Dep"→MDD`), but still carries `272→SZA` and `MCL004→MDD`. Erin's notebook reads labels only from that CSV and applies no subject-specific rewrites, so Erin's labels diverge from Marzieh / our fork on exactly those two subjects
+- Corrected earlier in-session claim: Marzieh's `to_csv(.../aggregated_profiles_fibroblast.csv)` in cell 4 is guarded by `if 0:` and does not run on notebook re-execution. The shipped CSV was produced by a one-off manual run when the guard was removed
+
 ### Next action
 
 - Finalize the gdoc response to Anne: (a) confirm our fork matches upstream numerically, (b) propose either leaving `subjects.csv` as-is with a note in the paper, or regenerating it from the code-applied labels, (c) indicate we won't block reviewer response on the choice

@@ -234,3 +234,79 @@ def load_aggregated_profiles() -> pd.DataFrame:
     df.loc[df["subject"].astype(str) == "MCL004", "label"] = "SZA"
     df["label"] = df["label"].replace("MDD or Dep", "MDD")
     return df
+
+
+def build_corrected_upstream_labels(output_dir) -> dict:
+    """Emit corrected versions of upstream label artefacts for a proposed upstream PR.
+
+    Rebuilds ``aggregated_profiles_fibroblast.csv`` and ``subjects.csv`` with all
+    four of Marzieh's inline label corrections applied (``272→Control``,
+    ``MCL004→SZA``, ``370{E,F,H}→370``, ``"MDD or Dep"→MDD``). The shipped CSV
+    already has the two bulk corrections applied but still carries the two
+    subject-specific wrong labels; this function produces the "fully corrected"
+    version that matches the labels our fork and Marzieh's notebooks actually
+    use downstream.
+
+    Also writes a ``diff_report.md`` enumerating every cell that changed, so
+    the output can be handed to upstream maintainers as a reviewable patch.
+    """
+    from pathlib import Path
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    original = pd.read_csv(AGGREGATED_PROFILES_PATH)
+    corrected = original.copy()
+    corrected["subject"] = corrected["subject"].astype(str).replace({"370E": "370", "370F": "370", "370H": "370"})
+    corrected.loc[corrected["subject"] == "272", "label"] = "Control"
+    corrected.loc[corrected["subject"] == "MCL004", "label"] = "SZA"
+    corrected["label"] = corrected["label"].replace("MDD or Dep", "MDD")
+
+    agg_out = output_dir / "aggregated_profiles_fibroblast.csv"
+    subjects_out = output_dir / "subjects.csv"
+    diff_out = output_dir / "diff_report.md"
+
+    corrected.to_csv(agg_out, index=False)
+    corrected[["subject", "label"]].drop_duplicates().to_csv(subjects_out, index=False)
+
+    changed = []
+    for col in ("subject", "label"):
+        mask = original[col].astype(str) != corrected[col].astype(str)
+        for idx in original.index[mask]:
+            changed.append(
+                {
+                    "row": int(idx),
+                    "column": col,
+                    "before": original.at[idx, col],
+                    "after": corrected.at[idx, col],
+                    "subject_after": corrected.at[idx, "subject"],
+                }
+            )
+
+    lines = [
+        "# Corrected upstream label artefacts — diff report",
+        "",
+        f"Source: `{AGGREGATED_PROFILES_PATH}`",
+        f"Corrected aggregated CSV: `{agg_out}`",
+        f"Corrected subjects.csv: `{subjects_out}`",
+        "",
+        f"Rows in CSV: {len(corrected)} (unchanged)",
+        f"Cells changed: {len(changed)}",
+        "",
+        "| row | column | before | after | subject (after) |",
+        "| ---:| ------ | ------ | ----- | --------------- |",
+    ]
+    for c in changed:
+        lines.append(f"| {c['row']} | {c['column']} | `{c['before']}` | `{c['after']}` | `{c['subject_after']}` |")
+    diff_out.write_text("\n".join(lines) + "\n")
+
+    logger.info(f"Wrote corrected aggregated CSV → {agg_out}")
+    logger.info(f"Wrote corrected subjects.csv → {subjects_out}")
+    logger.info(f"Wrote diff report → {diff_out} ({len(changed)} cells changed)")
+
+    return {
+        "aggregated_csv": agg_out,
+        "subjects_csv": subjects_out,
+        "diff_report": diff_out,
+        "cells_changed": len(changed),
+    }

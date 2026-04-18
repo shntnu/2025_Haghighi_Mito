@@ -578,6 +578,25 @@ rule build_fibroblast_singlecell_parquet:
         "pixi run haghighi-mito build-singlecell-parquet --output-path {output}"
 
 
+rule build_corrected_upstream_labels:
+    """Emit corrected versions of upstream label artefacts (aggregated CSV + subjects.csv).
+
+    Applies all four of Marzieh's inline label corrections to the shipped
+    aggregated_profiles_fibroblast.csv (272→Control, MCL004→SZA plus the two
+    idempotent bulk fixes) and derives a matching subjects.csv. Writes a
+    row-level diff report so the outputs can be handed to upstream as a
+    reviewable patch.
+    """
+    input:
+        csv=f"{FIBROBLAST_DATA_DIR}/aggregated_profiles_fibroblast.csv"
+    output:
+        agg="data/interim/upstream_corrected/aggregated_profiles_fibroblast.csv",
+        subjects="data/interim/upstream_corrected/subjects.csv",
+        diff="data/interim/upstream_corrected/diff_report.md",
+    shell:
+        "pixi run haghighi-mito build-corrected-upstream-labels --output-dir data/interim/upstream_corrected"
+
+
 ## Figure Generation Rules ##
 
 rule generate_supplemental_mito_features:

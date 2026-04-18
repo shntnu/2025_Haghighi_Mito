@@ -143,6 +143,22 @@ def build_singlecell_parquet_cmd(
     build_singlecell_parquet(output_path=output_path)
 
 
+@app.command(name="build-corrected-upstream-labels")
+def build_corrected_upstream_labels_cmd(
+    output_dir: Annotated[Path, typer.Option(help="Output directory for corrected CSVs + diff report")] = Path("data/interim/upstream_corrected"),
+):
+    """Emit corrected versions of upstream label artefacts.
+
+    Rewrites aggregated_profiles_fibroblast.csv and subjects.csv with all four
+    of Marzieh's inline label corrections applied (272→Control, MCL004→SZA,
+    370{E,F,H}→370, "MDD or Dep"→MDD) and writes a row-level diff report
+    suitable for reviewing as an upstream PR.
+    """
+    from haghighi_mito.patient_analysis import build_corrected_upstream_labels
+
+    build_corrected_upstream_labels(output_dir=output_dir)
+
+
 def main():
     """Entry point for CLI."""
     app()
