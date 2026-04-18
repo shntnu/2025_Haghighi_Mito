@@ -1556,3 +1556,24 @@ snakemake all_patient_figures -c1 -p        # ~3 min, ~3 GB download
 
 - All removed files are fully regenerable: curated Excels exist in upstream repo (`carpenter-singh-lab/2025_Haghighi_Mito`); pipeline regenerates figures and diagnostics
 - `data/` can now be deleted and fully restored: `git checkout -- data/external/tables/` restores curated Excels; `snakemake all_patient_figures all_baseline -c4` downloads and regenerates everything else from S3
+
+---
+
+## 2026-04-18: Supp Fig 3 A–E Raw-Micron Panels
+
+### What was done
+
+- Added raw-micron versions of Supp Fig 3 panels A–E (AreaShape features + slope pairplot) in `notebooks/3.0-mh-slope-analysis.py`, with a combined grid PDF assembled via nested gridspec to match Erin's Google Drawing layout
+- Introduced `PIXEL_SIZE_UM = 0.16125` in `haghighi_mito/config.py` with full evidence chain (protocol, TIFF dimensions, arithmetic, sanity check) and explicit "inferred, not measured" warning — no calibration slide exists in repo or Zenodo
+- New Snakemake outputs under `generate_slope_figures`: five raw-micron SuppFig3 PDFs plus `SuppFig3_combined_microns.pdf`; dropped z-scored and PNG variants
+- Fixed cohort mismatch caught during Codex verification: panels A–D were using 176 pickle subjects vs 168 in aggregated CSV (8 raw-only: 5 Control, 1 MDD, 2 SZ). Now filtered to `valid_subjects` from aggregated CSV with invariant guard on panel E join
+
+### Key findings
+
+- Pixel size confirmed correct: per-group perimeter medians (~450 µm) match Erin's gdraw. If PIXEL_SIZE_UM were wrong, perimeter would scale linearly and area quadratically — both would be off
+- Cell area still ~1.5× lower than Erin's gdraw (~1800 vs ~2700 µm²) despite correct pixel size and matching perimeter. Rules out units/arithmetic; most likely a different upstream segmentation run or a pre-computed `*_Microns` feature column we don't have. Pending clarification from Erin
+- Welch t-test p-values and Pearson correlations are affine-invariant, so changing PIXEL_SIZE_UM (if Erin provides a measured value) regenerates figures but doesn't change statistical conclusions
+
+### Notes
+
+- Run `snakemake generate_slope_figures` or `.pixi/envs/default/bin/python notebooks/3.0-mh-slope-analysis.py` to regenerate; `pixi run` currently panics on this machine so direct interpreter invocation is the workaround
