@@ -63,10 +63,13 @@ print(sorted(set(reads)))
 ```
 **Expected:** `['aggregated_profiles_fibroblast']`
 
-### Claim E2 — Erin applies no inline label overrides
+### Claim E2 — Erin applies no subject-specific disease-label overrides
 
-No `loc[...,'label']=`, no `replace('MDD or Dep','MDD')`, no `replace(['370E'...`
-anywhere in Erin's notebook.
+Erin does not apply the subject-specific disease-label corrections that appear
+in Marzieh's notebooks and our fork: no `272→Control`, no `MCL004→SZA`, no
+`370{E,F,H}→370`, and no `"MDD or Dep"→MDD` rewrite. She *does* manipulate the
+`label` column later for plotting/category order and to append the composite
+`psychosis` group; those are not patient-label source overrides.
 
 **Check:**
 ```bash
@@ -78,7 +81,12 @@ hits = []
 for c in nb['cells']:
     if c['cell_type'] != 'code': continue
     src = ''.join(c['source'])
-    for needle in ['MCL004', \"'272'\", 'MDD or Dep', '370E', '370F', '370H']:
+    for needle in [
+        \"replace(['370E','370F','370H'],'370')\",
+        \"replace('MDD or Dep','MDD')\",
+        \"loc[df_1['subject']=='272','label']='Control'\",
+        \"loc[df_1['subject']=='MCL004','label']='SZA'\",
+    ]:
         if needle in src:
             hits.append(needle)
 print(sorted(set(hits)))
@@ -264,27 +272,30 @@ Cell 26 of `2.slope_analysis.ipynb` contains
 `pd.read_excel(.../patient_labels.xlsx)` (no `_updatedSept302025`). This is a
 separate, later merge onto `data_phs0`, used only to pull `D1` (a finer
 diagnostic subtype column) for the boxplot in that cell. It does **not**
-overwrite `label`.
+overwrite the `label` column. The earlier check for this claim was too loose:
+it treated a commented read of `data_phs['label']` as if it were an
+assignment.
 
 **Check:**
 ```bash
 python3 -c "
-import json
+import json, re
 nb = json.load(open('.worktrees/upstream/phenotype_discovery/2.slope_analysis.ipynb'))
 src = ''.join(nb['cells'][26]['source'])
 print('reads_old_xlsx   :', 'patient_labels.xlsx' in src and 'updatedSept302025' not in src.split('patient_labels.xlsx')[0].rsplit('pd.read_excel',1)[-1])
 print('merges_on_subject:', 'on=[\"subject\"]' in src)
-print('touches_label    :', \"'label'\" in src and '=' in src.split(\"'label'\")[1][:20])
+print('writes_label     :', bool(re.search(r\"\\[['\\\"]label['\\\"]\\]\\s*=(?!=)\", src)))
 "
 ```
 **Expected:**
 ```
 reads_old_xlsx   : True
 merges_on_subject: True
-touches_label    : False
+writes_label     : False
 ```
-(The third check asks whether cell 26 writes to the `'label'` column — it
-should not. If it does, claim M6 is wrong and needs updating.)
+(The third check now asks specifically whether cell 26 assigns to the
+`'label'` column — it should not. If it does, claim M6 is wrong and needs
+updating.)
 
 ### Claim M7 — `1.feature_inspection.ipynb` repeats the same cell-4 pattern
 
@@ -479,23 +490,28 @@ reference to `load_aggregated_profiles`.
 
 ## Section 4 — The cross-pipeline claim
 
-### Claim X1 — Every pipeline ultimately applies the same four label corrections
+### Claim X1 — The shipped aggregated CSV only partially reflects Marzieh's four label corrections
 
-Across Erin / Marzieh / our fork, the same four label corrections end up
-applied to the final per-subject label column:
+Marzieh's cell 4 applies all four corrections explicitly. Our fork also applies
+all four corrections, split across `load_single_cell_data`,
+`preprocess_single_cells`, `load_aggregated_profiles`, and notebook 3.0.
+However, the shipped `aggregated_profiles_fibroblast.csv` on disk only
+reflects two of those four corrections: it has collapsed `370` and no
+`"MDD or Dep"` label, but it still carries `272→SZA` and `MCL004→MDD`.
+Therefore Erin's notebook, which reads labels only from that CSV and applies no
+subject-specific rewrites, does **not** end up with the same final labels as
+Marzieh / our fork for those two subjects.
 
 | Correction | Marzieh (cell 4) | Erin | Our fork (heavy) | Our fork (light) |
 |---|---|---|---|---|
 | `370{E,F,H} → 370` | explicit | inherited via aggregated CSV | explicit (`load_single_cell_data`) | inherited via aggregated CSV |
-| `272 → Control`    | explicit | inherited via aggregated CSV | explicit | explicit (idempotent) |
-| `MCL004 → SZA`     | explicit | inherited via aggregated CSV | explicit | explicit (idempotent) |
+| `272 → Control`    | explicit | **not present in shipped CSV** | explicit | explicit (idempotent) |
+| `MCL004 → SZA`     | explicit | **not present in shipped CSV** | explicit | explicit (idempotent) |
 | `"MDD or Dep" → MDD` | explicit | inherited via aggregated CSV | explicit in `preprocess_single_cells` | explicit (idempotent) |
 
-The word **"inherited via aggregated CSV"** is a hypothesis: it asserts that
-the aggregated CSV currently shipped on S3 was generated from a run of
-Marzieh's cell 4 **after** her overrides ran (i.e. the `if 0:` guard was
-disabled or bypassed for that run). This is not independently provable from
-code alone; it requires inspecting the actual CSV.
+This supersedes the earlier hypothesis that the aggregated CSV on disk had
+already inherited all four of Marzieh's corrections. The local file refutes
+that hypothesis.
 
 **Check (data-dependent — requires the downloaded CSV):**
 ```bash
@@ -515,13 +531,12 @@ print('has_MDD_or_Dep      :', 'MDD or Dep' in set(df['label'].dropna().astype(s
 **Expected:**
 - `has_370E_F_H        : False`
 - `has_collapsed_370   : True`
-- `272_label           : ['Control']`
-- `MCL004_label        : ['SZA']`
+- `272_label           : ['SZA']`
+- `MCL004_label        : ['MDD']`
 - `has_MDD_or_Dep      : False`
 - `label values`: subset of `['BP','Control','MDD','SZ','SZA']`
 
-If any of these fail, claim X1 is wrong for the CSV on disk and the
-"inherited via aggregated CSV" hypothesis does not hold for that file.
+If any of these fail, claim X1 is wrong for the CSV on disk and needs updating.
 
 ---
 
