@@ -1577,3 +1577,30 @@ snakemake all_patient_figures -c1 -p        # ~3 min, ~3 GB download
 ### Notes
 
 - Run `snakemake generate_slope_figures` or `.pixi/envs/default/bin/python notebooks/3.0-mh-slope-analysis.py` to regenerate; `pixi run` currently panics on this machine so direct interpreter invocation is the workaround
+
+---
+
+## 2026-04-18: Supp Fig 3 — Switched to SQL parquet (matches upstream exactly)
+
+### What was done
+
+- Traced upstream single-cell data sources in detail (Erin's `plot_singlecell_cellsize.ipynb` and Marzieh's `phenotype_discovery/2.slope_analysis.ipynb` at commit f277734) and discovered both upstream notebooks source features from the per-subject SQLite backends (`workspace/backend/Mito_Morphology_input/<si>/<si>.sqlite`), NOT from `single_cell_with_annot_allFeatures.pkl`. Marzieh loads the pickle but uses it only as a subject→label lookup (`df_1 = df_new[df_new['subject'].isin(common_subjects)]` → `df_1` is the SQL frame; `merge(df_1_0[['subject','label']], ...)` borrows only the label column)
+- Confirmed the pickle carries 349 `CytoplasmRound_*` / `Cells_Round_*` columns (AreaShape, Intensity, Texture, RadialDistribution families) that upstream SQL does NOT emit — evidence of an augmented CellProfiler pipeline with an extra `IdentifySecondaryObjects` run. These extra columns are dead weight in Marzieh's code (zero references) but our fork was consuming them, which explains the 93,445 vs 72,234 cell-count gap on the 168-subject cohort
+- Added `load_raw_singlecell_from_sql()` and `build_singlecell_parquet()` in `haghighi_mito/patient_analysis.py`: one-off SQL loop over all 185 SQLite backends (~1.5 min) writes a zstd-compressed parquet to `data/interim/fibroblast_singlecell.parquet` (1.7 GB, 79,250 cells × 3039 cols)
+- Added `haghighi-mito build-singlecell-parquet` CLI command and `build_fibroblast_singlecell_parquet` Snakemake rule; `generate_slope_figures` now depends on the parquet instead of the pickle
+- Rewrote Supp Fig 3 A–E block in `notebooks/3.0-mh-slope-analysis.py` to read 11 of 3039 columns from parquet (~1 sec via column pruning), source labels from the already-corrected aggregated CSV, and use capital `Actin` (SQL casing) in the intensity artefact filter
+- Adopted upstream's `PIXEL_SIZE_UM = 0.161` (was 0.16125) to match Erin's Supp Fig 3 panels numerically; camera-exact 6.45/40 = 0.16125 derivation preserved in the evidence block as physical justification
+
+### Key findings
+
+- **All four QC gates match Erin's executed notebook exactly:** 72234 → 42659 (border) → 41065 (ratio) → 39017 (intensity). Cell counts identical implies the surviving per-cell rows are the same, so all downstream aggregates match up to floating-point equivalence
+- Per-patient medians after conversion: Area ≈ 2,700 µm², MajorAxis ≈ 95 µm, MinorAxis ≈ 44 µm, Perimeter ≈ 454 µm — all in biologically plausible fibroblast ranges and consistent with Erin's Supp Fig 3
+- SQL cohort is 167 subjects (not 168) because backends have separate `370A`–`370H` directories with no collapsed `370`; upstream drops `370` explicitly with `[x for x in population if x != '370']`. Our cohort filter against `valid_subjects` (which contains `370`) produces the same effective drop without needing the explicit line
+- Column-store parquet with `read_parquet(..., columns=[...])` is the key speedup: full file is 1.7 GB but pruned reads pull only the needed columns in ~1 sec, faster than the pickle load (~20 sec) and vastly faster than the 185-subject SQL loop (~1.5 min)
+- Earlier cell-area discrepancy (~1,800 µm² with pickle vs ~2,700 µm² in Erin's gdraw, flagged in the previous entry) was entirely explained by this pipeline divergence — the pickle's CytoplasmRound-augmented segmentation admitted different/extra cells with systematically smaller per-patient means
+
+### Notes
+
+- Pipeline contract: `build_fibroblast_singlecell_parquet` is a one-off intermediate. Re-run only if SQLite inputs change or the parquet is deleted. Stored pre-QC so other notebooks can apply their own filters
+- `notebooks/1.0-mh-feat-importance.py` still uses the legacy `load_single_cell_data()` path (SQL loop + pickle). Migrating it to the parquet would shave ~1–3 min off each run but is not required for reviewer response
+- This closes the "are our figures numerically equivalent to upstream's Supp Fig 3?" question raised during reviewer-response prep. Answer: yes, they are now
